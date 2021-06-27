@@ -1,4 +1,4 @@
-package message
+package gateway
 
 import (
 	"context"
@@ -8,28 +8,29 @@ import (
 )
 
 type (
-	CreateMessageRequest struct {
-		Id string `json:"id"`
+	CreateDMRequest struct {
+		Id    string `json:"id"`
 		Msg string `json:"msg"`
 	}
-	CreateMessageResponse struct {
+	CreateDMResponse struct {
 		Ok string `json:"ok"`
 	}
-	
-	GetMessageRequest struct {
+
+	GetDMRequest struct {
 		Id string `json:"id"`
 	}
-	GetMessageResponse struct {
+	GetDMResponse struct {
 		Msg string `json:"msg"`
 	}
 )
+
 
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	return json.NewEncoder(w).Encode(response)
 }
 
-func decodeCreateMessageReq(ctx context.Context, r *http.Request) (interface{}, error) {
-	var req CreateMessageRequest
+func decodeCreateDMReq(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req CreateDMRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		return nil, err
@@ -37,11 +38,12 @@ func decodeCreateMessageReq(ctx context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func decodeGetMessageReq(ctx context.Context, r *http.Request) (interface{}, error) {
-	var req GetMessageRequest
+func decodeGetDMReq(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req GetDMRequest
 	vars := mux.Vars(r)
 
-	req = GetMessageRequest{Id: vars["id"]}
-
+	req = GetDMRequest{
+		Id: vars["id"],
+	}
 	return req, nil
 }

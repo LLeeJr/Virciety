@@ -1,4 +1,4 @@
-package message
+package gateway
 
 import (
 	"context"
@@ -8,23 +8,21 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
-func NewHTTPServer(ctx context.Context, endpoints Endpoints) http.Handler {
+func NewHttpServer(ctx context.Context, endpoints Endpoints) http.Handler {
 	r := mux.NewRouter()
 	r.Use(commonMiddleware)
 
-	r.Methods("POST").Path("/message").Handler(httptransport.NewServer(
-		endpoints.CreateMessage,
-		decodeCreateMessageReq,
+	r.Methods("POST").Path("/dm").Handler(httptransport.NewServer(
+		endpoints.CreateDM,
+		decodeCreateDMReq,
 		encodeResponse,
 	))
 
-	r.Methods("GET").Path("/message/{id}").Handler(httptransport.NewServer(
-		endpoints.GetMessage,
-		decodeGetMessageReq,
+	r.Methods("GET").Path("/dm/{id}").Handler(httptransport.NewServer(
+		endpoints.GetDM,
+		decodeGetDMReq,
 		encodeResponse,
 	))
-
-	// todo: delete message by id or all messages from user
 
 	return r
 }

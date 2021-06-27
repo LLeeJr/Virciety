@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/gofrs/uuid"
 )
 
 type service struct {
@@ -12,16 +11,13 @@ type service struct {
 	logger log.Logger
 }
 
-func (s service) CreateMessage(ctx context.Context, msg string, from string, to string) (string, error) {
+func (s service) CreateMessage(ctx context.Context, id string, msg string) (string, error) {
 	logger := log.With(s.logger, "method", "CreateMessage")
 
-	uuid, _ := uuid.NewV4()
-	id := uuid.String()
+	// id consists of: author + date + destination
 	message := Message{
 		ID:      id,
 		Msg: msg,
-		From:    from,
-		To:      to,
 	}
 
 	if err := s.repo.CreateMessage(ctx, message); err != nil {

@@ -20,7 +20,7 @@ func MakeEndpoints(s Service) Endpoints {
 func makeCreateMessageEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateMessageRequest)
-		ok, err := s.CreateMessage(ctx, req.Msg, req.From, req.To)
+		ok, err := s.CreateMessage(ctx, req.Id, req.Msg)
 		return CreateMessageResponse{Ok: ok}, err
 	}
 }

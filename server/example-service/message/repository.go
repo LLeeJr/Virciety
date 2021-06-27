@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/go-kit/kit/log"
 )
 
@@ -17,11 +16,9 @@ type repo struct {
 }
 
 func (r *repo) CreateMessage(ctx context.Context, msg Message) error {
-	if msg.From == "" || msg.To == "" {
+	if msg.ID == "" || msg.Msg == "" {
 		return RepoErr
 	}
-
-	fmt.Printf("Message from %s to %s: %s", msg.From, msg.To, msg.Msg)
 	messages = append(messages, msg)
 	return nil
 }
@@ -29,7 +26,6 @@ func (r *repo) CreateMessage(ctx context.Context, msg Message) error {
 func (r *repo) GetMessage(ctx context.Context, id string) (string, error) {
 	for _, message := range messages {
 		if message.ID == id {
-			fmt.Printf("Message with ID %s: %s", id, message.Msg)
 			return message.Msg, nil
 		}
 	}
