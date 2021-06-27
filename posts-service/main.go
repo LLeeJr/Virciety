@@ -1,67 +1,34 @@
 package main
 
 import (
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
-	httptransport "github.com/go-kit/kit/transport/http"
-	"github.com/gorilla/mux"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"log"
 	"net/http"
 	_ "net/http"
 	"os"
-	"posts-service/service"
-	"posts-service/service/database"
-	"posts-service/service/transport"
+	"posts-service/database"
+	"posts-service/graph"
+	"posts-service/graph/generated"
 )
 
-func main() {
-	logger := log.NewLogfmtLogger(os.Stderr)
-	r := mux.NewRouter()
-	db := database.GetDBConn()
+const defaultPort = "8080"
 
-	var svc service.PostService
-	svc = service.Service{}
-	{
-		repository, err := service.NewRepo(db, logger)
-		if err != nil {
-			level.Error(logger).Log("exit", err)
-			os.Exit(-1)
-		}
-		svc = service.NewService(repository, logger)
+func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = defaultPort
 	}
 
-	CreatePostHandler := httptransport.NewServer(
-		transport.MakeCreatePostEndpoint(svc),
-		transport.DecodeCreatePostRequest,
-		transport.EncodeResponse)
+	db := database.GetDBConn()
 
-	GetPostsHandler := httptransport.NewServer(
-		transport.MakeGetPostsEndpoint(svc),
-		transport.DecodeGetPostsRequest,
-		transport.EncodeResponse)
+	repo, _ := database.NewRepo(db)
 
-	RemovePostHandler := httptransport.NewServer(
-		transport.MakeRemovePostEndpoint(svc),
-		transport.DecodeRemovePostRequest,
-		transport.EncodeResponse)
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo)}))
 
-	EditPostHandler := httptransport.NewServer(
-		transport.MakeEditPostEndpoint(svc),
-		transport.DecodeEditPostRequest,
-		transport.EncodeResponse)
+	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/query", srv)
 
-	LikedPostHandler := httptransport.NewServer(
-		transport.MakeLikedPostEndpoint(svc),
-		transport.DecodeLikedPostRequest,
-		transport.EncodeResponse)
-
-	http.Handle("/", r)
-	http.Handle("/post", CreatePostHandler)
-	http.Handle("/post/edit", EditPostHandler)
-	http.Handle("/post/liked", LikedPostHandler)
-	r.Handle("/post/getAll", GetPostsHandler).Methods("GET")
-	r.Handle("/post/{id}", RemovePostHandler).Methods("DELETE")
-
-	logger.Log("msg", "HTTP", "addr", ":8000")
-	logger.Log("err", http.ListenAndServe(":8000", nil))
-
+	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

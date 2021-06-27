@@ -1,0 +1,21 @@
+input CreatePostRequest {
+    username:       String!
+    description:    String!
+    data:           String!
+}
+
+type Post {
+    id: String!
+    description: String!
+    data: String!
+    likedBy: [String!]!
+    comments: [String!]!
+}
+
+type Query {
+    getPosts: [Post!]!
+}
+
+type Mutation {
+    createPost(newPost: CreatePostRequest): Post
+}
