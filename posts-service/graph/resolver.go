@@ -20,3 +20,13 @@ func NewResolver(repo database.Repository) *Resolver {
 		currentPosts: make([]model.Post, 0),
 	}
 }
+
+func GetPostByID(currentPosts []model.Post, id string) (int, *model.Post) {
+	 for i, post := range currentPosts {
+	 	if post.ID == id {
+			return i, &post
+		}
+	 }
+
+	 return -1, nil
+}

@@ -8,6 +8,7 @@ import (
 type PostEvent struct {
 	EventTime 	string 		`json:"event_time"`
 	EventType 	string 		`json:"event_type"`
+	PostID		string		`json:"id"`
 	Username 	string 		`json:"username"`
 	Description string 		`json:"description"`
 	Data 		string 		`json:"data"`
@@ -18,6 +19,10 @@ type PostEvent struct {
 type Repository interface {
 	CreatePost(postEvent PostEvent) (*model.Post, error)
 	GetPosts() ([]*model.Post, error)
+	RemovePost(id string) (string, error)
+	EditPost(postEvent PostEvent) (string, error)
+	LikePost(id, username string) (string, error)
+	UnlikePost(id, username string) (string, error)
 }
 
 type repo struct {
@@ -26,14 +31,17 @@ type repo struct {
 }
 
 func NewRepo(db *sql.DB) (Repository, error) {
-	return &repo{PostEvents: make([]PostEvent, 0)}, nil
+	return &repo{
+		DB:         db,
+		PostEvents: make([]PostEvent, 0),
+	}, nil
 }
 
 func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
 	repo.PostEvents = append(repo.PostEvents, postEvent)
 
 	 return &model.Post{
-		ID:          postEvent.EventTime + postEvent.Username,
+		ID:          postEvent.PostID,
 		Description: postEvent.Description,
 		Data:        postEvent.Data,
 		LikedBy:     postEvent.LikedBy,
@@ -41,23 +49,60 @@ func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
 	}, nil
 }
 
-func (repo *repo) GetPosts() ([]*model.Post, error) {
+func (repo *repo) GetPosts(/*lastChecked string (eventTime)*/) ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
 
-	// first get all rows with event_type = "PostCreated"
-	for _, event := range repo.PostEvents {
-		post := &model.Post{
-			ID:          event.EventTime + event.Username,
-			Description: event.Description,
-			Data:        event.Data,
-			LikedBy:     event.LikedBy,
-			Comments:    event.Comments,
-		}
+	// check from this last event timestamp, so we only get the recent events to process them
 
-		currentPosts = append(currentPosts, post)
+	// first get all rows with event_type = "PostCreated"
+
+	for _, event := range repo.PostEvents {
+		if event.EventType == "CreatePost" {
+			post := &model.Post{
+				ID:          event.PostID,
+				Description: event.Description,
+				Data:        event.Data,
+				LikedBy:     event.LikedBy,
+				Comments:    event.Comments,
+			}
+
+			currentPosts = append(currentPosts, post)
+		}
 	}
 
-	return currentPosts, nil
+	for _, event := range repo.PostEvents {
+		if event.EventType == "CreatePost" {
+			continue
+		}
+
+		for _, post := range currentPosts {
+			if event.PostID == post.ID {
+				post.Description = event.Description
+				break
+			}
+		}
+	}
 
 	// then get all rows with event_type = "PostUpdated"
+	return currentPosts, nil
+}
+
+func (repo *repo) RemovePost(id string) (string, error) {
+	// delete all events relating to the id
+
+	return "success", nil
+}
+
+func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
+	repo.PostEvents = append(repo.PostEvents, postEvent)
+
+	return "success", nil
+}
+
+func (repo *repo) LikePost(id, username string) (string, error) {
+	return "success", nil
+}
+
+func (repo *repo) UnlikePost(id, username string) (string, error) {
+	return "success", nil
 }

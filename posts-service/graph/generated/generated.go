@@ -45,6 +45,7 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Mutation struct {
 		CreatePost func(childComplexity int, newPost *model.CreatePostRequest) int
+		EditPost   func(childComplexity int, edit *model.EditPostRequest) int
 	}
 
 	Post struct {
@@ -62,6 +63,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	CreatePost(ctx context.Context, newPost *model.CreatePostRequest) (*model.Post, error)
+	EditPost(ctx context.Context, edit *model.EditPostRequest) (string, error)
 }
 type QueryResolver interface {
 	GetPosts(ctx context.Context) ([]*model.Post, error)
@@ -93,6 +95,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreatePost(childComplexity, args["newPost"].(*model.CreatePostRequest)), true
+
+	case "Mutation.editPost":
+		if e.complexity.Mutation.EditPost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_editPost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EditPost(childComplexity, args["edit"].(*model.EditPostRequest)), true
 
 	case "Post.comments":
 		if e.complexity.Post.Comments == nil {
@@ -206,8 +220,13 @@ var sources = []*ast.Source{
     data:           String!
 }
 
-type Post {
+input EditPostRequest {
     id: String!
+    newDescription: String!
+}
+
+type Post {
+    id: String! # timestamp(created)__username
     description: String!
     data: String!
     likedBy: [String!]!
@@ -219,7 +238,8 @@ type Query {
 }
 
 type Mutation {
-    createPost(newPost: CreatePostRequest): Post
+    createPost(newPost: CreatePostRequest): Post!
+    editPost(edit: EditPostRequest): String!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -240,6 +260,21 @@ func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, 
 		}
 	}
 	args["newPost"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_editPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.EditPostRequest
+	if tmp, ok := rawArgs["edit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("edit"))
+		arg0, err = ec.unmarshalOEditPostRequest2ᚖpostsᚑserviceᚋgraphᚋmodelᚐEditPostRequest(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["edit"] = arg0
 	return args, nil
 }
 
@@ -328,11 +363,56 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.Post)
 	fc.Result = res
-	return ec.marshalOPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_editPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_editPost_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EditPost(rctx, args["edit"].(*model.EditPostRequest))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -1739,6 +1819,34 @@ func (ec *executionContext) unmarshalInputCreatePostRequest(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputEditPostRequest(ctx context.Context, obj interface{}) (model.EditPostRequest, error) {
+	var it model.EditPostRequest
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "newDescription":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newDescription"))
+			it.NewDescription, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -1764,6 +1872,14 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = graphql.MarshalString("Mutation")
 		case "createPost":
 			out.Values[i] = ec._Mutation_createPost(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "editPost":
+			out.Values[i] = ec._Mutation_editPost(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2126,6 +2242,10 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) marshalNPost2postsᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
+	return ec._Post(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNPost2ᚕᚖpostsᚑserviceᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -2479,11 +2599,12 @@ func (ec *executionContext) unmarshalOCreatePostRequest2ᚖpostsᚑserviceᚋgra
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
+func (ec *executionContext) unmarshalOEditPostRequest2ᚖpostsᚑserviceᚋgraphᚋmodelᚐEditPostRequest(ctx context.Context, v interface{}) (*model.EditPostRequest, error) {
 	if v == nil {
-		return graphql.Null
+		return nil, nil
 	}
-	return ec._Post(ctx, sel, v)
+	res, err := ec.unmarshalInputEditPostRequest(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

@@ -8,6 +8,11 @@ type CreatePostRequest struct {
 	Data        string `json:"data"`
 }
 
+type EditPostRequest struct {
+	ID             string `json:"id"`
+	NewDescription string `json:"newDescription"`
+}
+
 type Post struct {
 	ID          string   `json:"id"`
 	Description string   `json:"description"`
