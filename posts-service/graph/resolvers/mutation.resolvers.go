@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error) {
+func (r *mutationResolver) CreatePost(_ context.Context, newPost model.CreatePostRequest) (*model.Post, error) {
 	created := time.Now().String()
 
 	postEvent := database.PostEvent{
@@ -23,8 +23,8 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 		Username:    newPost.Username,
 		Description: newPost.Description,
 		Data:        newPost.Data,
-		LikedBy:     make([]string, 0),
-		Comments:    make([]string, 0),
+		LikedBy:     make([]*string, 0),
+		Comments:    make([]*string, 0),
 	}
 
 	// put event on queue for notifs?
@@ -36,20 +36,18 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 	}
 
 	// add to currentPosts in resolver
-	r.currentPosts = append(r.currentPosts, *post)
+	r.currentPosts = append(r.currentPosts, post)
 
 	return post, nil
 }
 
 func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequest) (string, error) {
 	// get post data out of current saved posts and remove it out of the list
-	index, post := GetPostByID(r.currentPosts, edit.ID)
+	_, post := GetPostByID(r.currentPosts, edit.ID)
 	if post == nil {
 		errMsg := "no post with id " + edit.ID + " found"
 		return "failed", errors.New(errMsg)
 	}
-
-	r.currentPosts = append(r.currentPosts[:index], r.currentPosts[index+1:]...)
 
 	// process the data and create new post event
 	info := strings.Split(post.ID, "__")
@@ -72,9 +70,6 @@ func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequ
 	if err != nil {
 		return ok, err
 	}
-
-	// add post to currentPosts
-	r.currentPosts = append(r.currentPosts, *post)
 
 	return ok, nil
 }
@@ -99,11 +94,50 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 		Username:    info[1],
 		Description: post.Description,
 		Data:        post.Data,
-		LikedBy:     make([]string, 0),
-		Comments:    make([]string, 0),
+		LikedBy:     make([]*string, 0),
+		Comments:    make([]*string, 0),
 	}
 
+	// save event in database
 	ok, err := r.repo.RemovePost(postEvent)
+	if err != nil {
+		return ok, err
+	}
+
+	return ok, nil
+}
+
+func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRequest) (string, error) {
+	// get post data out of current saved posts and remove it out of the list
+	_, post := GetPostByID(r.currentPosts, like.ID)
+	if post == nil {
+		errMsg := "no post with id " + like.ID + " found"
+		return "failed", errors.New(errMsg)
+	}
+
+	// process the data and create new post event
+	info := strings.Split(post.ID, "__")
+
+	if contains(post.LikedBy, like.Username) {
+		errMsg := "user " + like.Username + " already liked the post with id " + like.ID
+		return "failed", errors.New(errMsg)
+	}
+
+	post.LikedBy = append(post.LikedBy, &like.Username)
+
+	postEvent := database.PostEvent{
+		EventTime:   time.Now().String(),
+		EventType:   "LikePost",
+		PostID:      post.ID,
+		Username:    info[1],
+		Description: post.Description,
+		Data:        post.Data,
+		LikedBy:     post.LikedBy,
+		Comments:    post.Comments,
+	}
+
+	// save event in database
+	ok, err := r.repo.LikePost(postEvent)
 	if err != nil {
 		return ok, err
 	}

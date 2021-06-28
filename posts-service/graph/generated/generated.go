@@ -46,6 +46,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreatePost func(childComplexity int, newPost model.CreatePostRequest) int
 		EditPost   func(childComplexity int, edit model.EditPostRequest) int
+		LikePost   func(childComplexity int, like model.UnLikePostRequest) int
 		RemovePost func(childComplexity int, removeID string) int
 	}
 
@@ -66,6 +67,7 @@ type MutationResolver interface {
 	CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error)
 	EditPost(ctx context.Context, edit model.EditPostRequest) (string, error)
 	RemovePost(ctx context.Context, removeID string) (string, error)
+	LikePost(ctx context.Context, like model.UnLikePostRequest) (string, error)
 }
 type QueryResolver interface {
 	GetPosts(ctx context.Context) ([]*model.Post, error)
@@ -109,6 +111,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.EditPost(childComplexity, args["edit"].(model.EditPostRequest)), true
+
+	case "Mutation.likePost":
+		if e.complexity.Mutation.LikePost == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_likePost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LikePost(childComplexity, args["like"].(model.UnLikePostRequest)), true
 
 	case "Mutation.removePost":
 		if e.complexity.Mutation.RemovePost == nil {
@@ -239,6 +253,11 @@ input EditPostRequest {
     newDescription: String!
 }
 
+input UnLikePostRequest {
+    id: String!
+    username: String!
+}
+
 input RemovePostRequest {
     id: String!
 }
@@ -247,13 +266,14 @@ type Post {
     id: String! # timestamp(created)__username
     description: String!
     data: String!
-    likedBy: [String!]!
-    comments: [String!]!
+    likedBy: [String]!
+    comments: [String]!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation {
     createPost(newPost: CreatePostRequest!): Post!
     editPost(edit: EditPostRequest!): String!
     removePost(removeID: String!): String!
+    likePost(like: UnLikePostRequest!): String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
     getPosts: [Post!]!
@@ -292,6 +312,21 @@ func (ec *executionContext) field_Mutation_editPost_args(ctx context.Context, ra
 		}
 	}
 	args["edit"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_likePost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UnLikePostRequest
+	if tmp, ok := rawArgs["like"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("like"))
+		arg0, err = ec.unmarshalNUnLikePostRequest2postsᚑserviceᚋgraphᚋmodelᚐUnLikePostRequest(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["like"] = arg0
 	return args, nil
 }
 
@@ -489,6 +524,48 @@ func (ec *executionContext) _Mutation_removePost(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_likePost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_likePost_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LikePost(rctx, args["like"].(model.UnLikePostRequest))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -624,9 +701,9 @@ func (ec *executionContext) _Post_likedBy(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.([]*string)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -659,9 +736,9 @@ func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.([]*string)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getPosts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1941,6 +2018,34 @@ func (ec *executionContext) unmarshalInputRemovePostRequest(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUnLikePostRequest(ctx context.Context, obj interface{}) (model.UnLikePostRequest, error) {
+	var it model.UnLikePostRequest
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "username":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -1976,6 +2081,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "removePost":
 			out.Values[i] = ec._Mutation_removePost(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "likePost":
+			out.Values[i] = ec._Mutation_likePost(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2417,7 +2527,7 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+func (ec *executionContext) unmarshalNString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
 	var vSlice []interface{}
 	if v != nil {
 		if tmp1, ok := v.([]interface{}); ok {
@@ -2427,10 +2537,10 @@ func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v
 		}
 	}
 	var err error
-	res := make([]string, len(vSlice))
+	res := make([]*string, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -2438,13 +2548,18 @@ func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v
 	return res, nil
 }
 
-func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+func (ec *executionContext) marshalNString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	for i := range v {
-		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalNUnLikePostRequest2postsᚑserviceᚋgraphᚋmodelᚐUnLikePostRequest(ctx context.Context, v interface{}) (model.UnLikePostRequest, error) {
+	res, err := ec.unmarshalInputUnLikePostRequest(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

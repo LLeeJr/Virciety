@@ -6,14 +6,14 @@ import (
 )
 
 type PostEvent struct {
-	EventTime 	string 		`json:"event_time"`
-	EventType 	string 		`json:"event_type"`
-	PostID		string		`json:"id"`
-	Username 	string 		`json:"username"`
-	Description string 		`json:"description"`
-	Data 		string 		`json:"data"`
-	LikedBy		[]string 	`json:"liked_by"`
-	Comments	[]string 	`json:"comments"`
+	EventTime   string    `json:"event_time"`
+	EventType   string    `json:"event_type"`
+	PostID      string    `json:"id"`
+	Username    string    `json:"username"`
+	Description string    `json:"description"`
+	Data        string    `json:"data"`
+	LikedBy     []*string `json:"liked_by"`
+	Comments    []*string `json:"comments"`
 }
 
 type Repository interface {
@@ -21,7 +21,7 @@ type Repository interface {
 	GetPosts() ([]*model.Post, error)
 	RemovePost(postEvent PostEvent) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
-	LikePost(id, username string) (string, error)
+	LikePost(postEvent PostEvent) (string, error)
 	UnlikePost(id, username string) (string, error)
 }
 
@@ -40,7 +40,7 @@ func NewRepo(db *sql.DB) (Repository, error) {
 func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
 	repo.PostEvents = append(repo.PostEvents, &postEvent)
 
-	 return &model.Post{
+	return &model.Post{
 		ID:          postEvent.PostID,
 		Description: postEvent.Description,
 		Data:        postEvent.Data,
@@ -49,7 +49,7 @@ func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
 	}, nil
 }
 
-func (repo *repo) GetPosts(/*lastChecked string (eventTime)*/) ([]*model.Post, error) {
+func (repo *repo) GetPosts( /*lastChecked string (eventTime)*/ ) ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
 
 	// check from this last event timestamp, so we only get the recent events to process them
@@ -77,7 +77,14 @@ func (repo *repo) GetPosts(/*lastChecked string (eventTime)*/) ([]*model.Post, e
 
 		for _, post := range currentPosts {
 			if event.PostID == post.ID {
-				post.Description = event.Description
+				if event.EventType == "EditPost" {
+					post.Description = event.Description
+				} else if event.EventType == "LikePost" {
+					post.LikedBy = append(post.LikedBy, event.LikedBy[len(event.LikedBy)-1])
+				} else { // event.EventType == "UnlikePost"
+
+				}
+
 				break
 			}
 		}
@@ -113,7 +120,9 @@ func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
 	return "success", nil
 }
 
-func (repo *repo) LikePost(id, username string) (string, error) {
+func (repo *repo) LikePost(postEvent PostEvent) (string, error) {
+	repo.PostEvents = append(repo.PostEvents, &postEvent)
+
 	return "success", nil
 }
 
