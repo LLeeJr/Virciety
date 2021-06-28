@@ -20,3 +20,7 @@ type Post struct {
 	LikedBy     []string `json:"likedBy"`
 	Comments    []string `json:"comments"`
 }
+
+type RemovePostRequest struct {
+	ID string `json:"id"`
+}

@@ -19,7 +19,7 @@ type PostEvent struct {
 type Repository interface {
 	CreatePost(postEvent PostEvent) (*model.Post, error)
 	GetPosts() ([]*model.Post, error)
-	RemovePost(id string) (string, error)
+	RemovePost(postEvent PostEvent) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
 	LikePost(id, username string) (string, error)
 	UnlikePost(id, username string) (string, error)
@@ -27,18 +27,18 @@ type Repository interface {
 
 type repo struct {
 	DB         *sql.DB
-	PostEvents []PostEvent
+	PostEvents []*PostEvent
 }
 
 func NewRepo(db *sql.DB) (Repository, error) {
 	return &repo{
 		DB:         db,
-		PostEvents: make([]PostEvent, 0),
+		PostEvents: make([]*PostEvent, 0),
 	}, nil
 }
 
 func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
-	repo.PostEvents = append(repo.PostEvents, postEvent)
+	repo.PostEvents = append(repo.PostEvents, &postEvent)
 
 	 return &model.Post{
 		ID:          postEvent.PostID,
@@ -71,7 +71,7 @@ func (repo *repo) GetPosts(/*lastChecked string (eventTime)*/) ([]*model.Post, e
 	}
 
 	for _, event := range repo.PostEvents {
-		if event.EventType == "CreatePost" {
+		if event.EventType == "CreatePost" || event.EventType == "RemovePost" {
 			continue
 		}
 
@@ -87,14 +87,28 @@ func (repo *repo) GetPosts(/*lastChecked string (eventTime)*/) ([]*model.Post, e
 	return currentPosts, nil
 }
 
-func (repo *repo) RemovePost(id string) (string, error) {
+func (repo *repo) RemovePost(postEvent PostEvent) (string, error) {
 	// delete all events relating to the id
+	newPostEvents := make([]*PostEvent, 0)
+
+	for _, event := range repo.PostEvents {
+		if event.PostID == postEvent.PostID {
+			continue
+		}
+
+		newPostEvents = append(newPostEvents, event)
+	}
+
+	newPostEvents = append(newPostEvents, &postEvent)
+
+	// new current post events
+	repo.PostEvents = newPostEvents
 
 	return "success", nil
 }
 
 func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
-	repo.PostEvents = append(repo.PostEvents, postEvent)
+	repo.PostEvents = append(repo.PostEvents, &postEvent)
 
 	return "success", nil
 }
