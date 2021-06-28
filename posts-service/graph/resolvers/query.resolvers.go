@@ -9,7 +9,7 @@ import (
 	"posts-service/graph/model"
 )
 
-func (r *queryResolver) GetPosts(_ context.Context) ([]*model.Post, error) {
+func (r *queryResolver) GetPosts(ctx context.Context) ([]*model.Post, error) {
 	return r.repo.GetPosts()
 	//return r.currentPosts, nil
 }

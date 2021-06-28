@@ -9,11 +9,12 @@ import (
 	"posts-service/database"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
+	"posts-service/util"
 	"strings"
 	"time"
 )
 
-func (r *mutationResolver) CreatePost(_ context.Context, newPost model.CreatePostRequest) (*model.Post, error) {
+func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error) {
 	created := time.Now().String()
 
 	postEvent := database.PostEvent{
@@ -118,7 +119,7 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRe
 	// process the data and create new post event
 	info := strings.Split(post.ID, "__")
 
-	if contains(post.LikedBy, like.Username) {
+	if util.Contains(post.LikedBy, like.Username) {
 		errMsg := "user " + like.Username + " already liked the post with id " + like.ID
 		return "failed", errors.New(errMsg)
 	}
@@ -138,6 +139,46 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRe
 
 	// save event in database
 	ok, err := r.repo.LikePost(postEvent)
+	if err != nil {
+		return ok, err
+	}
+
+	return ok, nil
+}
+
+func (r *mutationResolver) UnlikePost(ctx context.Context, unlike model.UnLikePostRequest) (string, error) {
+	// get post data out of current saved posts and remove it out of the list
+	_, post := GetPostByID(r.currentPosts, unlike.ID)
+	if post == nil {
+		errMsg := "no post with id " + unlike.ID + " found"
+		return "failed", errors.New(errMsg)
+	}
+
+	// process the data and create new post event
+	info := strings.Split(post.ID, "__")
+
+	index := util.Search(post.LikedBy, unlike.Username)
+
+	if index == -1 {
+		errMsg := "user " + unlike.Username + " hasn't liked the post with id " + unlike.ID
+		return "failed", errors.New(errMsg)
+	}
+
+	post.LikedBy = append(post.LikedBy[:index], post.LikedBy[index+1:]...)
+
+	postEvent := database.PostEvent{
+		EventTime:   time.Now().String(),
+		EventType:   "UnlikePost",
+		PostID:      post.ID,
+		Username:    info[1],
+		Description: post.Description,
+		Data:        post.Data,
+		LikedBy:     post.LikedBy,
+		Comments:    post.Comments,
+	}
+
+	// save event in database
+	ok, err := r.repo.UnlikePost(postEvent)
 	if err != nil {
 		return ok, err
 	}

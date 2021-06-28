@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"posts-service/graph/model"
+	"posts-service/util"
 )
 
 type PostEvent struct {
@@ -22,7 +23,7 @@ type Repository interface {
 	RemovePost(postEvent PostEvent) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
 	LikePost(postEvent PostEvent) (string, error)
-	UnlikePost(id, username string) (string, error)
+	UnlikePost(postEvent PostEvent) (string, error)
 }
 
 type repo struct {
@@ -82,7 +83,7 @@ func (repo *repo) GetPosts( /*lastChecked string (eventTime)*/ ) ([]*model.Post,
 				} else if event.EventType == "LikePost" {
 					post.LikedBy = append(post.LikedBy, event.LikedBy[len(event.LikedBy)-1])
 				} else { // event.EventType == "UnlikePost"
-
+					post.LikedBy = util.Compare(post.LikedBy, event.LikedBy)
 				}
 
 				break
@@ -126,6 +127,8 @@ func (repo *repo) LikePost(postEvent PostEvent) (string, error) {
 	return "success", nil
 }
 
-func (repo *repo) UnlikePost(id, username string) (string, error) {
+func (repo *repo) UnlikePost(postEvent PostEvent) (string, error) {
+	repo.PostEvents = append(repo.PostEvents, &postEvent)
+
 	return "success", nil
 }
