@@ -28,8 +28,6 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 		Comments:    make([]*string, 0),
 	}
 
-	// put event on queue for notifications?
-
 	// save event in database
 	post, err := r.repo.CreatePost(postEvent)
 	if err != nil {
@@ -38,6 +36,9 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 
 	// add to currentPosts in resolver
 	r.currentPosts = append(r.currentPosts, post)
+
+	// put event on queue for notifications
+	r.messageQueue.AddMessageToQueue(postEvent)
 
 	return post, nil
 }
@@ -105,6 +106,9 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 		return ok, err
 	}
 
+	// put event on queue for notifications to remove all notification events for this post
+	r.messageQueue.AddMessageToQueue(postEvent)
+
 	return ok, nil
 }
 
@@ -142,6 +146,9 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRe
 	if err != nil {
 		return ok, err
 	}
+
+	// put event on queue for notifications
+	r.messageQueue.AddMessageToQueue(postEvent)
 
 	return ok, nil
 }
@@ -182,6 +189,9 @@ func (r *mutationResolver) UnlikePost(ctx context.Context, unlike model.UnLikePo
 	if err != nil {
 		return ok, err
 	}
+
+	// put event on queue for notifications for deleting like notification?
+	r.messageQueue.AddMessageToQueue(postEvent)
 
 	return ok, nil
 }

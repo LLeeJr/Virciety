@@ -10,6 +10,7 @@ import (
 	"posts-service/database"
 	"posts-service/graph/generated"
 	"posts-service/graph/resolvers"
+	message_queue "posts-service/message-queue"
 )
 
 const defaultPort = "8080"
@@ -24,7 +25,10 @@ func main() {
 
 	repo, _ := database.NewRepo(db)
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo)}))
+	mq, _ := message_queue.NewChannel()
+	go mq.InitProducer()
+
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, mq)}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
