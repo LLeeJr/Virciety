@@ -15,7 +15,7 @@ import (
 )
 
 func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error) {
-	created := time.Now().String()
+	created := time.Now().Format("2006-01-02 15:04:05")
 
 	postEvent := database.PostEvent{
 		EventTime:   created,
@@ -28,7 +28,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 		Comments:    make([]*string, 0),
 	}
 
-	// put event on queue for notifs?
+	// put event on queue for notifications?
 
 	// save event in database
 	post, err := r.repo.CreatePost(postEvent)
@@ -56,7 +56,7 @@ func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequ
 	post.Description = edit.NewDescription
 
 	postEvent := database.PostEvent{
-		EventTime:   time.Now().String(),
+		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   "EditPost",
 		PostID:      post.ID,
 		Username:    info[1],
@@ -89,7 +89,7 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 	info := strings.Split(post.ID, "__")
 
 	postEvent := database.PostEvent{
-		EventTime:   time.Now().String(),
+		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   "RemovePost",
 		PostID:      post.ID,
 		Username:    info[1],
@@ -127,7 +127,7 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRe
 	post.LikedBy = append(post.LikedBy, &like.Username)
 
 	postEvent := database.PostEvent{
-		EventTime:   time.Now().String(),
+		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   "LikePost",
 		PostID:      post.ID,
 		Username:    info[1],
@@ -167,7 +167,7 @@ func (r *mutationResolver) UnlikePost(ctx context.Context, unlike model.UnLikePo
 	post.LikedBy = append(post.LikedBy[:index], post.LikedBy[index+1:]...)
 
 	postEvent := database.PostEvent{
-		EventTime:   time.Now().String(),
+		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   "UnlikePost",
 		PostID:      post.ID,
 		Username:    info[1],

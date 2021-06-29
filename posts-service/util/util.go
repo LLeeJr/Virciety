@@ -28,3 +28,11 @@ func Compare(s1, s2 []*string) (result []*string) {
 	}
 	return
 }
+
+func ConvertToPointerString(s []string) (result []*string) {
+	for _, v := range s {
+		result = append(result, &v)
+	}
+
+	return
+}
