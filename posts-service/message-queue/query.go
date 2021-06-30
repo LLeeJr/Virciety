@@ -7,7 +7,7 @@ import (
 	"posts-service/database"
 )
 
-type MessageQueue interface {
+type ProducerQueue interface {
 	InitProducer()
 	AddMessageToQueue(postEvent database.PostEvent)
 	AddMessageToExchange(postEvent database.PostEvent)
@@ -23,7 +23,7 @@ type Channel struct {
 	EChan chan RabbitMsg
 }
 
-func NewChannel() (MessageQueue, error) {
+func NewChannel() (ProducerQueue, error) {
 	return &Channel{QChan: make(chan RabbitMsg, 10),
 		EChan: make(chan RabbitMsg, 10)}, nil
 }
@@ -79,9 +79,9 @@ func (channel *Channel) InitProducer() {
 				})
 			failOnError(err, "Failed to publish a message")
 
-			log.Printf("INFO: published msg: %v", msg.PostEvent)
+			log.Printf("INFO: published msg on %s: %v", msg.QueueName, msg.PostEvent)
 		case msg := <-channel.EChan:
-			log.Printf("INFO: got msg: %v", msg.PostEvent)
+			log.Printf("INFO: got msg on %s: %v", msg.QueueName, msg.PostEvent)
 		}
 	}
 }

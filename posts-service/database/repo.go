@@ -31,14 +31,12 @@ type Repository interface {
 
 type repo struct {
 	DB             *sql.DB
-	PostEvents     []*PostEvent
 	currentEventId int
 }
 
 func NewRepo(db *sql.DB) (Repository, error) {
 	return &repo{
 		DB:             db,
-		PostEvents:     make([]*PostEvent, 0),
 		currentEventId: 0,
 	}, nil
 }
