@@ -44,7 +44,7 @@ func NewRepo(db *sql.DB) (Repository, error) {
 }
 
 func (repo *repo) InsertPostEvent(postEvent PostEvent) (err error) {
-	sqlQuery := `INSERT INTO events ("postId", "eventTime", "eventType", username, description, data, liked, comments)
+	sqlQuery := `INSERT INTO "post-events" ("postId", "eventTime", "eventType", username, description, data, liked, comments)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8) returning id`
 
 	newTime, _ := time.Parse("2006-01-02 15:04:05", postEvent.EventTime)
@@ -78,7 +78,7 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
 
 	// first get all rows with event_type = "CreatePost" and latestEventId
-	sqlQuery := `select "postId", description, data, liked, comments, id from events where id > $1 and "eventType" = $2 `
+	sqlQuery := `select "postId", description, data, liked, comments, id from "post-events" where id > $1 and "eventType" = $2 `
 
 	rows, err := repo.DB.Query(sqlQuery, repo.currentEventId, "CreatePost")
 	if err != nil {
@@ -105,33 +105,21 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 
 	repo.currentEventId = id
 
-	// then add all edited data to posts
+	// then search for newest edit event (includes EditPost, LikePost, UnlikePost)
+	// and add all data to posts
 	for _, post := range currentPosts {
-		sqlQuery = `select description from events where id = (select max(id) from events where "postId" = $1 and "eventType" = $2)`
+		sqlQuery = `select description, liked from "post-events" where id = (select max(id) from "post-events" where "postId" = $1 and ("eventType" = $2 or "eventType" = $3 or "eventType" = $4))`
 
-		row := repo.DB.QueryRow(sqlQuery, post.ID, "EditPost")
+		row := repo.DB.QueryRow(sqlQuery, post.ID, "EditPost", "LikePost", "UnlikePost")
 
 		var description string
-		switch err = row.Scan(&description); err {
+		var likedBy []string
+		switch err = row.Scan(&description, pq.Array(&likedBy)); err {
 		case sql.ErrNoRows:
 			// nothing happens because it is not really an error
 			// since a post doesn't have to be edited
 		case nil:
 			post.Description = description
-		default:
-			return nil, err
-		}
-
-		// lastly add all recent liked data to posts
-		sqlQuery = `select liked from events where id = (select max(id) from events where "postId" = $1 and ("eventType" = $2 or "eventType" = $3))`
-
-		row = repo.DB.QueryRow(sqlQuery, post.ID, "LikePost", "UnlikePost")
-		var likedBy []string
-		switch err = row.Scan(pq.Array(&likedBy)); err {
-		case sql.ErrNoRows:
-			// nothing happens because it is not really an error
-			// since a post doesn't have to be liked
-		case nil:
 			post.LikedBy = util.ConvertToPointerString(likedBy)
 		default:
 			return nil, err
@@ -143,7 +131,7 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 
 func (repo *repo) RemovePost(postEvent PostEvent) (string, error) {
 	// delete all events relating to the id
-	sqlQuery := `delete from events where "postId" = $1`
+	sqlQuery := `delete from "post-events" where "postId" = $1`
 
 	_, err := repo.DB.Exec(sqlQuery, postEvent.PostID)
 	if err != nil {
