@@ -1,8 +1,14 @@
 package util
 
-func Contains(s []*string, str string) bool {
+import (
+	"posts-service/graph/model"
+)
+
+// basic slice operations
+
+func Contains(s []string, str string) bool {
 	for _, v := range s {
-		if *v == str {
+		if v == str {
 			return true
 		}
 	}
@@ -10,9 +16,9 @@ func Contains(s []*string, str string) bool {
 	return false
 }
 
-func Search(s []*string, str string) int {
+func Search(s []string, str string) int {
 	for i, v := range s {
-		if *v == str {
+		if v == str {
 			return i
 		}
 	}
@@ -20,19 +26,14 @@ func Search(s []*string, str string) int {
 	return -1
 }
 
-func Compare(s1, s2 []*string) (result []*string) {
-	for _, v := range s1 {
-		if Contains(s2, *v) {
-			result = append(result, v)
+// Useful stuff
+
+func GetPostByID(currentPosts []*model.Post, id string) (int, *model.Post) {
+	for i, post := range currentPosts {
+		if post.ID == id {
+			return i, post
 		}
 	}
-	return
-}
 
-func ConvertToPointerString(s []string) (result []*string) {
-	for _, v := range s {
-		result = append(result, &v)
-	}
-
-	return
+	return -1, nil
 }

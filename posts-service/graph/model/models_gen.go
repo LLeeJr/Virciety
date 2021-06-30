@@ -14,11 +14,11 @@ type EditPostRequest struct {
 }
 
 type Post struct {
-	ID          string    `json:"id"`
-	Description string    `json:"description"`
-	Data        string    `json:"data"`
-	LikedBy     []*string `json:"likedBy"`
-	Comments    []*string `json:"comments"`
+	ID          string   `json:"id"`
+	Description string   `json:"description"`
+	Data        string   `json:"data"`
+	LikedBy     []string `json:"likedBy"`
+	Comments    []string `json:"comments"`
 }
 
 type RemovePostRequest struct {

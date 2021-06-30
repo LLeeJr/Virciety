@@ -22,6 +22,6 @@ type Post {
     id: String! # timestamp(created)__username
     description: String!
     data: String!
-    likedBy: [String]!
-    comments: [String]!
+    likedBy: [String!]!
+    comments: [String!]!
 }

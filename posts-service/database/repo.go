@@ -3,20 +3,20 @@ package database
 import (
 	"database/sql"
 	"github.com/lib/pq"
+	"log"
 	"posts-service/graph/model"
-	"posts-service/util"
 	"time"
 )
 
 type PostEvent struct {
-	EventTime   string    `json:"event_time"`
-	EventType   string    `json:"event_type"`
-	PostID      string    `json:"id"`
-	Username    string    `json:"username"`
-	Description string    `json:"description"`
-	Data        string    `json:"data"`
-	LikedBy     []*string `json:"liked_by"`
-	Comments    []*string `json:"comments"`
+	EventTime   string   `json:"event_time"`
+	EventType   string   `json:"event_type"`
+	PostID      string   `json:"id"`
+	Username    string   `json:"username"`
+	Description string   `json:"description"`
+	Data        string   `json:"data"`
+	LikedBy     []string `json:"liked_by"`
+	Comments    []string `json:"comments"`
 }
 
 type Repository interface {
@@ -84,6 +84,7 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 	}
 	defer rows.Close()
 
+	oldId := repo.currentEventId
 	id := repo.currentEventId
 
 	for rows.Next() {
@@ -91,6 +92,7 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 
 		err = rows.Scan(&post.ID, &post.Description, &post.Data, pq.Array(&post.LikedBy), pq.Array(&post.Comments), &id)
 		if err != nil {
+			repo.currentEventId = oldId
 			return nil, err
 		}
 		currentPosts = append(currentPosts, &post)
@@ -106,20 +108,18 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 	// then search for newest edit event (includes EditPost, LikePost, UnlikePost)
 	// and add all data to posts
 	for _, post := range currentPosts {
-		sqlQuery = `select description, liked from "post-events" where id = (select max(id) from "post-events" where "postId" = $1 and ("eventType" = $2 or "eventType" = $3 or "eventType" = $4))`
+		sqlQuery = `select liked, description from "post-events" where id = (select max(id) from "post-events" where "postId" = $1 and ("eventType" = $2 or "eventType" = $3 or "eventType" = $4))`
 
 		row := repo.DB.QueryRow(sqlQuery, post.ID, "EditPost", "LikePost", "UnlikePost")
 
-		var description string
-		var likedBy []string
-		switch err = row.Scan(&description, pq.Array(&likedBy)); err {
+		switch err = row.Scan(pq.Array(&post.LikedBy), &post.Description); err {
 		case sql.ErrNoRows:
 			// nothing happens because it is not really an error
 			// since a post doesn't have to be edited
 		case nil:
-			post.Description = description
-			post.LikedBy = util.ConvertToPointerString(likedBy)
+			log.Printf("Edited data added to " + post.ID)
 		default:
+			repo.currentEventId = oldId
 			return nil, err
 		}
 	}

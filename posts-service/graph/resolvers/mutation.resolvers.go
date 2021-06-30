@@ -24,8 +24,8 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 		Username:    newPost.Username,
 		Description: newPost.Description,
 		Data:        newPost.Data,
-		LikedBy:     make([]*string, 0),
-		Comments:    make([]*string, 0),
+		LikedBy:     make([]string, 0),
+		Comments:    make([]string, 0),
 	}
 
 	// save event in database
@@ -38,14 +38,14 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 	r.currentPosts = append(r.currentPosts, post)
 
 	// put event on queue for notifications
-	r.producerQueue.AddMessageToQueue(postEvent)
+	// r.producerQueue.AddMessageToQueue(postEvent)
 
 	return post, nil
 }
 
 func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequest) (string, error) {
 	// get post data out of current saved posts and remove it out of the list
-	_, post := GetPostByID(r.currentPosts, edit.ID)
+	_, post := util.GetPostByID(r.currentPosts, edit.ID)
 	if post == nil {
 		errMsg := "no post with id " + edit.ID + " found"
 		return "failed", errors.New(errMsg)
@@ -78,7 +78,7 @@ func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequ
 
 func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (string, error) {
 	// get post data out of current saved posts and remove it out of the list
-	index, post := GetPostByID(r.currentPosts, removeID)
+	index, post := util.GetPostByID(r.currentPosts, removeID)
 	if post == nil {
 		errMsg := "no post with id " + removeID + " found"
 		return "failed", errors.New(errMsg)
@@ -96,8 +96,8 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 		Username:    info[1],
 		Description: post.Description,
 		Data:        post.Data,
-		LikedBy:     make([]*string, 0),
-		Comments:    make([]*string, 0),
+		LikedBy:     make([]string, 0),
+		Comments:    make([]string, 0),
 	}
 
 	// save event in database
@@ -107,14 +107,15 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 	}
 
 	// put event on queue for notifications to remove all notification events for this post
-	r.producerQueue.AddMessageToQueue(postEvent)
+	// TODO put event on queue for comments to remove all comment events for this post
+	// r.producerQueue.AddMessageToQueue(postEvent)
 
 	return ok, nil
 }
 
 func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRequest) (string, error) {
 	// get post data out of current saved posts and remove it out of the list
-	_, post := GetPostByID(r.currentPosts, like.ID)
+	_, post := util.GetPostByID(r.currentPosts, like.ID)
 	if post == nil {
 		errMsg := "no post with id " + like.ID + " found"
 		return "failed", errors.New(errMsg)
@@ -128,7 +129,7 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRe
 		return "failed", errors.New(errMsg)
 	}
 
-	post.LikedBy = append(post.LikedBy, &like.Username)
+	post.LikedBy = append(post.LikedBy, like.Username)
 
 	postEvent := database.PostEvent{
 		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
@@ -148,14 +149,14 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRe
 	}
 
 	// put event on queue for notifications
-	r.producerQueue.AddMessageToQueue(postEvent)
+	// r.producerQueue.AddMessageToQueue(postEvent)
 
 	return ok, nil
 }
 
 func (r *mutationResolver) UnlikePost(ctx context.Context, unlike model.UnLikePostRequest) (string, error) {
 	// get post data out of current saved posts and remove it out of the list
-	_, post := GetPostByID(r.currentPosts, unlike.ID)
+	_, post := util.GetPostByID(r.currentPosts, unlike.ID)
 	if post == nil {
 		errMsg := "no post with id " + unlike.ID + " found"
 		return "failed", errors.New(errMsg)
@@ -191,7 +192,7 @@ func (r *mutationResolver) UnlikePost(ctx context.Context, unlike model.UnLikePo
 	}
 
 	// put event on queue for notifications for deleting like notification?
-	r.producerQueue.AddMessageToQueue(postEvent)
+	// r.producerQueue.AddMessageToQueue(postEvent)
 
 	return ok, nil
 }

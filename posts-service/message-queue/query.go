@@ -13,36 +13,26 @@ type ProducerQueue interface {
 	AddMessageToExchange(postEvent database.PostEvent)
 }
 
-type RabbitMsg struct {
-	QueueName string             `json:"queueName"`
-	PostEvent database.PostEvent `json:"postEvent"`
-}
-
-type Channel struct {
-	QChan chan RabbitMsg
-	EChan chan RabbitMsg
-}
-
-func NewChannel() (ProducerQueue, error) {
-	return &Channel{QChan: make(chan RabbitMsg, 10),
+func NewProducerChannel() (ProducerQueue, error) {
+	return &ChannelConfig{QChan: make(chan RabbitMsg, 10),
 		EChan: make(chan RabbitMsg, 10)}, nil
 }
 
-func (channel *Channel) AddMessageToQueue(postEvent database.PostEvent) {
+func (channel *ChannelConfig) AddMessageToQueue(postEvent database.PostEvent) {
 	channel.QChan <- RabbitMsg{
 		QueueName: "notification-service",
 		PostEvent: postEvent,
 	}
 }
 
-func (channel *Channel) AddMessageToExchange(postEvent database.PostEvent) {
+func (channel *ChannelConfig) AddMessageToExchange(postEvent database.PostEvent) {
 	channel.EChan <- RabbitMsg{
 		QueueName: "",
 		PostEvent: postEvent,
 	}
 }
 
-func (channel *Channel) InitProducer() {
+func (channel *ChannelConfig) InitProducer() {
 	// conn
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
@@ -83,11 +73,5 @@ func (channel *Channel) InitProducer() {
 		case msg := <-channel.EChan:
 			log.Printf("INFO: got msg on %s: %v", msg.QueueName, msg.PostEvent)
 		}
-	}
-}
-
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
 	}
 }

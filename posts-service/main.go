@@ -25,8 +25,11 @@ func main() {
 
 	repo, _ := database.NewRepo(db)
 
-	producerQueue, _ := messagequeue.NewChannel()
+	producerQueue, _ := messagequeue.NewProducerChannel()
 	go producerQueue.InitProducer()
+
+	consumerQueue, _ := messagequeue.NewConsumerChannel(repo)
+	go consumerQueue.InitConsumer()
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
 
