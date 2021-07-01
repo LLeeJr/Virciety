@@ -5,48 +5,42 @@ package graph
 
 import (
 	"context"
-	"dm-service/database"
-	"dm-service/graph/generated"
-	"dm-service/graph/model"
+	"fmt"
 	"log"
-	"strings"
+	"notifs-service/database"
+	"notifs-service/graph/generated"
+	"notifs-service/graph/model"
 	"time"
 )
 
-func (r *mutationResolver) CreateDm(ctx context.Context, input *model.CreateDmRequest) (*model.Dm, error) {
-	data := strings.Split(input.ID, "__")
-	dmEvent := database.DmEvent{
-		EventTime: time.Now().Format("2006-01-02 15:04:05"),
-		EventType: "CreateDm",
-		DmID:      input.ID,
-		From:      data[0],
-		To:        data[2],
-		Time:      data[1],
-		Msg:       input.Msg,
-	}
-	log.Println("dmEvent", dmEvent)
+func (r *mutationResolver) CreateNotif(ctx context.Context, input model.CreateNotifRequest) (*model.Notif, error) {
+	id := fmt.Sprintf("%s__%s__%s", input.Event, time.Now().Format("2006-01-02 15:04:05"), input.Receiver)
 
-	dm, err := r.repo.CreateDm(ctx, dmEvent)
+	notifEvent := database.NotifEvent{
+		EventTime: time.Now().Format("2006-01-02 15:04:05"),
+		EventType: input.Event,
+		NotifId:   id,
+		Receiver:  input.Receiver,
+		Text:      input.Text,
+	}
+	log.Println("notifEvent", notifEvent)
+
+	notif, err := r.repo.CreateNotif(ctx, notifEvent)
 	if err != nil {
 		return nil, err
 	}
-	r.dms = append(r.dms, dm)
+	r.notifs = append(r.notifs, notif)
+	r.notifsChan <- notif
 
-	r.dmsChan <- dm
-
-	return dm, nil
+	return notif, nil
 }
 
-func (r *queryResolver) GetDms(ctx context.Context) ([]*model.Dm, error) {
-	return r.repo.GetDms(ctx)
+func (r *queryResolver) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error) {
+	return r.repo.GetNotifsByReceiver(ctx, receiver)
 }
 
-func (r *queryResolver) GetDmsByFromTo(ctx context.Context, input model.GetByFromToRequest) ([]*model.Dm, error) {
-	return r.repo.GetDmsByFromTo(ctx, input.From, input.To)
-}
-
-func (r *subscriptionResolver) DmAdded(ctx context.Context) (<-chan *model.Dm, error) {
-	return r.dmsChan, nil
+func (r *subscriptionResolver) NotifAdded(ctx context.Context) (<-chan *model.Notif, error) {
+	return r.notifsChan, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
