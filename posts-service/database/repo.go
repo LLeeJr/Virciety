@@ -8,29 +8,22 @@ import (
 	"time"
 )
 
-type PostEvent struct {
-	EventTime   string   `json:"event_time"`
-	EventType   string   `json:"event_type"`
-	PostID      string   `json:"id"`
-	Username    string   `json:"username"`
-	Description string   `json:"description"`
-	Data        string   `json:"data"`
-	LikedBy     []string `json:"liked_by"`
-	Comments    []string `json:"comments"`
-}
-
 type Repository interface {
 	InsertPostEvent(post PostEvent) error
 	CreatePost(postEvent PostEvent) (*model.Post, error)
 	GetPosts() ([]*model.Post, error)
-	RemovePost(postEvent PostEvent) (string, error)
+	GetCurrentPosts() []*model.Post
+	GetPostById(id string) (int, *model.Post)
+	RemovePost(postEvent PostEvent, index int) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
 	LikePost(postEvent PostEvent) (string, error)
 	UnlikePost(postEvent PostEvent) (string, error)
+	AddComment(postEvent PostEvent) (string, error)
 }
 
 type repo struct {
 	DB             *sql.DB
+	currentPosts   []*model.Post
 	currentEventId int
 }
 
@@ -38,6 +31,7 @@ func NewRepo(db *sql.DB) (Repository, error) {
 	return &repo{
 		DB:             db,
 		currentEventId: 0,
+		currentPosts:   make([]*model.Post, 0),
 	}, nil
 }
 
@@ -63,13 +57,18 @@ func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
 		return nil, err
 	}
 
-	return &model.Post{
+	post := &model.Post{
 		ID:          postEvent.PostID,
 		Description: postEvent.Description,
 		Data:        postEvent.Data,
 		LikedBy:     postEvent.LikedBy,
 		Comments:    postEvent.Comments,
-	}, nil
+	}
+
+	// add to currentPosts
+	repo.currentPosts = append(repo.currentPosts, post)
+
+	return post, nil
 }
 
 func (repo *repo) GetPosts() ([]*model.Post, error) {
@@ -100,7 +99,7 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 
 	// list is recent
 	if id == repo.currentEventId {
-		return nil, nil
+		return repo.currentPosts, nil
 	}
 
 	repo.currentEventId = id
@@ -124,10 +123,30 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 		}
 	}
 
-	return currentPosts, nil
+	// Update runtime data
+	repo.currentPosts = append(repo.currentPosts, currentPosts...)
+
+	return repo.currentPosts, nil
 }
 
-func (repo *repo) RemovePost(postEvent PostEvent) (string, error) {
+func (repo *repo) GetCurrentPosts() []*model.Post {
+	return repo.currentPosts
+}
+
+func (repo *repo) GetPostById(id string) (int, *model.Post) {
+	for i, post := range repo.currentPosts {
+		if post.ID == id {
+			return i, post
+		}
+	}
+
+	return -1, nil
+}
+
+func (repo *repo) RemovePost(postEvent PostEvent, index int) (string, error) {
+	// remove from currentPosts
+	repo.currentPosts = append(repo.currentPosts[:index], repo.currentPosts[index+1:]...)
+
 	// delete all events relating to the id
 	sqlQuery := `delete from "post-events" where "postId" = $1`
 
@@ -167,6 +186,15 @@ func (repo *repo) UnlikePost(postEvent PostEvent) (string, error) {
 	err := repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return "failed", err
+	}
+
+	return "success", nil
+}
+
+func (repo *repo) AddComment(postEvent PostEvent) (string, error) {
+	err := repo.InsertPostEvent(postEvent)
+	if err != nil {
+		return "failure", nil
 	}
 
 	return "success", nil

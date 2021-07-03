@@ -15,10 +15,7 @@ func (r *queryResolver) GetPosts(ctx context.Context) ([]*model.Post, error) {
 		return nil, err
 	}
 
-	// update runtime data
-	r.currentPosts = append(r.currentPosts, currentPosts...)
-
-	return r.currentPosts, nil
+	return currentPosts, nil
 }
 
 // Query returns generated.QueryResolver implementation.

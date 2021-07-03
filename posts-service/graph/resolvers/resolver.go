@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"posts-service/database"
-	"posts-service/graph/model"
 	messagequeue "posts-service/message-queue"
 )
 
@@ -12,14 +11,12 @@ import (
 
 type Resolver struct {
 	repo          database.Repository
-	currentPosts  []*model.Post
-	producerQueue messagequeue.ProducerQueue
+	producerQueue messagequeue.Publisher
 }
 
-func NewResolver(repo database.Repository, producerQueue messagequeue.ProducerQueue) *Resolver {
+func NewResolver(repo database.Repository, producerQueue messagequeue.Publisher) *Resolver {
 	return &Resolver{
 		repo:          repo,
 		producerQueue: producerQueue,
-		currentPosts:  make([]*model.Post, 0),
 	}
 }
