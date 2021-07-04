@@ -15,7 +15,8 @@ type Repository interface {
 	GetComments() (map[string][]*model.Comment, error)
 	GetCurrentComments() map[string][]*model.Comment
 	GetCommentsByPostId(postId string) ([]*model.Comment, error)
-	GetCommentById(commentId string) (*model.Comment, string, error)
+	GetCommentById(commentId string) (*model.Comment, int, string, error)
+	RemoveComment(event CommentEvent, index int) (string, error)
 	EditComment(event CommentEvent) (string, error)
 	LikeComment(event CommentEvent) (string, error)
 	UnlikeComment(event CommentEvent) (string, error)
@@ -154,9 +155,10 @@ func (repo *repo) GetCommentsByPostId(postId string) ([]*model.Comment, error) {
 	return comments, nil
 }
 
-func (repo *repo) GetCommentById(commentId string) (*model.Comment, string, error) {
+func (repo *repo) GetCommentById(commentId string) (*model.Comment, int, string, error) {
 	// process data to get postId
 	info := strings.Split(commentId, "__")
+	index := -1
 
 	username := info[1]
 	postId := info[2] + "__" + info[3]
@@ -164,24 +166,56 @@ func (repo *repo) GetCommentById(commentId string) (*model.Comment, string, erro
 	// get comment data out of current saved comments
 	comments, err := repo.GetCommentsByPostId(postId)
 	if err != nil {
-		return nil, username, err
+		return nil, index, username, err
 	}
 
 	// search comment in post comments list
 	var comment *model.Comment
-	for _, v := range comments {
+	for i, v := range comments {
 		if v.ID == commentId {
 			comment = v
+			index = i
 			break
 		}
 	}
 
 	if comment == nil {
 		errMsg := "no comment with id " + commentId + " for post with id " + postId + " found"
-		return nil, username, errors.New(errMsg)
+		return nil, index, username, errors.New(errMsg)
 	}
 
-	return comment, username, nil
+	return comment, index, username, nil
+}
+
+func (repo *repo) RemoveComment(event CommentEvent, index int) (string, error) {
+	// remove from currentComments
+	comments, err := repo.GetCommentsByPostId(event.PostID)
+	if err != nil {
+		return "failed", err
+	}
+
+	comments = append(comments[:index], comments[index+1:]...)
+
+	if len(comments) == 0 {
+		delete(repo.currentComments, event.PostID)
+	} else {
+		repo.currentComments[event.PostID] = comments
+	}
+
+	// delete all events relating to the id
+	sqlQuery := `delete from "comment-events" where "commentID" = $1`
+
+	_, err = repo.DB.Exec(sqlQuery, event.CommentID)
+	if err != nil {
+		return "failed", err
+	}
+
+	err = repo.InsertCommentEvent(event)
+	if err != nil {
+		return "failed", err
+	}
+
+	return "success", nil
 }
 
 func (repo *repo) EditComment(event CommentEvent) (string, error) {

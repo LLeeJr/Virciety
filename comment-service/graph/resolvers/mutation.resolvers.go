@@ -10,7 +10,6 @@ import (
 	"comment-service/util"
 	"context"
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -43,7 +42,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, newComment model.C
 
 func (r *mutationResolver) EditComment(ctx context.Context, edit model.EditCommentRequest) (string, error) {
 	// get comment by id
-	comment, username, err := r.repo.GetCommentById(edit.ID)
+	comment, _, username, err := r.repo.GetCommentById(edit.ID)
 	if err != nil {
 		return "failed", err
 	}
@@ -71,12 +70,35 @@ func (r *mutationResolver) EditComment(ctx context.Context, edit model.EditComme
 }
 
 func (r *mutationResolver) RemoveComment(ctx context.Context, removeID string) (string, error) {
-	panic(fmt.Errorf("not implemented"))
+	// get comment by id
+	comment, index, username, err := r.repo.GetCommentById(removeID)
+	if err != nil {
+		return "failed", err
+	}
+
+	// add new data and create event
+	commentEvent := database.CommentEvent{
+		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
+		EventType:   "RemoveComment",
+		CommentID:   comment.ID,
+		PostID:      comment.PostID,
+		Username:    username,
+		Description: comment.Description,
+		LikedBy:     make([]string, 0),
+	}
+
+	// save event in database
+	ok, err := r.repo.RemoveComment(commentEvent, index)
+	if err != nil {
+		return ok, err
+	}
+
+	return ok, nil
 }
 
 func (r *mutationResolver) LikeComment(ctx context.Context, like model.UnLikeCommentRequest) (string, error) {
 	// get comment by id
-	comment, username, err := r.repo.GetCommentById(like.ID)
+	comment, _, username, err := r.repo.GetCommentById(like.ID)
 	if err != nil {
 		return "failed", err
 	}
@@ -110,7 +132,7 @@ func (r *mutationResolver) LikeComment(ctx context.Context, like model.UnLikeCom
 
 func (r *mutationResolver) UnlikeComment(ctx context.Context, unlike model.UnLikeCommentRequest) (string, error) {
 	// get comment by id
-	comment, username, err := r.repo.GetCommentById(unlike.ID)
+	comment, _, username, err := r.repo.GetCommentById(unlike.ID)
 	if err != nil {
 		return "failed", err
 	}
