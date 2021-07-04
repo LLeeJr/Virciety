@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/lib/pq"
+	"log"
+	"strings"
 	"time"
 )
 
@@ -23,6 +25,8 @@ type Repository interface {
 	GetComments() (map[string][]*model.Comment, error)
 	GetCurrentComments() map[string][]*model.Comment
 	GetCommentsByPostId(postId string) ([]*model.Comment, error)
+	GetCommentById(commentId string) (*model.Comment, string, error)
+	EditComment(event CommentEvent) (string, error)
 }
 
 type repo struct {
@@ -107,6 +111,21 @@ func (repo *repo) GetComments() (map[string][]*model.Comment, error) {
 	}
 
 	for _, comment := range currentComments {
+		sqlQuery = `select liked, description from "comment-events" where id = (select max(id) from "comment-events" where "commentID" = $1
+                                                                                                   and ("eventType" = $2 or "eventType" = $3 or "eventType" = $4))`
+
+		row := repo.DB.QueryRow(sqlQuery, comment.ID, "EditComment", "LikeComment", "UnlikeComment")
+
+		switch err = row.Scan(pq.Array(&comment.LikedBy), &comment.Description); err {
+		case sql.ErrNoRows:
+			// nothing happens because it is not really an error
+			// since a post doesn't have to be edited
+		case nil:
+			log.Printf("Edited data added to " + comment.ID)
+		default:
+			repo.currentEventId = oldId
+			return nil, err
+		}
 
 		// add to currentComments
 		comments, ok := repo.currentComments[comment.PostID]
@@ -133,4 +152,42 @@ func (repo *repo) GetCommentsByPostId(postId string) ([]*model.Comment, error) {
 	}
 
 	return comments, nil
+}
+
+func (repo *repo) GetCommentById(commentId string) (*model.Comment, string, error) {
+	// process data to get postId
+	info := strings.Split(commentId, "__")
+
+	postId := info[2] + "__" + info[3]
+
+	// get comment data out of current saved comments
+	comments, err := repo.GetCommentsByPostId(postId)
+	if err != nil {
+		return nil, postId, err
+	}
+
+	// search comment in post comments list
+	var comment *model.Comment
+	for _, v := range comments {
+		if v.ID == commentId {
+			comment = v
+			break
+		}
+	}
+
+	if comment == nil {
+		errMsg := "no comment with id " + commentId + " for post with id " + postId + " found"
+		return nil, postId, errors.New(errMsg)
+	}
+
+	return comment, postId, nil
+}
+
+func (repo *repo) EditComment(event CommentEvent) (string, error) {
+	err := repo.InsertCommentEvent(event)
+	if err != nil {
+		return "failed", err
+	}
+
+	return "success", nil
 }

@@ -58,6 +58,9 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateComment func(childComplexity int, newComment model.CreateCommentRequest) int
 		EditComment   func(childComplexity int, edit model.EditCommentRequest) int
+		LikeComment   func(childComplexity int, like model.UnLikeCommentRequest) int
+		RemoveComment func(childComplexity int, removeID string) int
+		UnlikeComment func(childComplexity int, unlike model.UnLikeCommentRequest) int
 	}
 
 	Query struct {
@@ -69,6 +72,9 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	CreateComment(ctx context.Context, newComment model.CreateCommentRequest) (*model.Comment, error)
 	EditComment(ctx context.Context, edit model.EditCommentRequest) (string, error)
+	RemoveComment(ctx context.Context, removeID string) (string, error)
+	LikeComment(ctx context.Context, like model.UnLikeCommentRequest) (string, error)
+	UnlikeComment(ctx context.Context, unlike model.UnLikeCommentRequest) (string, error)
 }
 type QueryResolver interface {
 	GetComments(ctx context.Context) ([]*model.MapComments, error)
@@ -155,6 +161,42 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.EditComment(childComplexity, args["edit"].(model.EditCommentRequest)), true
+
+	case "Mutation.likeComment":
+		if e.complexity.Mutation.LikeComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_likeComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LikeComment(childComplexity, args["like"].(model.UnLikeCommentRequest)), true
+
+	case "Mutation.removeComment":
+		if e.complexity.Mutation.RemoveComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_removeComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RemoveComment(childComplexity, args["removeID"].(string)), true
+
+	case "Mutation.unlikeComment":
+		if e.complexity.Mutation.UnlikeComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unlikeComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnlikeComment(childComplexity, args["unlike"].(model.UnLikeCommentRequest)), true
 
 	case "Query.GetComments":
 		if e.complexity.Query.GetComments == nil {
@@ -273,9 +315,9 @@ type Comment {
 	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation {
     createComment(newComment: CreateCommentRequest!): Comment!
     editComment(edit: EditCommentRequest!): String!
-    #removeComment(removeID: String!): String!
-    #likeComment(like: UnLikeCommentRequest!): String!
-    #unlikeComment(unlike: UnLikeCommentRequest!): String!
+    removeComment(removeID: String!): String!
+    likeComment(like: UnLikeCommentRequest!): String!
+    unlikeComment(unlike: UnLikeCommentRequest!): String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
     GetComments: [MapComments!]!
@@ -315,6 +357,51 @@ func (ec *executionContext) field_Mutation_editComment_args(ctx context.Context,
 		}
 	}
 	args["edit"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_likeComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UnLikeCommentRequest
+	if tmp, ok := rawArgs["like"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("like"))
+		arg0, err = ec.unmarshalNUnLikeCommentRequest2commentᚑserviceᚋgraphᚋmodelᚐUnLikeCommentRequest(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["like"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_removeComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["removeID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["removeID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unlikeComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.UnLikeCommentRequest
+	if tmp, ok := rawArgs["unlike"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unlike"))
+		arg0, err = ec.unmarshalNUnLikeCommentRequest2commentᚑserviceᚋgraphᚋmodelᚐUnLikeCommentRequest(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["unlike"] = arg0
 	return args, nil
 }
 
@@ -664,6 +751,132 @@ func (ec *executionContext) _Mutation_editComment(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().EditComment(rctx, args["edit"].(model.EditCommentRequest))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_removeComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_removeComment_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RemoveComment(rctx, args["removeID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_likeComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_likeComment_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LikeComment(rctx, args["like"].(model.UnLikeCommentRequest))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_unlikeComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_unlikeComment_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UnlikeComment(rctx, args["unlike"].(model.UnLikeCommentRequest))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2134,6 +2347,21 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "removeComment":
+			out.Values[i] = ec._Mutation_removeComment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "likeComment":
+			out.Values[i] = ec._Mutation_likeComment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "unlikeComment":
+			out.Values[i] = ec._Mutation_unlikeComment(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2614,6 +2842,11 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalNUnLikeCommentRequest2commentᚑserviceᚋgraphᚋmodelᚐUnLikeCommentRequest(ctx context.Context, v interface{}) (model.UnLikeCommentRequest, error) {
+	res, err := ec.unmarshalInputUnLikeCommentRequest(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
