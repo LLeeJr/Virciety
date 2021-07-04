@@ -10,16 +10,6 @@ import (
 	"time"
 )
 
-type CommentEvent struct {
-	EventTime   string   `json:"event_time"`
-	EventType   string   `json:"event_type"`
-	CommentID   string   `json:"id"`
-	Username    string   `json:"username"`
-	Description string   `json:"description"`
-	LikedBy     []string `json:"liked_by"`
-	PostID      string   `json:"post_id"`
-}
-
 type Repository interface {
 	CreateComment(event CommentEvent) (*model.Comment, error)
 	GetComments() (map[string][]*model.Comment, error)
@@ -27,6 +17,8 @@ type Repository interface {
 	GetCommentsByPostId(postId string) ([]*model.Comment, error)
 	GetCommentById(commentId string) (*model.Comment, string, error)
 	EditComment(event CommentEvent) (string, error)
+	LikeComment(event CommentEvent) (string, error)
+	UnlikeComment(event CommentEvent) (string, error)
 }
 
 type repo struct {
@@ -110,6 +102,14 @@ func (repo *repo) GetComments() (map[string][]*model.Comment, error) {
 		currentComments = append(currentComments, &comment)
 	}
 
+	// list is recent
+	if id == repo.currentEventId {
+		log.Printf("Comment list is up to date!")
+		return repo.currentComments, nil
+	}
+
+	repo.currentEventId = id
+
 	for _, comment := range currentComments {
 		sqlQuery = `select liked, description from "comment-events" where id = (select max(id) from "comment-events" where "commentID" = $1
                                                                                                    and ("eventType" = $2 or "eventType" = $3 or "eventType" = $4))`
@@ -158,12 +158,13 @@ func (repo *repo) GetCommentById(commentId string) (*model.Comment, string, erro
 	// process data to get postId
 	info := strings.Split(commentId, "__")
 
+	username := info[1]
 	postId := info[2] + "__" + info[3]
 
 	// get comment data out of current saved comments
 	comments, err := repo.GetCommentsByPostId(postId)
 	if err != nil {
-		return nil, postId, err
+		return nil, username, err
 	}
 
 	// search comment in post comments list
@@ -177,13 +178,31 @@ func (repo *repo) GetCommentById(commentId string) (*model.Comment, string, erro
 
 	if comment == nil {
 		errMsg := "no comment with id " + commentId + " for post with id " + postId + " found"
-		return nil, postId, errors.New(errMsg)
+		return nil, username, errors.New(errMsg)
 	}
 
-	return comment, postId, nil
+	return comment, username, nil
 }
 
 func (repo *repo) EditComment(event CommentEvent) (string, error) {
+	err := repo.InsertCommentEvent(event)
+	if err != nil {
+		return "failed", err
+	}
+
+	return "success", nil
+}
+
+func (repo *repo) LikeComment(event CommentEvent) (string, error) {
+	err := repo.InsertCommentEvent(event)
+	if err != nil {
+		return "failed", err
+	}
+
+	return "success", nil
+}
+
+func (repo *repo) UnlikeComment(event CommentEvent) (string, error) {
 	err := repo.InsertCommentEvent(event)
 	if err != nil {
 		return "failed", err

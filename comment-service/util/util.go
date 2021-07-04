@@ -1,18 +1,23 @@
 package util
 
-import "comment-service/graph/model"
+// basic slice operations
 
-func ConvertedIntoMapComments(currentComments map[string][]*model.Comment) []*model.MapComments {
-	mapComments := make([]*model.MapComments, 0)
-
-	for key, value := range currentComments {
-		mapComment := &model.MapComments{
-			Key:   key,
-			Value: value,
+func Contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
 		}
-
-		mapComments = append(mapComments, mapComment)
 	}
 
-	return mapComments
+	return false
+}
+
+func Search(s []string, str string) int {
+	for i, v := range s {
+		if v == str {
+			return i
+		}
+	}
+
+	return -1
 }

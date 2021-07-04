@@ -6,7 +6,7 @@ package resolvers
 import (
 	"comment-service/graph/generated"
 	"comment-service/graph/model"
-	"comment-service/util"
+	"comment-service/graph/util"
 	"context"
 )
 

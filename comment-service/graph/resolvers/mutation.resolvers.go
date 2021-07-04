@@ -7,7 +7,9 @@ import (
 	"comment-service/database"
 	"comment-service/graph/generated"
 	"comment-service/graph/model"
+	"comment-service/util"
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -41,7 +43,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, newComment model.C
 
 func (r *mutationResolver) EditComment(ctx context.Context, edit model.EditCommentRequest) (string, error) {
 	// get comment by id
-	comment, postId, err := r.repo.GetCommentById(edit.ID)
+	comment, username, err := r.repo.GetCommentById(edit.ID)
 	if err != nil {
 		return "failed", err
 	}
@@ -54,7 +56,7 @@ func (r *mutationResolver) EditComment(ctx context.Context, edit model.EditComme
 		EventType:   "EditComment",
 		CommentID:   comment.ID,
 		PostID:      comment.PostID,
-		Username:    postId,
+		Username:    username,
 		Description: comment.Description,
 		LikedBy:     comment.LikedBy,
 	}
@@ -73,11 +75,73 @@ func (r *mutationResolver) RemoveComment(ctx context.Context, removeID string) (
 }
 
 func (r *mutationResolver) LikeComment(ctx context.Context, like model.UnLikeCommentRequest) (string, error) {
-	panic(fmt.Errorf("not implemented"))
+	// get comment by id
+	comment, username, err := r.repo.GetCommentById(like.ID)
+	if err != nil {
+		return "failed", err
+	}
+
+	// add new data and create event
+	if util.Contains(comment.LikedBy, like.Username) {
+		errMsg := "user " + like.Username + " already liked the comment with id " + like.ID
+		return "failed", errors.New(errMsg)
+	}
+
+	comment.LikedBy = append(comment.LikedBy, like.Username)
+
+	commentEvent := database.CommentEvent{
+		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
+		EventType:   "LikeComment",
+		CommentID:   comment.ID,
+		PostID:      comment.PostID,
+		Username:    username,
+		Description: comment.Description,
+		LikedBy:     comment.LikedBy,
+	}
+
+	// save event in database
+	ok, err := r.repo.LikeComment(commentEvent)
+	if err != nil {
+		return ok, err
+	}
+
+	return ok, nil
 }
 
 func (r *mutationResolver) UnlikeComment(ctx context.Context, unlike model.UnLikeCommentRequest) (string, error) {
-	panic(fmt.Errorf("not implemented"))
+	// get comment by id
+	comment, username, err := r.repo.GetCommentById(unlike.ID)
+	if err != nil {
+		return "failed", err
+	}
+
+	// add new data and create event
+	index := util.Search(comment.LikedBy, unlike.Username)
+
+	if index == -1 {
+		errMsg := "user " + unlike.Username + " hasn't liked the comment with id " + unlike.ID
+		return "failed", errors.New(errMsg)
+	}
+
+	comment.LikedBy = append(comment.LikedBy[:index], comment.LikedBy[index+1:]...)
+
+	commentEvent := database.CommentEvent{
+		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
+		EventType:   "UnlikeComment",
+		CommentID:   comment.ID,
+		PostID:      comment.PostID,
+		Username:    username,
+		Description: comment.Description,
+		LikedBy:     comment.LikedBy,
+	}
+
+	// save event in database
+	ok, err := r.repo.UnlikeComment(commentEvent)
+	if err != nil {
+		return ok, err
+	}
+
+	return ok, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
