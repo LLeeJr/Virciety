@@ -8,7 +8,6 @@ import (
 	"comment-service/graph/model"
 	"comment-service/util"
 	"context"
-	"fmt"
 )
 
 func (r *queryResolver) GetComments(ctx context.Context) ([]*model.MapComments, error) {
@@ -21,7 +20,17 @@ func (r *queryResolver) GetComments(ctx context.Context) ([]*model.MapComments, 
 }
 
 func (r *queryResolver) GetCommentsByPostID(ctx context.Context, id string) ([]*model.Comment, error) {
-	panic(fmt.Errorf("not implemented"))
+	_, err := r.repo.GetComments()
+	if err != nil {
+		return nil, err
+	}
+
+	comments, err := r.repo.GetCommentsByPostId(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return comments, nil
 }
 
 // Query returns generated.QueryResolver implementation.
