@@ -18,6 +18,11 @@ input RemoveCommentRequest {
     id: String!
 }
 
+type MapComments {
+    key: String! # postID
+    value: [Comment!]!
+}
+
 type Comment {
     id: String! # timestamp(created)__username__postID
     post_id: String!

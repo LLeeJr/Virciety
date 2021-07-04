@@ -6,11 +6,21 @@ package resolvers
 import (
 	"comment-service/graph/generated"
 	"comment-service/graph/model"
+	"comment-service/util"
 	"context"
 	"fmt"
 )
 
-func (r *queryResolver) GetCommentsOfPost(ctx context.Context, id string) ([]*model.Comment, error) {
+func (r *queryResolver) GetComments(ctx context.Context) ([]*model.MapComments, error) {
+	currentComments, err := r.repo.GetComments()
+	if err != nil {
+		return nil, err
+	}
+
+	return util.ConvertedIntoMapComments(currentComments), nil
+}
+
+func (r *queryResolver) GetCommentsByPostID(ctx context.Context, id string) ([]*model.Comment, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

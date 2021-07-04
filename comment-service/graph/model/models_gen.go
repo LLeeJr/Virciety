@@ -20,6 +20,11 @@ type EditCommentRequest struct {
 	NewDescription string `json:"newDescription"`
 }
 
+type MapComments struct {
+	Key   string     `json:"key"`
+	Value []*Comment `json:"value"`
+}
+
 type RemoveCommentRequest struct {
 	ID string `json:"id"`
 }

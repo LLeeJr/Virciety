@@ -8,6 +8,7 @@ import (
 	"comment-service/graph/generated"
 	"comment-service/graph/model"
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -35,6 +36,10 @@ func (r *mutationResolver) CreateComment(ctx context.Context, newComment model.C
 	r.producerQueue.AddMessageToEvent(commentEvent, "Post-Service")
 
 	return comment, nil
+}
+
+func (r *mutationResolver) EditComment(ctx context.Context, edit model.EditCommentRequest) (string, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Mutation returns generated.MutationResolver implementation.

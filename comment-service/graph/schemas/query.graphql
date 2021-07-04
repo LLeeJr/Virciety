@@ -1,3 +1,4 @@
 type Query {
-    getCommentsOfPost(id: String!): [Comment!]!
+    GetComments: [MapComments!]!
+    GetCommentsByPostId(id: String!): [Comment!]!
 }

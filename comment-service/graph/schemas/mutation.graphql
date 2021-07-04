@@ -1,6 +1,6 @@
 type Mutation {
     createComment(newComment: CreateCommentRequest!): Comment!
-    #editComment(edit: EditCommentRequest!): String!
+    editComment(edit: EditCommentRequest!): String!
     #removeComment(removeID: String!): String!
     #likeComment(like: UnLikeCommentRequest!): String!
     #unlikeComment(unlike: UnLikeCommentRequest!): String!

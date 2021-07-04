@@ -20,6 +20,7 @@ type CommentEvent struct {
 
 type Repository interface {
 	CreateComment(event CommentEvent) (*model.Comment, error)
+	GetComments() (map[string][]*model.Comment, error)
 	GetCurrentComments() map[string][]*model.Comment
 	GetCommentsByPostId(postId string) ([]*model.Comment, error)
 }
@@ -67,7 +68,7 @@ func (repo *repo) CreateComment(event CommentEvent) (*model.Comment, error) {
 		PostID:      event.PostID,
 	}
 
-	// add to currentComments in resolver
+	// add to currentComments
 	comments, ok := repo.currentComments[comment.PostID]
 
 	if ok {
@@ -77,6 +78,47 @@ func (repo *repo) CreateComment(event CommentEvent) (*model.Comment, error) {
 	}
 
 	return comment, nil
+}
+
+func (repo *repo) GetComments() (map[string][]*model.Comment, error) {
+	currentComments := make([]*model.Comment, 0)
+
+	// first get all rows with event_type = "CreateComment" and latestEventId
+	sqlQuery := `select "commentID", description, liked, "postID", id from "comment-events" where id > $1 and "eventType" = $2 `
+
+	rows, err := repo.DB.Query(sqlQuery, repo.currentEventId, "CreateComment")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	oldId := repo.currentEventId
+	id := repo.currentEventId
+
+	for rows.Next() {
+		var comment model.Comment
+
+		err = rows.Scan(&comment.ID, &comment.Description, pq.Array(&comment.LikedBy), &comment.PostID, &id)
+		if err != nil {
+			repo.currentEventId = oldId
+			return nil, err
+		}
+		currentComments = append(currentComments, &comment)
+	}
+
+	for _, comment := range currentComments {
+
+		// add to currentComments
+		comments, ok := repo.currentComments[comment.PostID]
+
+		if ok {
+			repo.currentComments[comment.PostID] = append(comments, comment)
+		} else {
+			repo.currentComments[comment.PostID] = []*model.Comment{comment}
+		}
+	}
+
+	return repo.currentComments, nil
 }
 
 func (repo *repo) GetCurrentComments() map[string][]*model.Comment {
