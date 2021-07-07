@@ -4,6 +4,7 @@ import (
 	"dm-service/database"
 	"dm-service/graph"
 	"dm-service/graph/generated"
+	"dm-service/queue"
 	"log"
 	"net/http"
 	"os"
@@ -27,7 +28,13 @@ func main() {
 		log.Fatal("err", err)
 	}
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo)}))
+	publisher, _ := queue.NewPublisher()
+	go publisher.InitPublisher()
+
+	consumer, _ := queue.NewConsumer(repo)
+	go consumer.InitConsumer()
+
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)

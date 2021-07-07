@@ -21,46 +21,60 @@ type DmEvent struct {
 type Repository interface {
 	CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error)
 	GetDms(ctx context.Context) ([]*model.Dm, error)
-	GetDmsByFromTo(ctx context.Context, from string, to string) ([]*model.Dm, error)
+	GetChat(ctx context.Context, user1 string, user2 string) ([]*model.Dm, error)
 }
 
 type repo struct {
-	DB *sql.DB
-	DmEvents []*DmEvent
+	DB          *sql.DB
+	CurrentDmId string
+	CurrentDms  []*model.Dm
 }
 
 func NewRepo(db *sql.DB) (Repository, error) {
 	return &repo{
-		DB:       db,
-		DmEvents: make([]*DmEvent, 0),
+		DB:          db,
+		CurrentDmId: "",
+		CurrentDms:  make([]*model.Dm, 0),
 	}, nil
+}
+
+func (r *repo) InsertDmEvent(ctx context.Context, dmEvent DmEvent) (err error) {
+	query := `INSERT INTO dms ("eventTime", "eventType", id, "fromUser", "toUser", "atTime", msg)
+              VALUES ($1, $2, $3, $4, $5, $6, $7) returning id`
+
+	id := ""
+
+	row := r.DB.QueryRowContext(ctx, query, dmEvent.EventTime, dmEvent.EventType,
+		dmEvent.DmID, dmEvent.From, dmEvent.To, dmEvent.Time, dmEvent.Msg)
+
+	err = row.Scan(&id)
+
+	r.CurrentDmId = id
+
+	return
 }
 
 func (r *repo) CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error) {
-	r.DmEvents = append(r.DmEvents, &dmEvent)
-
-	query := `INSERT INTO dms ("eventTime", "eventType", id, "fromUser", "toUser", "atTime", msg)
-              VALUES ($1, $2, $3, $4, $5, $6, $7)`
-
-	_, err := r.DB.ExecContext(ctx, query, dmEvent.EventTime, dmEvent.EventType,
-		dmEvent.DmID, dmEvent.From, dmEvent.To, dmEvent.Time, dmEvent.Msg)
-	if err != nil {
-		return nil, err
-	}
+	_ = r.InsertDmEvent(ctx, dmEvent)
 
 	id := fmt.Sprintf("%s__%s__%s", dmEvent.From, dmEvent.Time, dmEvent.To)
-	return &model.Dm{
+	dm := &model.Dm{
 		ID:  id,
 		Msg: dmEvent.Msg,
-	}, nil
+	}
+
+	r.CurrentDms = append(r.CurrentDms, dm)
+
+	return dm, nil
 }
 
-func (r *repo) GetDmsByFromTo(ctx context.Context, from string, to string) ([]*model.Dm, error) {
+func (r *repo) GetChat(ctx context.Context, user1 string, user2 string) ([]*model.Dm, error) {
 	dms := make([]*model.Dm, 0)
 
-	query := `SELECT * FROM dms WHERE dms."fromUser" = $1 AND "toUser" = $2`
+	query := `SELECT * FROM dms WHERE dms."fromUser" = $1 AND "toUser" = $2
+              OR dms."fromUser" = $2 AND "toUser" = $1`
 
-	rows, _ := r.DB.QueryContext(ctx, query, from, to)
+	rows, _ := r.DB.QueryContext(ctx, query, user1, user2)
 	for rows.Next() {
 		var dmEvent DmEvent
 		err := rows.Scan(&dmEvent.EventTime, &dmEvent.EventType, &dmEvent.DmID,
@@ -68,14 +82,11 @@ func (r *repo) GetDmsByFromTo(ctx context.Context, from string, to string) ([]*m
 		if err != nil {
 			continue
 		}
-		if dmEvent.From == from && dmEvent.To == to {
-			dm := &model.Dm{
-				ID:  dmEvent.DmID,
-				Msg: dmEvent.Msg,
-			}
-			dms = append(dms, dm)
-
+		dm := &model.Dm{
+			ID:  dmEvent.DmID,
+			Msg: dmEvent.Msg,
 		}
+		dms = append(dms, dm)
 	}
 
 	if len(dms) == 0 {

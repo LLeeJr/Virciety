@@ -8,7 +8,6 @@ import (
 	"dm-service/database"
 	"dm-service/graph/generated"
 	"dm-service/graph/model"
-	"log"
 	"strings"
 	"time"
 )
@@ -24,29 +23,30 @@ func (r *mutationResolver) CreateDm(ctx context.Context, input *model.CreateDmRe
 		Time:      data[1],
 		Msg:       input.Msg,
 	}
-	log.Println("dmEvent", dmEvent)
 
+	// push event to db
 	dm, err := r.repo.CreateDm(ctx, dmEvent)
 	if err != nil {
 		return nil, err
 	}
-	r.dms = append(r.dms, dm)
 
-	r.dmsChan <- dm
+	// post message on queue
+	//msg := fmt.Sprintf("created new DM: %s <-> %s", dmEvent.From, dmEvent.To)
+	//r.publisher.AddMessageToQuery()
 
 	return dm, nil
 }
 
 func (r *queryResolver) GetDms(ctx context.Context) ([]*model.Dm, error) {
-	return r.repo.GetDms(ctx)
+	dms, err := r.repo.GetDms(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return dms, nil
 }
 
-func (r *queryResolver) GetDmsByFromTo(ctx context.Context, input model.GetByFromToRequest) ([]*model.Dm, error) {
-	return r.repo.GetDmsByFromTo(ctx, input.From, input.To)
-}
-
-func (r *subscriptionResolver) DmAdded(ctx context.Context) (<-chan *model.Dm, error) {
-	return r.dmsChan, nil
+func (r *queryResolver) GetChat(ctx context.Context, input model.GetChatRequest) ([]*model.Dm, error) {
+	return r.repo.GetChat(ctx, input.User1, input.User2)
 }
 
 // Mutation returns generated.MutationResolver implementation.
@@ -55,9 +55,5 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-// Subscription returns generated.SubscriptionResolver implementation.
-func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
-
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-type subscriptionResolver struct{ *Resolver }

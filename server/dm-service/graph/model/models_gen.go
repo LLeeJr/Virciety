@@ -12,7 +12,7 @@ type Dm struct {
 	Msg string `json:"msg"`
 }
 
-type GetByFromToRequest struct {
-	From string `json:"from"`
-	To   string `json:"to"`
+type GetChatRequest struct {
+	User1 string `json:"user1"`
+	User2 string `json:"user2"`
 }

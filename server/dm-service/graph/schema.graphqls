@@ -4,7 +4,7 @@
 
 type Query {
   getDms: [Dm!]!
-  getDmsByFromTo(input: GetByFromToRequest!): [Dm!]!
+  getChat(input: GetChatRequest!): [Dm!]!
 }
 
 type Dm {
@@ -16,16 +16,13 @@ type Mutation {
   createDm(input: CreateDmRequest): Dm!
 }
 
-type Subscription {
-  dmAdded: Dm!
-}
 
 input CreateDmRequest {
   id: String!
   msg: String!
 }
 
-input GetByFromToRequest {
-  from: String!
-  to: String!
+input GetChatRequest {
+  user1: String!
+  user2: String!
 }

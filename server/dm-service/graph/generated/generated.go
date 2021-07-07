@@ -7,7 +7,6 @@ import (
 	"context"
 	"dm-service/graph/model"
 	"errors"
-	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -38,7 +37,6 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
-	Subscription() SubscriptionResolver
 }
 
 type DirectiveRoot struct {
@@ -55,12 +53,8 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetDms         func(childComplexity int) int
-		GetDmsByFromTo func(childComplexity int, input model.GetByFromToRequest) int
-	}
-
-	Subscription struct {
-		DmAdded func(childComplexity int) int
+		GetChat func(childComplexity int, input model.GetChatRequest) int
+		GetDms  func(childComplexity int) int
 	}
 }
 
@@ -69,10 +63,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	GetDms(ctx context.Context) ([]*model.Dm, error)
-	GetDmsByFromTo(ctx context.Context, input model.GetByFromToRequest) ([]*model.Dm, error)
-}
-type SubscriptionResolver interface {
-	DmAdded(ctx context.Context) (<-chan *model.Dm, error)
+	GetChat(ctx context.Context, input model.GetChatRequest) ([]*model.Dm, error)
 }
 
 type executableSchema struct {
@@ -116,31 +107,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateDm(childComplexity, args["input"].(*model.CreateDmRequest)), true
 
+	case "Query.getChat":
+		if e.complexity.Query.GetChat == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getChat_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetChat(childComplexity, args["input"].(model.GetChatRequest)), true
+
 	case "Query.getDms":
 		if e.complexity.Query.GetDms == nil {
 			break
 		}
 
 		return e.complexity.Query.GetDms(childComplexity), true
-
-	case "Query.getDmsByFromTo":
-		if e.complexity.Query.GetDmsByFromTo == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getDmsByFromTo_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetDmsByFromTo(childComplexity, args["input"].(model.GetByFromToRequest)), true
-
-	case "Subscription.dmAdded":
-		if e.complexity.Subscription.DmAdded == nil {
-			break
-		}
-
-		return e.complexity.Subscription.DmAdded(childComplexity), true
 
 	}
 	return 0, false
@@ -180,23 +164,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				Data: buf.Bytes(),
 			}
 		}
-	case ast.Subscription:
-		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
-
-		var buf bytes.Buffer
-		return func(ctx context.Context) *graphql.Response {
-			buf.Reset()
-			data := next()
-
-			if data == nil {
-				return nil
-			}
-			data.MarshalGQL(&buf)
-
-			return &graphql.Response{
-				Data: buf.Bytes(),
-			}
-		}
 
 	default:
 		return graphql.OneShot(graphql.ErrorResponse(ctx, "unsupported GraphQL operation"))
@@ -229,7 +196,7 @@ var sources = []*ast.Source{
 
 type Query {
   getDms: [Dm!]!
-  getDmsByFromTo(input: GetByFromToRequest!): [Dm!]!
+  getChat(input: GetChatRequest!): [Dm!]!
 }
 
 type Dm {
@@ -241,18 +208,15 @@ type Mutation {
   createDm(input: CreateDmRequest): Dm!
 }
 
-type Subscription {
-  dmAdded: Dm!
-}
 
 input CreateDmRequest {
   id: String!
   msg: String!
 }
 
-input GetByFromToRequest {
-  from: String!
-  to: String!
+input GetChatRequest {
+  user1: String!
+  user2: String!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -291,13 +255,13 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_getDmsByFromTo_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_getChat_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.GetByFromToRequest
+	var arg0 model.GetChatRequest
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNGetByFromToRequest2dmᚑserviceᚋgraphᚋmodelᚐGetByFromToRequest(ctx, tmp)
+		arg0, err = ec.unmarshalNGetChatRequest2dmᚑserviceᚋgraphᚋmodelᚐGetChatRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -491,7 +455,7 @@ func (ec *executionContext) _Query_getDms(ctx context.Context, field graphql.Col
 	return ec.marshalNDm2ᚕᚖdmᚑserviceᚋgraphᚋmodelᚐDmᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_getDmsByFromTo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_getChat(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -508,7 +472,7 @@ func (ec *executionContext) _Query_getDmsByFromTo(ctx context.Context, field gra
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_getDmsByFromTo_args(ctx, rawArgs)
+	args, err := ec.field_Query_getChat_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -516,7 +480,7 @@ func (ec *executionContext) _Query_getDmsByFromTo(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetDmsByFromTo(rctx, args["input"].(model.GetByFromToRequest))
+		return ec.resolvers.Query().GetChat(rctx, args["input"].(model.GetChatRequest))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -602,51 +566,6 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Subscription_dmAdded(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = nil
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Subscription",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().DmAdded(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return nil
-	}
-	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *model.Dm)
-		if !ok {
-			return nil
-		}
-		return graphql.WriterFunc(func(w io.Writer) {
-			w.Write([]byte{'{'})
-			graphql.MarshalString(field.Alias).MarshalGQL(w)
-			w.Write([]byte{':'})
-			ec.marshalNDm2ᚖdmᚑserviceᚋgraphᚋmodelᚐDm(ctx, field.Selections, res).MarshalGQL(w)
-			w.Write([]byte{'}'})
-		})
-	}
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -1764,25 +1683,25 @@ func (ec *executionContext) unmarshalInputCreateDmRequest(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputGetByFromToRequest(ctx context.Context, obj interface{}) (model.GetByFromToRequest, error) {
-	var it model.GetByFromToRequest
+func (ec *executionContext) unmarshalInputGetChatRequest(ctx context.Context, obj interface{}) (model.GetChatRequest, error) {
+	var it model.GetChatRequest
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "from":
+		case "user1":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("from"))
-			it.From, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user1"))
+			it.User1, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "to":
+		case "user2":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("to"))
-			it.To, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user2"))
+			it.User2, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -1892,7 +1811,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "getDmsByFromTo":
+		case "getChat":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -1900,7 +1819,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getDmsByFromTo(ctx, field)
+				res = ec._Query_getChat(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -1919,26 +1838,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 	return out
-}
-
-var subscriptionImplementors = []string{"Subscription"}
-
-func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
-	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
-		Object: "Subscription",
-	})
-	if len(fields) != 1 {
-		ec.Errorf(ctx, "must subscribe to exactly one stream")
-		return nil
-	}
-
-	switch fields[0].Name {
-	case "dmAdded":
-		return ec._Subscription_dmAdded(ctx, fields[0])
-	default:
-		panic("unknown field " + strconv.Quote(fields[0].Name))
-	}
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -2252,8 +2151,8 @@ func (ec *executionContext) marshalNDm2ᚖdmᚑserviceᚋgraphᚋmodelᚐDm(ctx 
 	return ec._Dm(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNGetByFromToRequest2dmᚑserviceᚋgraphᚋmodelᚐGetByFromToRequest(ctx context.Context, v interface{}) (model.GetByFromToRequest, error) {
-	res, err := ec.unmarshalInputGetByFromToRequest(ctx, v)
+func (ec *executionContext) unmarshalNGetChatRequest2dmᚑserviceᚋgraphᚋmodelᚐGetChatRequest(ctx context.Context, v interface{}) (model.GetChatRequest, error) {
+	res, err := ec.unmarshalInputGetChatRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
