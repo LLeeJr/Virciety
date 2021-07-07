@@ -17,6 +17,6 @@ func NewResolver(repo database.Repository, publisher queue.Publisher) *Resolver 
 }
 
 type Resolver struct {
-	repo    database.Repository
-	publisher   queue.Publisher
+	repo		database.Repository
+	publisher	queue.Publisher
 }

@@ -31,6 +31,8 @@ func (r *mutationResolver) CreateDm(ctx context.Context, input *model.CreateDmRe
 	}
 
 	// post message on queue
+	r.publisher.AddMessageToEvent(dmEvent, "Dm-Service")
+	r.publisher.AddMessageToCommand("Dm-Service")
 	//msg := fmt.Sprintf("created new DM: %s <-> %s", dmEvent.From, dmEvent.To)
 	//r.publisher.AddMessageToQuery()
 

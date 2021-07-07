@@ -14,7 +14,7 @@ const EventExchange = "event-exchange"
 type Publisher interface {
 	InitPublisher()
 	AddMessageToQuery()
-	AddMessageToCommand()
+	AddMessageToCommand(messageId string)
 	AddMessageToEvent(dmEvent database.DmEvent, messageId string)
 }
 
@@ -57,15 +57,16 @@ func (c ChannelConfig) AddMessageToQuery() {
 	}
 }
 
-func (c ChannelConfig) AddMessageToCommand() {
+func (c ChannelConfig) AddMessageToCommand(messageId string) {
 	c.CommandChan <- RabbitMsg{
-		QueueName: QueryExchange,
+		QueueName: CommandExchange,
+		MessageId: messageId,
 	}
 }
 
 func (c ChannelConfig) AddMessageToEvent(dmEvent database.DmEvent, messageId string) {
 	c.EventChan <- RabbitMsg{
-		QueueName: QueryExchange,
+		QueueName: EventExchange,
 		DmEvent:   dmEvent,
 		MessageId: messageId,
 	}
