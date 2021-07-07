@@ -22,7 +22,3 @@ input CreateNotifRequest {
 type Mutation {
   createNotif(input: CreateNotifRequest!): Notif!
 }
-
-type Subscription {
-  notifAdded: Notif!
-}

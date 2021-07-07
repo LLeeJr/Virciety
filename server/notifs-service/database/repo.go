@@ -3,8 +3,13 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"log"
 	"notifs-service/graph/model"
+	"strings"
+	"time"
 )
 
 type NotifEvent struct {
@@ -18,6 +23,7 @@ type NotifEvent struct {
 type Repository interface {
 	CreateNotif(ctx context.Context, notifEvent NotifEvent) (*model.Notif, error)
 	GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error)
+	CreateDmNotifFromConsumer(body []byte)
 }
 
 type repo struct {
@@ -25,17 +31,47 @@ type repo struct {
 	NotifEvents []*NotifEvent
 }
 
-func (r repo) CreateNotif(ctx context.Context, notifEvent NotifEvent) (*model.Notif, error) {
-	r.NotifEvents = append(r.NotifEvents, &notifEvent)
+func (r repo) CreateDmNotifFromConsumer(data []byte) {
+	var s map[string]string
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		log.Println("err", err)
+		return
+	}
 
+	id := s["id"]
+	slices := strings.Split(id, "__")
+	notifId := fmt.Sprintf("%s__%s__%s", s["eventType"], time.Now().Format("2006-01-02 15:04:05"), slices[2])
+	notifText := fmt.Sprintf("Got a new DM from %s", slices[0])
+	notifEvent := NotifEvent{
+		EventTime: s["eventTime"],
+		EventType: s["eventType"],
+		NotifId:   notifId,
+		Receiver:  slices[2],
+		Text:      notifText,
+	}
+
+	r.NotifEvents = append(r.NotifEvents, &notifEvent)
+	r.InsertNotifEvent(notifEvent)
+}
+
+func (r *repo) InsertNotifEvent(notifEvent NotifEvent) (err error) {
 	query := `INSERT INTO db.public.notifs ("eventTime", "eventType", "NotifId", "Receiver", "Text")
               VALUES ($1, $2, $3, $4, $5)`
 
-	_, err := r.DB.ExecContext(ctx, query, notifEvent.EventTime, notifEvent.EventType,
+	_, err = r.DB.Exec(query, notifEvent.EventTime, notifEvent.EventType,
 		notifEvent.NotifId, notifEvent.Receiver, notifEvent.Text)
 	if err != nil {
-		return nil, err
+		return err
 	}
+
+	return
+}
+
+func (r repo) CreateNotif(ctx context.Context, notifEvent NotifEvent) (*model.Notif, error) {
+	r.NotifEvents = append(r.NotifEvents, &notifEvent)
+
+	r.InsertNotifEvent(notifEvent)
 
 	return &model.Notif{
 		ID:       notifEvent.NotifId,

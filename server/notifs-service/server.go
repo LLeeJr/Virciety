@@ -6,6 +6,7 @@ import (
 	"notifs-service/database"
 	"notifs-service/graph"
 	"notifs-service/graph/generated"
+	"notifs-service/queue"
 	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -27,7 +28,13 @@ func main() {
 		log.Fatal("err", err)
 	}
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo)}))
+	publisher, _ := queue.NewPublisher()
+	go publisher.InitPublisher()
+
+	consumer, _ := queue.NewConsumer(repo)
+	go consumer.InitConsumer()
+
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)

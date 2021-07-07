@@ -29,8 +29,6 @@ func (r *mutationResolver) CreateNotif(ctx context.Context, input model.CreateNo
 	if err != nil {
 		return nil, err
 	}
-	r.notifs = append(r.notifs, notif)
-	r.notifsChan <- notif
 
 	return notif, nil
 }
@@ -39,19 +37,11 @@ func (r *queryResolver) GetNotifsByReceiver(ctx context.Context, receiver string
 	return r.repo.GetNotifsByReceiver(ctx, receiver)
 }
 
-func (r *subscriptionResolver) NotifAdded(ctx context.Context) (<-chan *model.Notif, error) {
-	return r.notifsChan, nil
-}
-
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
-// Subscription returns generated.SubscriptionResolver implementation.
-func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
-
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-type subscriptionResolver struct{ *Resolver }

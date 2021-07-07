@@ -2,22 +2,21 @@ package graph
 
 import (
 	"notifs-service/database"
-	"notifs-service/graph/model"
+	"notifs-service/queue"
 )
 
 // This file will not be regenerated automatically.
 //
 // It serves as dependency injection for your app, add any dependencies you require here.
 
-func NewResolver(repo database.Repository) *Resolver {
+func NewResolver(repo database.Repository, publisher queue.Publisher) *Resolver {
 	return &Resolver{
 		repo:       repo,
-		notifsChan: make(chan *model.Notif),
+		publisher:  publisher,
 	}
 }
 
 type Resolver struct {
-	repo       database.Repository
-	notifs     []*model.Notif
-	notifsChan chan *model.Notif
+	repo		database.Repository
+	publisher	queue.Publisher
 }
