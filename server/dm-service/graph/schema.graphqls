@@ -1,0 +1,28 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+type Query {
+  getDms: [Dm!]!
+  getChat(input: GetChatRequest!): [Dm!]!
+}
+
+type Dm {
+  id: String!
+  msg: String!
+}
+
+type Mutation {
+  createDm(input: CreateDmRequest): Dm!
+}
+
+
+input CreateDmRequest {
+  id: String!
+  msg: String!
+}
+
+input GetChatRequest {
+  user1: String!
+  user2: String!
+}
