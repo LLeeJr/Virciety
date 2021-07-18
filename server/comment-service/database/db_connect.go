@@ -9,10 +9,10 @@ import (
 
 const (
 	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "postgres"
-	dbname   = "comment-service"
+	port     = 5436
+	user     = "user"
+	password = "pass"
+	dbname   = "db"
 )
 
 func GetDBConn() *sql.DB {
