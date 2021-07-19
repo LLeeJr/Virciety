@@ -15,7 +15,7 @@ type Publisher interface {
 	InitPublisher()
 	AddMessageToQuery()
 	AddMessageToCommand()
-	AddMessageToEvent(postEvent database.PostEvent, messageId string)
+	AddMessageToEvent(postEvent database.PostEvent)
 }
 
 func NewPublisher() (Publisher, error) {
@@ -38,11 +38,10 @@ func (channel *ChannelConfig) AddMessageToCommand() {
 	}
 }
 
-func (channel *ChannelConfig) AddMessageToEvent(postEvent database.PostEvent, messageId string) {
+func (channel *ChannelConfig) AddMessageToEvent(postEvent database.PostEvent) {
 	channel.EventChan <- RabbitMsg{
 		QueueName: EventExchange,
 		PostEvent: postEvent,
-		MessageId: messageId,
 	}
 }
 
@@ -84,7 +83,7 @@ func (channel *ChannelConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 		amqp.Publishing{
 			ContentType: "text/plain",
 			Body:        body,
-			MessageId:   msg.MessageId,
+			MessageId:   "Post-Service",
 		})
 	failOnError(err, "Failed to publish a message")
 

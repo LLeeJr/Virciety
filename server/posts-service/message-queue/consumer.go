@@ -80,7 +80,7 @@ func (channel *ChannelConfig) InitConsumer() {
 
 	go func() {
 		for data := range events {
-			if data.MessageId == "Post-Service" {
+			if data.MessageId == "Comment-Service" {
 				postEvent, err := convertCommentEventToPostEvent(channel.Repo, data.Body)
 
 				if err != nil {

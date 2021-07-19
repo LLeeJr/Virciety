@@ -12,7 +12,6 @@ import (
 type RabbitMsg struct {
 	QueueName string             `json:"queueName"`
 	PostEvent database.PostEvent `json:"postEvent"`
-	MessageId string             `json:"messageId"`
 }
 
 type ChannelConfig struct {
