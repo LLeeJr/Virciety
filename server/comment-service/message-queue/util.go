@@ -9,7 +9,6 @@ import (
 type RabbitMsg struct {
 	QueueName    string                `json:"queueName"`
 	CommentEvent database.CommentEvent `json:"commentEvent"`
-	MessageId    string                `json:"messageId"`
 }
 
 type ChannelConfig struct {
@@ -30,6 +29,25 @@ func initExchange(queueName string, ch *amqp.Channel) {
 		nil,
 	)
 	failOnError(err, "Failed to declare an exchange")
+}
+
+func initQueue(queueName string, exchangeName string, ch *amqp.Channel) {
+	q, err := ch.QueueDeclare(
+		queueName,
+		false,
+		false,
+		false,
+		false,
+		nil)
+	failOnError(err, "Failed to declare a queue")
+
+	err = ch.QueueBind(
+		q.Name,
+		"",
+		exchangeName,
+		false,
+		nil)
+	failOnError(err, "Failed to bind a queue")
 }
 
 func failOnError(err error, msg string) {

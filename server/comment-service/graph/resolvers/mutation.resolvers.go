@@ -35,7 +35,7 @@ func (r *mutationResolver) CreateComment(ctx context.Context, newComment model.C
 
 	// put event on queue for notifications
 	// put event on queue for posts
-	r.producerQueue.AddMessageToEvent(commentEvent, "Post-Service")
+	r.producerQueue.AddMessageToEvent(commentEvent)
 
 	return comment, nil
 }
