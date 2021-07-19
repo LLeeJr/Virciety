@@ -1,0 +1,31 @@
+input CreateCommentRequest {
+    username:       String!
+    description:    String!
+    postID:         String!
+}
+
+input EditCommentRequest {
+    id: String!
+    newDescription: String!
+}
+
+input UnLikeCommentRequest {
+    id: String!
+    username: String!
+}
+
+input RemoveCommentRequest {
+    id: String!
+}
+
+type MapComments {
+    key: String! # postID
+    value: [Comment!]!
+}
+
+type Comment {
+    id: String! # timestamp(created)__username__postID
+    post_id: String!
+    description: String!
+    likedBy: [String!]!
+}
