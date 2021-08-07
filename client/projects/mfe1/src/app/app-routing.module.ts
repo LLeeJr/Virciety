@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import {HomeComponent} from "./home/home.component";
+import {HomeComponent} from "projects/mfe1/src/app/home/home.component";
 
 const routes: Routes = [
   {
@@ -11,10 +11,8 @@ const routes: Routes = [
   {
     path: 'mfe1',
     loadChildren: () =>
-      import('mfe1/MfefeatureModule').then((m) => {
-        return m.MfefeatureModule;
-      }),
-  }
+      import("./mfefeature/mfefeature.module").then((m) => m.MfefeatureModule),
+  },
 ];
 
 @NgModule({
