@@ -1,0 +1,12 @@
+<p>post works!</p>
+
+<div *ngIf="loading">
+  Loading...
+</div>
+<div *ngIf="error">
+  Error :(
+</div>
+<div *ngFor="let post of posts">
+  <img src="assets/Ikkaku.PNG" alt="Ikkaku" width="333" height="333">
+  <p>{{ post.data }} -- {{ post.description }}</p>
+</div>
