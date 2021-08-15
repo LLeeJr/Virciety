@@ -10,7 +10,7 @@ sharedMappings.register(
 
 module.exports = {
   output: {
-    uniqueName: "shell",
+    uniqueName: "chat",
     publicPath: "auto"
   },
   optimization: {
@@ -25,17 +25,19 @@ module.exports = {
     new ModuleFederationPlugin({
 
         // For remotes (please adjust)
-        // name: "shell",
-        // filename: "remoteEntry.js",
-        // exposes: {
-        //     './Component': './projects/shell/src/app/app.component.ts',
-        // },
+        name: "chat",
+        filename: "chatremoteEntry.js",
+        exposes: {
+            './ChatModule': './projects/chat/src/app/chat/chat.module.ts',
+        },
 
         // For hosts (please adjust)
-        remotes: {
-          "mfe1": "mfe1@http://localhost:5000/mfe1remoteEntry.js",
-          "chat": "chat@http://localhost:5001/chatremoteEntry.js",
-        },
+        // remotes: {
+        //     "shell": "shell@http://localhost:4200/remoteEntry.js",
+        //     "example": "example@http://localhost:4200/remoteEntry.js",
+        //     "mfe1": "mfe1@http://localhost:5000/remoteEntry.js",
+
+        // },
 
         shared: share({
           "@angular/core": { singleton: true, strictVersion: true, requiredVersion: 'auto' },

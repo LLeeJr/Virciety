@@ -6,13 +6,10 @@ import {ApiService} from "./api/api.service";
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   title = 'chat';
 
-  constructor(private api: ApiService) {
+  constructor() {
   }
 
-  ngOnInit(): void {
-    this.api.getDms().subscribe(value => console.log(value));
-  }
 }

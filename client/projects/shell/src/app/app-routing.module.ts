@@ -14,6 +14,13 @@ const routes: Routes = [
       import('mfe1/MfefeatureModule').then((m) => {
         return m.MfefeatureModule;
       }),
+  },
+  {
+    path: 'chat',
+    loadChildren: () =>
+      import('chat/ChatModule').then((m) => {
+        return m.ChatModule;
+      }),
   }
 ];
 
