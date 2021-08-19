@@ -10,6 +10,11 @@ const routes: Routes = [
     pathMatch: 'full',
   },
   {
+    path: 'post-comment',
+    loadChildren: () =>
+      import("./post-comment/post-comment.module").then(m => m.PostCommentModule),
+  },
+  {
     path: 'mfe1',
     loadChildren: () =>
       loadRemoteModule({

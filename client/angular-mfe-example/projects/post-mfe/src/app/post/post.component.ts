@@ -8,6 +8,7 @@ import { Post } from "../model/post";
   styleUrls: ['./post.component.css']
 })
 export class PostComponent implements OnInit {
+
   loading = true;
   error: any;
   posts: Post[] = [];

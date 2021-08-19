@@ -4,22 +4,21 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { HomeComponent } from './home/home.component';
-import { PostModule } from "../../../post-mfe/src/app/post/post.module";
-import { CommentModule } from "../../../comment-mfe/src/app/comment/comment.module";
 import {Apollo} from "apollo-angular";
-import {HttpLink} from "apollo-angular/http";
 import {InMemoryCache} from "@apollo/client/core";
 import {HttpClientModule} from "@angular/common/http";
+import { PostCommentComponent } from './post-comment/post-comment.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    HomeComponent
+    HomeComponent,
+    PostCommentComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    HttpClientModule
+    HttpClientModule,
   ],
   providers: [],
   bootstrap: [AppComponent]

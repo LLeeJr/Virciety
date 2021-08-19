@@ -15,14 +15,9 @@
     "moduleResolution": "node",
     "importHelpers": true,
     "paths": {
-      "apollo-service": [
-        "dist/apollo-service/apollo-service",
-        "dist/apollo-service"
+      "data-lib": [
+        "projects/data-lib/src/public-api.ts"
       ],
-      "service": [
-        "dist/service/service",
-        "dist/service"
-      ]
     },
     "target": "es2017",
     "module": "es2020",
