@@ -15,14 +15,6 @@ const routes: Routes = [
       import("./post-comment/post-comment.module").then(m => m.PostCommentModule),
   },
   {
-    path: 'mfe1',
-    loadChildren: () =>
-      loadRemoteModule({
-        remoteName: 'mfe1',
-        exposedModule: './MfefeatureModule'
-      }).then(m => m.MfefeatureModule),
-  },
-  {
     path: 'post-mfe',
     loadChildren: () =>
       loadRemoteModule({
