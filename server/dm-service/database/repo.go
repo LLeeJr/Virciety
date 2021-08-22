@@ -18,16 +18,59 @@ type DmEvent struct {
 	Msg string `json:"msg"`
 }
 
+type UniqueUser struct {
+	UserName string `json:"userName"`
+}
+
 type Repository interface {
 	CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error)
 	GetDms(ctx context.Context) ([]*model.Dm, error)
 	GetChat(ctx context.Context, user1 string, user2 string) ([]*model.Dm, error)
+	GetOpenChats(ctx context.Context, userName string) ([]*model.Chat, error)
 }
 
 type repo struct {
 	DB          *sql.DB
 	CurrentDmId string
 	CurrentDms  []*model.Dm
+}
+
+func (r *repo) GetOpenChats(ctx context.Context, userName string) ([]*model.Chat, error) {
+
+	query := `SELECT DISTINCT dms."toUser" FROM dms WHERE dms."fromUser" = $1`
+
+	uniqueUsers := make([]UniqueUser, 0)
+	rows, _ := r.DB.QueryContext(ctx, query, userName)
+	for rows.Next() {
+		var uniqueUser UniqueUser
+		err := rows.Scan(&uniqueUser.UserName)
+		if err != nil {
+			continue
+		}
+		uniqueUsers = append(uniqueUsers, uniqueUser)
+	}
+
+	chats := make([]*model.Chat, 0)
+	for _, user := range uniqueUsers {
+		previewQuery := `SELECT dms."toUser", dms.msg FROM dms WHERE dms."fromUser"=$1 AND dms."toUser"=$2
+                         AND dms."atTime" = (SELECT MAX(dms."atTime") FROM dms WHERE dms."fromUser"=$1 AND dms."toUser"=$2);`
+
+		previewRows, _ := r.DB.QueryContext(ctx, previewQuery, userName, user.UserName)
+		for previewRows.Next() {
+			var chat model.Chat
+			err := previewRows.Scan(&chat.WithUser, &chat.Preview)
+			if err != nil {
+				continue
+			}
+			chats = append(chats, &chat)
+		}
+	}
+
+	if len(chats) == 0 {
+		return nil, errors.New("no opened chats available")
+	}
+
+	return chats, nil
 }
 
 func NewRepo(db *sql.DB) (Repository, error) {

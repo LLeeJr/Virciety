@@ -2,6 +2,11 @@
 
 package model
 
+type Chat struct {
+	WithUser string `json:"withUser"`
+	Preview  string `json:"preview"`
+}
+
 type CreateDmRequest struct {
 	ID  string `json:"id"`
 	Msg string `json:"msg"`
