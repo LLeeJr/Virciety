@@ -5,6 +5,8 @@ import (
 	"dm-service/graph"
 	"dm-service/graph/generated"
 	"dm-service/queue"
+	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 	"log"
 	"net/http"
 	"os"
@@ -36,8 +38,17 @@ func main() {
 
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
 
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	r := mux.NewRouter()
+	r.Use(cors.New(cors.Options{
+		AllowedMethods: []string{"GET","POST", "OPTIONS"},
+		AllowedOrigins:   []string{"http://localhost:*"},
+		AllowedHeaders: []string{"Authorization","Content-Type","Bearer","Bearer ","content-type","Origin","Accept"},
+		AllowCredentials: true,
+		Debug:            true,
+	}).Handler)
+
+	r.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	r.Handle("/query", srv)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
