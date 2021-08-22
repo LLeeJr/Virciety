@@ -51,6 +51,15 @@ func (r *queryResolver) GetChat(ctx context.Context, input model.GetChatRequest)
 	return r.repo.GetChat(ctx, input.User1, input.User2)
 }
 
+func (r *queryResolver) GetOpenChats(ctx context.Context, userName string) ([]*model.Chat, error) {
+
+	chats, err := r.repo.GetOpenChats(ctx, userName)
+	if err != nil {
+		return nil, err
+	}
+	return chats, nil
+}
+
 // Mutation returns generated.MutationResolver implementation.
 func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResolver{r} }
 
