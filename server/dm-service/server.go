@@ -40,7 +40,9 @@ func main() {
 
 	r := mux.NewRouter()
 	r.Use(cors.New(cors.Options{
+		AllowedMethods: []string{"GET","POST", "OPTIONS"},
 		AllowedOrigins:   []string{"http://localhost:*"},
+		AllowedHeaders: []string{"Authorization","Content-Type","Bearer","Bearer ","content-type","Origin","Accept"},
 		AllowCredentials: true,
 		Debug:            true,
 	}).Handler)

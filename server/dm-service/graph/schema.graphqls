@@ -5,11 +5,17 @@
 type Query {
   getDms: [Dm!]!
   getChat(input: GetChatRequest!): [Dm!]!
+  getOpenChats(userName: String!): [Chat!]!
 }
 
 type Dm {
   id: String!
   msg: String!
+}
+
+type Chat {
+  withUser: String!
+  preview: String!
 }
 
 type Mutation {
