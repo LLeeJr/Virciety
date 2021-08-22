@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import {DataLibService} from "data-lib";
+import {Post} from "../../../../data-lib/src/model/post";
 
 @Component({
   selector: 'app-post-comment',
@@ -7,9 +9,12 @@ import { Component, OnInit } from '@angular/core';
 })
 export class PostCommentComponent implements OnInit {
 
-  constructor() { }
+  posts: Post[] = [];
+
+  constructor(private service: DataLibService) { }
 
   ngOnInit(): void {
+    this.posts = this.service.posts;
   }
 
 }
