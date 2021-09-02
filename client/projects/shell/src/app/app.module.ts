@@ -4,12 +4,13 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { HomeComponent } from './home/home.component';
-import {Apollo} from "apollo-angular";
+import { APOLLO_NAMED_OPTIONS, NamedOptions} from "apollo-angular";
 import {InMemoryCache} from "@apollo/client/core";
 import {HttpClientModule} from "@angular/common/http";
 import {initializeKeycloak} from "./init/keycloak-init.factory";
 import {KeycloakAngularModule, KeycloakService} from "keycloak-angular";
 import {DatePipe} from "@angular/common";
+import {HttpLink} from "apollo-angular/http";
 
 @NgModule({
   declarations: [
@@ -25,6 +26,20 @@ import {DatePipe} from "@angular/common";
   providers: [
     DatePipe,
     {
+      provide: APOLLO_NAMED_OPTIONS,
+      useFactory(httpLink: HttpLink): NamedOptions {
+        return {
+          chat: {
+            cache: new InMemoryCache(),
+            link: httpLink.create({
+              uri: 'http://localhost:8081/query',
+            }),
+          },
+        };
+      },
+      deps: [HttpLink],
+    },
+    {
       provide: APP_INITIALIZER,
       useFactory: initializeKeycloak,
       multi: true,
@@ -33,10 +48,4 @@ import {DatePipe} from "@angular/common";
   ],
   bootstrap: [AppComponent]
 })
-export class AppModule {
-  constructor(apollo: Apollo) {
-    apollo.create({
-      cache: new InMemoryCache()
-    })
-  }
-}
+export class AppModule { }

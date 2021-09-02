@@ -42,7 +42,9 @@ module.exports = {
           "@angular/common": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
           "@angular/common/http": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
           "@angular/router": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
-          "keycloak-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
+          "keycloak-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+          "@apollo/client": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+          "apollo-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
 
           ...sharedMappings.getDescriptors()
         })

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import {Apollo, gql, QueryRef} from "apollo-angular";
+import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
 import {Observable} from "rxjs";
 import {DatePipe} from "@angular/common";
 
@@ -11,9 +11,11 @@ export class ApiService {
   messages : any[] = [];
 
   private query: QueryRef<any> | undefined;
+  private apollo: ApolloBase;
 
-  constructor(private apollo: Apollo,
+  constructor(private apolloProvider: Apollo,
               private datePipe: DatePipe) {
+    this.apollo = apolloProvider.use('chat');
   }
 
   writeDm(msg: string, from: string, to: string): Observable<any> {
