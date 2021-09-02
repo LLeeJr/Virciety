@@ -14,6 +14,27 @@ export class ApiService {
   constructor(private apollo: Apollo) {
   }
 
+  getOpenChats(userName: string): Observable<any> {
+    const query = gql`
+    query getOpenChats($userName: String!){
+      getOpenChats(userName: $userName)
+      {
+        withUser,
+        preview
+      }
+    }
+    `;
+
+    this.query = this.apollo.watchQuery<any>({
+        query: query,
+        variables: {
+          userName: userName,
+        },
+      });
+
+    return this.query.valueChanges;
+  }
+
   getDms(): Observable<any> {
     const DMS_QUERY = gql`
     query {

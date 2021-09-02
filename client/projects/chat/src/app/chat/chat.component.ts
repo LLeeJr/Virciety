@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {ApiService} from "../api/api.service";
+import {AuthLibService} from "auth-lib";
 
 @Component({
   selector: 'app-chat',
@@ -8,11 +9,24 @@ import {ApiService} from "../api/api.service";
 })
 export class ChatComponent implements OnInit {
 
-  constructor(private api: ApiService) {
+  openChats: {
+    __typename: string,
+    preview: string,
+    withUser: string,
+  }[] = [];
+
+  constructor(private api: ApiService,
+              private auth: AuthLibService) {
   }
 
   ngOnInit(): void {
-    this.api.getDms().subscribe(value => console.log(value));
+    this.auth.userName.subscribe(user => {
+      if (user !== '') {
+        this.api.getOpenChats(user).subscribe(value => {
+          this.openChats = value.data.getOpenChats;
+        });
+      }
+    });
   }
 
 }
