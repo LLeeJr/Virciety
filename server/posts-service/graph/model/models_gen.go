@@ -13,6 +13,13 @@ type EditPostRequest struct {
 	NewDescription string `json:"newDescription"`
 }
 
+type File struct {
+	ID          int    `json:"id"`
+	Name        string `json:"name"`
+	Content     string `json:"content"`
+	ContentType string `json:"contentType"`
+}
+
 type Post struct {
 	ID          string   `json:"id"`
 	Description string   `json:"description"`

@@ -6,12 +6,15 @@ package resolvers
 import (
 	"context"
 	"errors"
+	"io/ioutil"
 	"posts-service/database"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
 	"posts-service/util"
 	"strings"
 	"time"
+
+	"github.com/99designs/gqlgen/graphql"
 )
 
 func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error) {
@@ -38,6 +41,19 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 	// r.producerQueue.AddMessageToQuery(postEvent)
 
 	return post, nil
+}
+
+func (r *mutationResolver) Upload(ctx context.Context, file graphql.Upload) (*model.File, error) {
+	content, err := ioutil.ReadAll(file.File)
+	if err != nil {
+		return nil, err
+	}
+	return &model.File{
+		ID:          1,
+		Name:        file.Filename,
+		Content:     string(content),
+		//ContentType: file.ContentType,
+	}, nil
 }
 
 func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequest) (string, error) {

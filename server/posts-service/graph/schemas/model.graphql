@@ -1,3 +1,12 @@
+scalar Upload
+
+type File {
+    id: Int!
+    name: String!
+    content: String!
+    contentType: String!
+}
+
 input CreatePostRequest {
     username:       String!
     description:    String!
