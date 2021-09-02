@@ -46,6 +46,7 @@ module.exports = {
           "@angular/router": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
           "@apollo/client": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
           "apollo-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+          "apollo-upload-client": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
 
           ...sharedMappings.getDescriptors()
         })

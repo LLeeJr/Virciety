@@ -7,15 +7,24 @@ import {HttpClientModule} from "@angular/common/http";
 import {APOLLO_NAMED_OPTIONS, NamedOptions} from "apollo-angular";
 import {HttpLink} from "apollo-angular/http";
 import {InMemoryCache} from "@apollo/client/core";
+import { createUploadLink } from "apollo-upload-client";
+import { FileUploadTestComponent } from './file-upload-test/file-upload-test.component';
+import {AngularMaterialModule} from "./angular-material.module";
+import {MatToolbarModule} from "@angular/material/toolbar";
+import {FormsModule} from "@angular/forms";
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    FileUploadTestComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
-    HttpClientModule
+    HttpClientModule,
+    AngularMaterialModule,
+    MatToolbarModule,
+    FormsModule
   ],
   providers: [
     {
@@ -24,7 +33,7 @@ import {InMemoryCache} from "@apollo/client/core";
         return {
           post: {
             cache: new InMemoryCache(),
-            link: httpLink.create({
+            link: createUploadLink({
               uri: 'http://localhost:8083/query',
             }),
           },
@@ -35,4 +44,5 @@ import {InMemoryCache} from "@apollo/client/core";
   ],
   bootstrap: [AppComponent]
 })
-export class AppModule { }
+export class AppModule {
+}

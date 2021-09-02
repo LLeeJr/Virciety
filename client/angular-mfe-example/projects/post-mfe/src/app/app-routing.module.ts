@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
+import {FileUploadTestComponent} from "./file-upload-test/file-upload-test.component";
 
 const routes: Routes = [
   {
@@ -12,6 +13,11 @@ const routes: Routes = [
     loadChildren: () =>
       import("./post/post.module").then(m => m.PostModule),
   },
+  {
+    path: 'file-upload',
+    component: FileUploadTestComponent,
+    pathMatch: 'full',
+  }
 ];
 
 @NgModule({
