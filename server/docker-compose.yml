@@ -2,6 +2,7 @@ version: "3.2"
 services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
+    restart: always
     container_name: 'rabbitmq'
     ports:
       - 5672:5672

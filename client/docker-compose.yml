@@ -8,6 +8,7 @@ services:
 
   postgres:
     image: postgres
+    restart: always
     ports:
       - 5431:5432
     expose:
@@ -22,6 +23,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:latest
+    restart: always
     container_name: keycloak-frontend
     environment:
       DB_VENDOR: POSTGRES
