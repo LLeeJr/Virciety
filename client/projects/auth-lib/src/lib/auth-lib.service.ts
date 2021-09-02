@@ -7,16 +7,18 @@ import { Subject } from "rxjs";
 export class AuthLibService {
 
   private _userName = new Subject<string>()
+  userName: string = '';
 
   constructor() { }
 
-  get userName(): Subject<string> {
+  getUserName(): Subject<string> {
     return this._userName;
   }
 
   login(userName: string) {
     // console.log('Login: ', userName);
     this._userName.next(userName);
+    this.userName = userName;
   }
 
 }

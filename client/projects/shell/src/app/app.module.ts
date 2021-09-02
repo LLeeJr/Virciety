@@ -9,6 +9,7 @@ import {InMemoryCache} from "@apollo/client/core";
 import {HttpClientModule} from "@angular/common/http";
 import {initializeKeycloak} from "./init/keycloak-init.factory";
 import {KeycloakAngularModule, KeycloakService} from "keycloak-angular";
+import {DatePipe} from "@angular/common";
 
 @NgModule({
   declarations: [
@@ -22,6 +23,7 @@ import {KeycloakAngularModule, KeycloakService} from "keycloak-angular";
     KeycloakAngularModule
   ],
   providers: [
+    DatePipe,
     {
       provide: APP_INITIALIZER,
       useFactory: initializeKeycloak,

@@ -20,13 +20,19 @@ export class ChatComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.auth.userName.subscribe(user => {
+    this.auth.getUserName().subscribe(user => {
       if (user !== '') {
         this.api.getOpenChats(user).subscribe(value => {
           this.openChats = value.data.getOpenChats;
         });
       }
     });
+
+    if (this.auth.userName !== '') {
+      this.api.getOpenChats(this.auth.userName).subscribe(value => {
+        this.openChats = value.data.getOpenChats;
+      });
+    }
   }
 
 }

@@ -1,6 +1,8 @@
 <div *ngIf="openChats.length > 0">
   <h3>Recent Chats</h3>
   <div *ngFor="let chat of openChats">
-    {{chat.withUser}}: {{chat.preview}}
+    <a [routerLink]="[chat.withUser]" style="cursor: pointer">
+      {{chat.withUser}}: {{chat.preview}}
+    </a>
   </div>
 </div>

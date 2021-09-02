@@ -5,15 +5,19 @@ import { ChatComponent } from './chat.component';
 import {Apollo} from "apollo-angular";
 import {InMemoryCache} from "@apollo/client/core";
 import {HttpLink} from "apollo-angular/http";
+import { OpenChatComponent } from './open-chat/open-chat.component';
+import {FormsModule} from "@angular/forms";
 
 
 @NgModule({
   declarations: [
-    ChatComponent
+    ChatComponent,
+    OpenChatComponent
   ],
   imports: [
     CommonModule,
-    ChatRoutingModule
+    ChatRoutingModule,
+    FormsModule
   ],
 })
 export class ChatModule {
