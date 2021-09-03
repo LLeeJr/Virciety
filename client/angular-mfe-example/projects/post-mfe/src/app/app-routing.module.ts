@@ -5,7 +5,7 @@ import {FileUploadTestComponent} from "./file-upload-test/file-upload-test.compo
 const routes: Routes = [
   {
     path: '',
-    redirectTo: '/post-mfe',
+    redirectTo: '/file-upload',
     pathMatch: 'full',
   },
   {
