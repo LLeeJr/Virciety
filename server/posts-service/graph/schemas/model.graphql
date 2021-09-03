@@ -1,8 +1,7 @@
 scalar Upload
 
 type File {
-    id: Int!
-    name: String!
+    id: String!
     content: String!
     contentType: String!
 }
@@ -30,7 +29,7 @@ input RemovePostRequest {
 type Post {
     id: String! # timestamp(created)__username
     description: String!
-    data: String!
+    data: File!
     likedBy: [String!]!
     comments: [String!]!
 }

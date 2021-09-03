@@ -47,7 +47,6 @@ type ComplexityRoot struct {
 		Content     func(childComplexity int) int
 		ContentType func(childComplexity int) int
 		ID          func(childComplexity int) int
-		Name        func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -56,7 +55,7 @@ type ComplexityRoot struct {
 		LikePost   func(childComplexity int, like model.UnLikePostRequest) int
 		RemovePost func(childComplexity int, removeID string) int
 		UnlikePost func(childComplexity int, unlike model.UnLikePostRequest) int
-		Upload     func(childComplexity int, file graphql.Upload) int
+		Upload     func(childComplexity int, file string) int
 	}
 
 	Post struct {
@@ -74,7 +73,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error)
-	Upload(ctx context.Context, file graphql.Upload) (*model.File, error)
+	Upload(ctx context.Context, file string) (*model.File, error)
 	EditPost(ctx context.Context, edit model.EditPostRequest) (string, error)
 	RemovePost(ctx context.Context, removeID string) (string, error)
 	LikePost(ctx context.Context, like model.UnLikePostRequest) (string, error)
@@ -119,13 +118,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.File.ID(childComplexity), true
-
-	case "File.name":
-		if e.complexity.File.Name == nil {
-			break
-		}
-
-		return e.complexity.File.Name(childComplexity), true
 
 	case "Mutation.createPost":
 		if e.complexity.Mutation.CreatePost == nil {
@@ -197,7 +189,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Upload(childComplexity, args["file"].(graphql.Upload)), true
+		return e.complexity.Mutation.Upload(childComplexity, args["file"].(string)), true
 
 	case "Post.comments":
 		if e.complexity.Post.Comments == nil {
@@ -308,8 +300,7 @@ var sources = []*ast.Source{
 	{Name: "graph/schemas/model.graphql", Input: `scalar Upload
 
 type File {
-    id: Int!
-    name: String!
+    id: String!
     content: String!
     contentType: String!
 }
@@ -337,13 +328,13 @@ input RemovePostRequest {
 type Post {
     id: String! # timestamp(created)__username
     description: String!
-    data: String!
+    data: File!
     likedBy: [String!]!
     comments: [String!]!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation {
     createPost(newPost: CreatePostRequest!): Post!
-    upload(file: Upload!): File!
+    upload(file: String!): File!
     editPost(edit: EditPostRequest!): String!
     removePost(removeID: String!): String!
     likePost(like: UnLikePostRequest!): String!
@@ -437,10 +428,10 @@ func (ec *executionContext) field_Mutation_unlikePost_args(ctx context.Context, 
 func (ec *executionContext) field_Mutation_upload_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 graphql.Upload
+	var arg0 string
 	if tmp, ok := rawArgs["file"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("file"))
-		arg0, err = ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -521,41 +512,6 @@ func (ec *executionContext) _File_id(ctx context.Context, field graphql.Collecte
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _File_name(ctx context.Context, field graphql.CollectedField, obj *model.File) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "File",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -709,7 +665,7 @@ func (ec *executionContext) _Mutation_upload(ctx context.Context, field graphql.
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Upload(rctx, args["file"].(graphql.Upload))
+		return ec.resolvers.Mutation().Upload(rctx, args["file"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -994,9 +950,9 @@ func (ec *executionContext) _Post_data(ctx context.Context, field graphql.Collec
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.File)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNFile2ᚖpostsᚑserviceᚋgraphᚋmodelᚐFile(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_likedBy(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -2398,11 +2354,6 @@ func (ec *executionContext) _File(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "name":
-			out.Values[i] = ec._File_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "content":
 			out.Values[i] = ec._File_content(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -2855,21 +2806,6 @@ func (ec *executionContext) marshalNFile2ᚖpostsᚑserviceᚋgraphᚋmodelᚐFi
 	return ec._File(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
-	res, err := graphql.UnmarshalInt(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
-	res := graphql.MarshalInt(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) marshalNPost2postsᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
 	return ec._Post(ctx, sel, &v)
 }
@@ -2969,21 +2905,6 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 func (ec *executionContext) unmarshalNUnLikePostRequest2postsᚑserviceᚋgraphᚋmodelᚐUnLikePostRequest(ctx context.Context, v interface{}) (model.UnLikePostRequest, error) {
 	res, err := ec.unmarshalInputUnLikePostRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (graphql.Upload, error) {
-	res, err := graphql.UnmarshalUpload(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v graphql.Upload) graphql.Marshaler {
-	res := graphql.MarshalUpload(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

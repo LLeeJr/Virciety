@@ -6,7 +6,6 @@ package resolvers
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 	"posts-service/database"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
@@ -14,11 +13,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/99designs/gqlgen/graphql"
+	"github.com/google/uuid"
 )
 
 func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error) {
 	created := time.Now().Format("2006-01-02 15:04:05")
+
+	properties := strings.Split(newPost.Data, ";base64,")
+	contentType := strings.Split(properties[0], ":")
 
 	postEvent := database.PostEvent{
 		EventTime:   created,
@@ -26,9 +28,13 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 		PostID:      created + "__" + newPost.Username,
 		Username:    newPost.Username,
 		Description: newPost.Description,
-		Data:        newPost.Data,
-		LikedBy:     make([]string, 0),
-		Comments:    make([]string, 0),
+		Data: &model.File{
+			ID:          uuid.New().String(),
+			Content:     properties[1],
+			ContentType: contentType[1],
+		},
+		LikedBy:  make([]string, 0),
+		Comments: make([]string, 0),
 	}
 
 	// save event in database
@@ -43,16 +49,19 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 	return post, nil
 }
 
-func (r *mutationResolver) Upload(ctx context.Context, file graphql.Upload) (*model.File, error) {
-	content, err := ioutil.ReadAll(file.File)
+func (r *mutationResolver) Upload(ctx context.Context, file string) (*model.File, error) {
+	/*content, err := ioutil.ReadAll(file.File)
 	if err != nil {
 		return nil, err
-	}
+	}*/
+
+	properties := strings.Split(file, ";base64,")
+	contentType := strings.Split(properties[0], ":")
+
 	return &model.File{
-		ID:          1,
-		Name:        file.Filename,
-		Content:     string(content),
-		//ContentType: file.ContentType,
+		ID:          uuid.New().String(),
+		Content:     properties[1],
+		ContentType: contentType[1],
 	}, nil
 }
 

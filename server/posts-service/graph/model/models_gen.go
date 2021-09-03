@@ -14,8 +14,7 @@ type EditPostRequest struct {
 }
 
 type File struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
+	ID          string `json:"id"`
 	Content     string `json:"content"`
 	ContentType string `json:"contentType"`
 }
@@ -23,7 +22,7 @@ type File struct {
 type Post struct {
 	ID          string   `json:"id"`
 	Description string   `json:"description"`
-	Data        string   `json:"data"`
+	Data        *File    `json:"data"`
 	LikedBy     []string `json:"likedBy"`
 	Comments    []string `json:"comments"`
 }
