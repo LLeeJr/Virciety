@@ -7,6 +7,6 @@
   Error :(
 </div>
 <div *ngFor="let post of posts">
-  <img src="assets/Ikkaku.PNG" alt="Ikkaku" width="333" height="333">
-  <p>{{ post.data }} -- {{ post.description }}</p>
+  <img src="{{post.data.fileUrl}}" alt="post: {{post.id}}" width="300px">
+  <p>{{ post.description }} -- {{ post.id }}</p>
 </div>

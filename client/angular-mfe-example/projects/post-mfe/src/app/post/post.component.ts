@@ -27,7 +27,11 @@ export class PostComponent implements OnInit {
           {
             getPosts {
               id
-              data
+              data {
+                id
+                content
+                contentType
+              }
               description
               comments
               likedBy
@@ -35,11 +39,17 @@ export class PostComponent implements OnInit {
           }`,
       })
       .valueChanges.subscribe((data: any) => {
-      this.service.posts = data.data.getPosts;
-      this.posts = data.data.getPosts;
+      //this.service.posts = data.data.getPosts;
+
+      console.log(data.data.getPosts);
+
+      for (let getPost of data.data.getPosts) {
+        const post: Post = new Post(getPost);
+        this.posts.push(post)
+      }
+
       this.loading = data.loading;
       this.error = data.error;
     });
   }
-
 }
