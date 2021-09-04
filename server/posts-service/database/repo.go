@@ -5,6 +5,8 @@ import (
 	"github.com/lib/pq"
 	"log"
 	"posts-service/graph/model"
+	"posts-service/util"
+	"strings"
 	"time"
 )
 
@@ -43,8 +45,12 @@ func (repo *repo) InsertPostEvent(postEvent PostEvent) (err error) {
 
 	id := 0
 
-	err = repo.DB.QueryRow(sqlQuery, postEvent.PostID, newTime, postEvent.EventType, postEvent.Username, postEvent.Description, postEvent.Data,
+	data := postEvent.Data.ID + "." + postEvent.Data.ContentType
+
+	err = repo.DB.QueryRow(sqlQuery, postEvent.PostID, newTime, postEvent.EventType, postEvent.Username, postEvent.Description, data,
 		pq.Array(postEvent.LikedBy), pq.Array(postEvent.Comments)).Scan(&id)
+
+	//TODO update currentPosts when id > repo.currentEventId
 
 	repo.currentEventId = id
 
@@ -53,6 +59,12 @@ func (repo *repo) InsertPostEvent(postEvent PostEvent) (err error) {
 
 func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
 	err := repo.InsertPostEvent(postEvent)
+	if err != nil {
+		return nil, err
+	}
+
+	// create file for new post data
+	err = util.SaveFile(postEvent.Data.Content, postEvent.Data.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +87,7 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
 
 	// first get all rows with event_type = "CreatePost" and latestEventId
-	sqlQuery := `select "postId", description, data, liked, comments, id from "post-events" where id > $1 and "eventType" = $2 `
+	sqlQuery := `select "postId", description, data, liked, comments, id from "post-events" where id > $1 and "eventType" = $2 ORDER BY "id" ASC`
 
 	rows, err := repo.DB.Query(sqlQuery, repo.currentEventId, "CreatePost")
 	if err != nil {
@@ -88,17 +100,35 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 
 	for rows.Next() {
 		var post model.Post
+		var fileProperties string // "fileid.contenttype"
 
-		err = rows.Scan(&post.ID, &post.Description, &post.Data, pq.Array(&post.LikedBy), pq.Array(&post.Comments), &id)
+		err = rows.Scan(&post.ID, &post.Description, &fileProperties, pq.Array(&post.LikedBy), pq.Array(&post.Comments), &id)
 		if err != nil {
 			repo.currentEventId = oldId
 			return nil, err
 		}
+
+		// id = 0, contenttype = 1
+		idContentType := strings.Split(fileProperties, ".")
+
+		content, err := util.LoadFile(idContentType[0])
+		if err != nil {
+			repo.currentEventId = oldId
+			return nil, err
+		}
+
+		post.Data = &model.File{
+			ID:          idContentType[0],
+			Content:     content,
+			ContentType: idContentType[1],
+		}
+
 		currentPosts = append(currentPosts, &post)
 	}
 
-	// list is recent
+	// when value of id hasn't changed, then list is already recent
 	if id == repo.currentEventId {
+		log.Printf("Post list is recent")
 		return repo.currentPosts, nil
 	}
 

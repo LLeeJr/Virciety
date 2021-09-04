@@ -29,7 +29,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 		Username:    newPost.Username,
 		Description: newPost.Description,
 		Data: &model.File{
-			ID:          uuid.New().String(),
+			ID:          uuid.NewString(),
 			Content:     properties[1],
 			ContentType: contentType[1],
 		},
@@ -50,16 +50,11 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 }
 
 func (r *mutationResolver) Upload(ctx context.Context, file string) (*model.File, error) {
-	/*content, err := ioutil.ReadAll(file.File)
-	if err != nil {
-		return nil, err
-	}*/
-
 	properties := strings.Split(file, ";base64,")
 	contentType := strings.Split(properties[0], ":")
 
 	return &model.File{
-		ID:          uuid.New().String(),
+		ID:          uuid.NewString(),
 		Content:     properties[1],
 		ContentType: contentType[1],
 	}, nil

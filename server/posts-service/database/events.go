@@ -8,7 +8,7 @@ type PostEvent struct {
 	PostID      string      `json:"id"`
 	Username    string      `json:"username"`
 	Description string      `json:"description"`
-	Data        *model.File `json:"data"`
+	Data        *model.File `json:"data"` // Database saves file properties: fileID.ContentType
 	LikedBy     []string    `json:"liked_by"`
 	Comments    []string    `json:"comments"`
 }
