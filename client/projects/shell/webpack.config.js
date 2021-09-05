@@ -32,9 +32,7 @@ module.exports = {
         // },
 
         // For hosts (please adjust)
-        remotes: {
-          "chat": "chat@http://localhost:5001/chatremoteEntry.js",
-        },
+        remotes: { },
 
         shared: share({
           "@angular/core": { singleton: true, strictVersion: true, requiredVersion: 'auto' },

@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import {HomeComponent} from "./home/home.component";
 import {AuthGuard} from "./guard/auth.guard";
+import {loadRemoteModule} from "@angular-architects/module-federation";
 
 const routes: Routes = [
   {
@@ -13,9 +14,10 @@ const routes: Routes = [
     path: 'chat',
     canActivate: [AuthGuard],
     loadChildren: () =>
-      import('chat/ChatModule').then((m) => {
-        return m.ChatModule;
-      }),
+      loadRemoteModule({
+        remoteName: 'chat',
+        exposedModule: './ChatModule',
+      }).then(m => m.ChatModule),
   }
 ];
 
