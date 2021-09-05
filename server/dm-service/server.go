@@ -5,15 +5,15 @@ import (
 	"dm-service/graph"
 	"dm-service/graph/generated"
 	"dm-service/queue"
-	"github.com/gorilla/mux"
-	"github.com/rs/cors"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 )
 
 const defaultPort = "8081"
