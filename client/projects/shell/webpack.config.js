@@ -33,7 +33,6 @@ module.exports = {
 
         // For hosts (please adjust)
         remotes: {
-          "mfe1": "mfe1@http://localhost:5000/mfe1remoteEntry.js",
           "chat": "chat@http://localhost:5001/chatremoteEntry.js",
         },
 

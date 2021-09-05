@@ -10,13 +10,6 @@ const routes: Routes = [
     pathMatch: 'full',
   },
   {
-    path: 'mfe1',
-    loadChildren: () =>
-      import('mfe1/MfefeatureModule').then((m) => {
-        return m.MfefeatureModule;
-      }),
-  },
-  {
     path: 'chat',
     canActivate: [AuthGuard],
     loadChildren: () =>
