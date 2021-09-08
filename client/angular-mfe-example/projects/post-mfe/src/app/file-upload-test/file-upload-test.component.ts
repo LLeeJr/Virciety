@@ -17,6 +17,12 @@ export class FileUploadTestComponent implements OnInit {
       }
     `;
 
+  private POST_SUBSCRIPTION = gql`
+    subscription postCreated {
+      postCreated
+    }
+  `;
+
   private apollo: ApolloBase;
   imageBase64: any;
   description: string = '';
@@ -28,6 +34,13 @@ export class FileUploadTestComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.apollo.subscribe({query: this.POST_SUBSCRIPTION}).subscribe(
+      ({ data }) => {
+      console.log('got data ', data)
+      },
+      (error) => {
+        console.log('there was an error sending the query', error)
+      })
   }
 
   onFileSelected(event: any) {

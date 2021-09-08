@@ -9,7 +9,6 @@ import {DataLibService} from "data-lib";
   styleUrls: ['./post.component.css']
 })
 export class PostComponent implements OnInit {
-
   private apollo: ApolloBase;
   loading = true;
   error: any;
@@ -51,5 +50,9 @@ export class PostComponent implements OnInit {
       this.loading = data.loading;
       this.error = data.error;
     });
+  }
+
+  createPost() {
+
   }
 }

@@ -6,11 +6,13 @@ import { AppComponent } from './app.component';
 import {HttpClientModule} from "@angular/common/http";
 import {APOLLO_NAMED_OPTIONS, NamedOptions} from "apollo-angular";
 import {HttpLink} from "apollo-angular/http";
-import {InMemoryCache} from "@apollo/client/core";
+import {InMemoryCache, split} from "@apollo/client/core";
 import { FileUploadTestComponent } from './file-upload-test/file-upload-test.component';
 import {AngularMaterialModule} from "./angular-material.module";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {FormsModule} from "@angular/forms";
+import {getMainDefinition} from "@apollo/client/utilities";
+import {WebSocketLink} from "@apollo/client/link/ws";
 
 @NgModule({
   declarations: [
@@ -29,13 +31,36 @@ import {FormsModule} from "@angular/forms";
     {
       provide: APOLLO_NAMED_OPTIONS, // <-- Different from standard initialization
       useFactory(httpLink: HttpLink): NamedOptions {
+        const http = httpLink.create({
+          uri: 'http://localhost:8083/query',
+        });
+
+
+        const ws = new WebSocketLink({
+          uri: `ws://localhost:8083/query`,
+          options: {
+            reconnect: true,
+          }
+        });
+
+        const link = split(
+          // split based on operation type
+          ({query}) => {
+            const data = getMainDefinition(query);
+            return (
+              data.kind === 'OperationDefinition' && data.operation === 'subscription'
+            );
+          },
+          ws,
+          http,
+        );
+
+
         return {
           post: {
             cache: new InMemoryCache(),
-            link: httpLink.create({
-              uri: 'http://localhost:8083/query',
-            }),
-          },
+            link: link
+          }
         };
       },
       deps: [HttpLink],

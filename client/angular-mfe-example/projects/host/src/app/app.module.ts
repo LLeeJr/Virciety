@@ -11,7 +11,6 @@ import { PostCommentComponent } from './post-comment/post-comment.component';
 import {PostModule} from "../../../post-mfe/src/app/post/post.module";
 import {HttpLink} from "apollo-angular/http";
 import {CommentModule} from "../../../comment-mfe/src/app/comment/comment.module";
-import {createUploadLink} from "apollo-upload-client";
 
 @NgModule({
   declarations: [
@@ -33,7 +32,7 @@ import {createUploadLink} from "apollo-upload-client";
         return {
           post: {
             cache: new InMemoryCache(),
-            link: createUploadLink({
+            link: httpLink.create({
               uri: 'http://localhost:8083/query',
             }),
           },
