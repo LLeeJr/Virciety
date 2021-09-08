@@ -53,6 +53,8 @@ func (r *mutationResolver) Upload(ctx context.Context, file string) (*model.File
 	properties := strings.Split(file, ";base64,")
 	contentType := strings.Split(properties[0], ":")
 
+	r.textChan <- "Test"
+
 	return &model.File{
 		ID:          uuid.NewString(),
 		Content:     properties[1],
