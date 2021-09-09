@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {Apollo, ApolloBase, gql} from "apollo-angular";
 import { Post } from "../model/post";
-import {DataLibService} from "data-lib";
 
 @Component({
   selector: 'app-post',
@@ -14,8 +13,7 @@ export class PostComponent implements OnInit {
   error: any;
   posts: Post[] = [];
 
-  constructor(private apolloProvider: Apollo,
-              private service: DataLibService) {
+  constructor(private apolloProvider: Apollo) {
     this.apollo = this.apolloProvider.use('post');
   }
 
@@ -38,7 +36,6 @@ export class PostComponent implements OnInit {
           }`,
       })
       .valueChanges.subscribe((data: any) => {
-      //this.service.posts = data.data.getPosts;
 
       console.log(data.data.getPosts);
 

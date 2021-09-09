@@ -8,8 +8,6 @@ import {APOLLO_NAMED_OPTIONS, NamedOptions} from "apollo-angular";
 import {HttpLink} from "apollo-angular/http";
 import {InMemoryCache, split} from "@apollo/client/core";
 import { FileUploadTestComponent } from './file-upload-test/file-upload-test.component';
-import {AngularMaterialModule} from "./angular-material.module";
-import {MatToolbarModule} from "@angular/material/toolbar";
 import {FormsModule} from "@angular/forms";
 import {getMainDefinition} from "@apollo/client/utilities";
 import {WebSocketLink} from "@apollo/client/link/ws";
@@ -23,13 +21,11 @@ import {WebSocketLink} from "@apollo/client/link/ws";
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    AngularMaterialModule,
-    MatToolbarModule,
     FormsModule
   ],
   providers: [
     {
-      provide: APOLLO_NAMED_OPTIONS, // <-- Different from standard initialization
+      provide: APOLLO_NAMED_OPTIONS,
       useFactory(httpLink: HttpLink): NamedOptions {
         const http = httpLink.create({
           uri: 'http://localhost:8083/query',

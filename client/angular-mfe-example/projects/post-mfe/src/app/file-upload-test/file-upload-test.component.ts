@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {Apollo, ApolloBase, gql} from "apollo-angular";
 
 @Component({
@@ -24,12 +24,14 @@ export class FileUploadTestComponent implements OnInit {
   `;
 
   private apollo: ApolloBase;
-  imageBase64: any;
+  fileBase64: any;
+  file: any;
+  fileBackend: any;
   description: string = '';
-  imageFile: any;
-  imageBackend: any;
+  content_type: string = '';
 
-  constructor(private apolloProvider: Apollo) {
+  constructor(private apolloProvider: Apollo,
+              private cd: ChangeDetectorRef) {
     this.apollo = this.apolloProvider.use('post');
   }
 
@@ -44,27 +46,34 @@ export class FileUploadTestComponent implements OnInit {
   }
 
   onFileSelected(event: any) {
-    this.imageFile = event.target.files[0];
+    this.fileBackend = null;
+    this.file = event.target.files[0];
 
-    if (this.imageFile) {
+    if (this.file) {
       const reader = new FileReader();
-      reader.readAsDataURL(this.imageFile);
+      reader.readAsDataURL(this.file);
 
       reader.onload = () => {
-        this.imageBase64 = reader.result;
+        if (reader.result) {
+          const base64 = reader.result;
+          const data: string = base64.toString().split(";base64,")[0];
+
+          this.content_type = data.split(":")[1];
+
+          this.fileBase64 = base64;
+        }
       }
     }
   }
 
   upload() {
-    if (this.imageFile) {
-
+    if (this.fileBase64) {
       this.apollo.mutate({
         mutation: this.UPLOAD_FILE,
         variables: {
-          file: this.imageBase64
+          file: this.fileBase64
         }
-      }).subscribe((data: any)=> {
+      }).subscribe((data: any) => {
         console.log('got data', data.data)
 
         const blob = this.base64ImageToBlob(data.data.upload.contentType, data.data.upload.content)
@@ -73,7 +82,14 @@ export class FileUploadTestComponent implements OnInit {
         reader.readAsDataURL(blob);
 
         reader.onload = () => {
-          this.imageBackend = reader.result;
+          if (reader.result) {
+            const base64 = reader.result;
+            const data: string = base64.toString().split(";base64,")[0];
+
+            this.content_type = data.split(":")[1];
+
+            this.fileBackend = base64;
+          }
         }
       }, (error) => {
         console.error('there was an error sending the query', error)
@@ -96,5 +112,11 @@ export class FileUploadTestComponent implements OnInit {
 
     // convert ArrayBuffer to Blob
     return new Blob([buffer], {type: type});
+  }
+
+  alertFunction() {
+    alert(`Content-Type ${this.content_type} is not supported`);
+    this.content_type = '';
+    this.cd.detectChanges();
   }
 }
