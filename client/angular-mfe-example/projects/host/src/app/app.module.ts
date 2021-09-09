@@ -30,12 +30,6 @@ import {CommentModule} from "../../../comment-mfe/src/app/comment/comment.module
       provide: APOLLO_NAMED_OPTIONS, // <-- Different from standard initialization
       useFactory(httpLink: HttpLink): NamedOptions {
         return {
-          post: {
-            cache: new InMemoryCache(),
-            link: httpLink.create({
-              uri: 'http://localhost:8083/query',
-            }),
-          },
           comment: {
             cache: new InMemoryCache(),
             link: httpLink.create({

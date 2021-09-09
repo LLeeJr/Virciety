@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import {Apollo, ApolloBase, gql} from "apollo-angular";
 import { Post } from "../model/post";
+import {GQLService} from "../service/g-q-l.service";
 
 @Component({
   selector: 'app-post',
@@ -8,34 +8,15 @@ import { Post } from "../model/post";
   styleUrls: ['./post.component.css']
 })
 export class PostComponent implements OnInit {
-  private apollo: ApolloBase;
   loading = true;
   error: any;
   posts: Post[] = [];
 
-  constructor(private apolloProvider: Apollo) {
-    this.apollo = this.apolloProvider.use('post');
+  constructor(private gqlService: GQLService) {
   }
 
   ngOnInit(): void {
-    this.apollo
-      .watchQuery({
-        query: gql`
-          {
-            getPosts {
-              id
-              data {
-                id
-                content
-                contentType
-              }
-              description
-              comments
-              likedBy
-            }
-          }`,
-      })
-      .valueChanges.subscribe((data: any) => {
+    this.gqlService.getPosts().subscribe((data: any) => {
 
       console.log(data.data.getPosts);
 
@@ -47,9 +28,5 @@ export class PostComponent implements OnInit {
       this.loading = data.loading;
       this.error = data.error;
     });
-  }
-
-  createPost() {
-
   }
 }

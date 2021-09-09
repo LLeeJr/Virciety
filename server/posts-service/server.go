@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
@@ -49,7 +50,7 @@ func main() {
 			},
 		},
 	})
-	//srv.Use(extension.Introspection{})
+	srv.Use(extension.Introspection{})
 
 	r := mux.NewRouter()
 	r.Use(cors.New(cors.Options{

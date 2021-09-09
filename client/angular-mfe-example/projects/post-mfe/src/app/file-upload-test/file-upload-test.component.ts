@@ -1,48 +1,34 @@
-import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
-import {Apollo, ApolloBase, gql} from "apollo-angular";
+import {ChangeDetectorRef, Component, OnInit, OnDestroy} from '@angular/core';
+import {GQLService} from "../service/g-q-l.service";
 
 @Component({
   selector: 'app-file-upload-test',
   templateUrl: './file-upload-test.component.html',
   styleUrls: ['./file-upload-test.component.css']
 })
-export class FileUploadTestComponent implements OnInit {
-  private UPLOAD_FILE = gql`
-      mutation upload($file: String!) {
-        upload(file: $file) {
-          id
-          content
-          contentType
-        }
-      }
-    `;
-
-  private POST_SUBSCRIPTION = gql`
-    subscription postCreated {
-      postCreated
-    }
-  `;
-
-  private apollo: ApolloBase;
+export class FileUploadTestComponent implements OnInit, OnDestroy {
   fileBase64: any;
   file: any;
   fileBackend: any;
   description: string = '';
   content_type: string = '';
 
-  constructor(private apolloProvider: Apollo,
+  constructor(private gqlService: GQLService,
               private cd: ChangeDetectorRef) {
-    this.apollo = this.apolloProvider.use('post');
   }
 
   ngOnInit(): void {
-    this.apollo.subscribe({query: this.POST_SUBSCRIPTION}).subscribe(
+    this.gqlService.postCreated().subscribe(
       ({ data }) => {
       console.log('got data ', data)
       },
       (error) => {
         console.log('there was an error sending the query', error)
       })
+  }
+
+  ngOnDestroy() {
+    this.gqlService.closeWebSocket();
   }
 
   onFileSelected(event: any) {
@@ -68,12 +54,7 @@ export class FileUploadTestComponent implements OnInit {
 
   upload() {
     if (this.fileBase64) {
-      this.apollo.mutate({
-        mutation: this.UPLOAD_FILE,
-        variables: {
-          file: this.fileBase64
-        }
-      }).subscribe((data: any) => {
+      this.gqlService.upload(this.fileBase64).subscribe((data: any) => {
         console.log('got data', data.data)
 
         const blob = this.base64ImageToBlob(data.data.upload.contentType, data.data.upload.content)
