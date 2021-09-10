@@ -49,19 +49,6 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 	return post, nil
 }
 
-func (r *mutationResolver) Upload(ctx context.Context, file string) (*model.File, error) {
-	properties := strings.Split(file, ";base64,")
-	contentType := strings.Split(properties[0], ":")
-
-	r.textChan <- "Test"
-
-	return &model.File{
-		ID:          uuid.NewString(),
-		Content:     properties[1],
-		ContentType: contentType[1],
-	}, nil
-}
-
 func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequest) (string, error) {
 	// get post data out of current saved posts and remove it out of the list
 	_, post := r.repo.GetPostById(edit.ID)
