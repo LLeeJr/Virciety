@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnInit} from '@angular/core';
 import { Post } from "../model/post";
 import {GQLService} from "../service/g-q-l.service";
 

@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, OnInit, OnDestroy} from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {GQLService} from "../service/g-q-l.service";
 
 @Component({
@@ -6,7 +6,7 @@ import {GQLService} from "../service/g-q-l.service";
   templateUrl: './file-upload-test.component.html',
   styleUrls: ['./file-upload-test.component.css']
 })
-export class FileUploadTestComponent implements OnInit, OnDestroy {
+export class FileUploadTestComponent implements OnInit {
   fileBase64: any;
   file: any;
   fileBackend: any;
@@ -17,19 +17,7 @@ export class FileUploadTestComponent implements OnInit, OnDestroy {
               private cd: ChangeDetectorRef) {
   }
 
-  ngOnInit(): void {
-    this.gqlService.postCreated().subscribe(
-      ({ data }) => {
-      console.log('got data ', data)
-      },
-      (error) => {
-        console.log('there was an error sending the query', error)
-      })
-  }
-
-  ngOnDestroy() {
-    this.gqlService.closeWebSocket();
-  }
+  ngOnInit(): void { }
 
   onFileSelected(event: any) {
     this.fileBackend = null;
@@ -52,47 +40,15 @@ export class FileUploadTestComponent implements OnInit, OnDestroy {
     }
   }
 
-  upload() {
+  createPost() {
     if (this.fileBase64) {
-      this.gqlService.upload(this.fileBase64).subscribe((data: any) => {
+      this.gqlService.createPost(this.fileBase64, this.description, 'user3').subscribe((data: any) => {
+        // TODO add to shared lib list of posts
         console.log('got data', data.data)
-
-        const blob = this.base64ImageToBlob(data.data.upload.contentType, data.data.upload.content)
-
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-
-        reader.onload = () => {
-          if (reader.result) {
-            const base64 = reader.result;
-            const data: string = base64.toString().split(";base64,")[0];
-
-            this.content_type = data.split(":")[1];
-
-            this.fileBackend = base64;
-          }
-        }
       }, (error) => {
         console.error('there was an error sending the query', error)
       })
     }
-  }
-
-  base64ImageToBlob(type: string, content: string): Blob {
-    // decode base64
-    const imageContent = atob(content);
-
-    // create an ArrayBuffer and a view (as unsigned 8-bit)
-    const buffer = new ArrayBuffer(imageContent.length);
-    const view = new Uint8Array(buffer);
-
-    // fill the view, using the decoded base64
-    for(let n = 0; n < imageContent.length; n++) {
-      view[n] = imageContent.charCodeAt(n);
-    }
-
-    // convert ArrayBuffer to Blob
-    return new Blob([buffer], {type: type});
   }
 
   alertFunction() {

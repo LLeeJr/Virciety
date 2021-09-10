@@ -1,11 +1,8 @@
 import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase, gql} from "apollo-angular";
 import {Observable} from "rxjs";
-import {WebSocketLink} from "@apollo/client/link/ws";
-import {InMemoryCache, split} from "@apollo/client/core";
-import {getMainDefinition} from "@apollo/client/utilities";
+import {InMemoryCache} from "@apollo/client/core";
 import {HttpLink} from "apollo-angular/http";
-import {SubscriptionClient} from "subscriptions-transport-ws";
 
 @Injectable({
   providedIn: 'root'
@@ -28,38 +25,25 @@ export class GQLService {
             }
           }`;
 
-  private UPLOAD_FILE = gql`
-    mutation upload($file: String!) {
-        upload(file: $file) {
+  private CREATE_POST = gql`
+    mutation createPost($username: String!, $description: String!, $data: String!) {
+      createPost(newPost: {username: $username, description: $description, data: $data}) {
+        id
+        description
+        data {
           id
           content
           contentType
         }
+        likedBy
+        comments
       }
-  `;
-
-  private CREATE_POST = gql`
-      mutation CreatePost($newPost: CreatePostRequest!) {
-        createPost(newPost: $newPost) {
-          id
-          description
-          data
-          likedBy
-          comments
-        }
-      }
-  `
-
-  private POST_SUBSCRIPTION = gql`
-    subscription postCreated {
-      postCreated
     }
   `;
 
   // ------------------------- Queries, Mutations and Subscriptions end
 
   private apollo: ApolloBase;
-  private readonly webSocketClient: SubscriptionClient;
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink) {
@@ -67,36 +51,12 @@ export class GQLService {
       uri: 'http://localhost:8083/query',
     });
 
-    this.webSocketClient = new SubscriptionClient(`ws://localhost:8083/query`, {
-      reconnect: true
-    });
-
-    const ws = new WebSocketLink(this.webSocketClient);
-
-    const link = split(
-      // split based on operation type
-      ({query}) => {
-        const data = getMainDefinition(query);
-        return (
-          data.kind === 'OperationDefinition' && data.operation === 'subscription'
-        );
-      },
-      ws,
-      http,
-    );
-
     this.apolloProvider.createNamed('post', {
       cache: new InMemoryCache(),
-      link: link,
+      link: http,
     });
 
     this.apollo = this.apolloProvider.use('post');
-  }
-
-  public closeWebSocket(): void {
-    this.webSocketClient.unsubscribeAll();
-    this.webSocketClient.close(true);
-    console.log(`Closed Websocket? ${this.webSocketClient.status}`);
   }
 
   getPosts(): Observable<any> {
@@ -107,15 +67,13 @@ export class GQLService {
       .valueChanges;
   }
 
-  postCreated(): Observable<any> {
-    return this.apollo.subscribe({query: this.POST_SUBSCRIPTION});
-  }
-
-  upload(fileBase64: string): Observable<any> {
+  createPost(fileBase64: string, description: string, username: string): Observable<any> {
     return this.apollo.mutate({
-      mutation: this.UPLOAD_FILE,
+      mutation: this.CREATE_POST,
       variables: {
-        file: fileBase64
+        username: username,
+        description: description,
+        data: fileBase64
       }
     });
   }

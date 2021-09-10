@@ -1,4 +1,4 @@
-<p>file-upload-test works!</p>
+<h2>Create a new post</h2>
 
 <div *ngIf="fileBase64 && content_type !== ''">
   <div *ngIf="!(content_type.startsWith('image') || content_type.startsWith('video')); else elseIfBlock">
@@ -19,7 +19,7 @@
       </div>
     </ng-template>
     <input [(ngModel)]="description" placeholder="Write a caption...">
-    <button (click)="upload()">Upload</button>
+    <button (click)="createPost()">Create Post</button>
   </ng-template>
 </div>
 

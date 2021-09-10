@@ -8,9 +8,8 @@ import {APOLLO_NAMED_OPTIONS, NamedOptions} from "apollo-angular";
 import {InMemoryCache} from "@apollo/client/core";
 import {HttpClientModule} from "@angular/common/http";
 import { PostCommentComponent } from './post-comment/post-comment.component';
-import {PostModule} from "../../../post-mfe/src/app/post/post.module";
 import {HttpLink} from "apollo-angular/http";
-import {CommentModule} from "../../../comment-mfe/src/app/comment/comment.module";
+import {FormsModule} from "@angular/forms";
 
 @NgModule({
   declarations: [
@@ -22,8 +21,7 @@ import {CommentModule} from "../../../comment-mfe/src/app/comment/comment.module
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    PostModule,
-    CommentModule,
+    FormsModule
   ],
   providers: [
     {

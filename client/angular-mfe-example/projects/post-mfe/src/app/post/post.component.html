@@ -5,6 +5,13 @@
   Error :(
 </div>
 <div *ngFor="let post of posts">
-  <img src="{{post.data.fileUrl}}" alt="post: {{post.id}}" width="300px">
+  <div *ngIf="post.data.contentType.startsWith('image'); else elseBlock">
+    <img src="{{post.data.fileUrl}}" alt="{{post.id}}" width="300px">
+  </div>
+  <ng-template #elseBlock>
+    <video width="300px" controls>
+      <source src="{{post.data.fileUrl}}">
+    </video>
+  </ng-template>
   <p>{{ post.description }} -- {{ post.id }}</p>
 </div>
