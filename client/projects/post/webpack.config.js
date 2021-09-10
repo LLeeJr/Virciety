@@ -29,6 +29,7 @@ module.exports = {
         filename: "postremoteEntry.js",
         exposes: {
           './PostModule': './projects/post/src/app/post/post.module.ts',
+          './CreatePostModule': './projects/post/src/app/create-post/create-post.module.ts'
         },
 
         // For hosts (please adjust)
