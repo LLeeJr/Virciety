@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import { Post } from "../model/post";
 import {GQLService} from "../service/gql.service";
+import {DataLibService} from "data-lib";
 
 @Component({
   selector: 'app-post',
@@ -8,25 +9,19 @@ import {GQLService} from "../service/gql.service";
   styleUrls: ['./post.component.scss']
 })
 export class PostComponent implements OnInit {
-  loading = true;
-  error: any;
   posts: Post[] = [];
 
-  constructor(private gqlService: GQLService) {
+  constructor(private gqlService: GQLService,
+              private dataService: DataLibService) {
   }
 
   ngOnInit(): void {
-    this.gqlService.getPosts().subscribe((data: any) => {
+    if (this.dataService.getPosts()) {
+      this.posts = this.dataService.getPosts();
+    }
 
-      console.log(data.data.getPosts);
-
-      for (let getPost of data.data.getPosts) {
-        const post: Post = new Post(getPost);
-        this.posts.push(post)
-      }
-
-      this.loading = data.loading;
-      this.error = data.error;
+    this.dataService.getPostSubject().subscribe(posts => {
+      this.posts = posts;
     });
   }
 }

@@ -1,17 +1,16 @@
-<div *ngIf="loading">
-  Loading...
-</div>
-<div *ngIf="error">
-  Error :(
-</div>
-<div *ngFor="let post of posts">
-  <div *ngIf="post.data.contentType.startsWith('image'); else elseBlock">
-    <img src="{{post.data.fileUrl}}" alt="{{post.id}}" width="300px">
+<div *ngFor="let post of posts" style="margin-top: 10px">
+  <div *ngIf="post.data.fileUrl !== ''; else loading">
+    <div *ngIf="post.data.contentType.startsWith('image'); else elseBlock">
+      <img src="{{post.data.fileUrl}}" alt="{{post.id}}" width="300px">
+    </div>
+    <ng-template #elseBlock>
+      <video width="300px" controls>
+        <source src="{{post.data.fileUrl}}">
+      </video>
+    </ng-template>
   </div>
-  <ng-template #elseBlock>
-    <video width="300px" controls>
-      <source src="{{post.data.fileUrl}}">
-    </video>
+  <ng-template #loading>
+    Loading...
   </ng-template>
   <p>{{ post.description }} -- {{ post.id }}</p>
 </div>

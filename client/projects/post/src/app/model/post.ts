@@ -13,9 +13,9 @@ export class Post {
   constructor(getPost: any) {
     this.data = {
       id: getPost.data.id,
-      content: getPost.data.content,
+      content: '',
       contentType: getPost.data.contentType,
-      fileUrl: `data:${getPost.data.contentType};base64,${getPost.data.content}`,
+      fileUrl: '',
     };
 
     this.id = getPost.id;

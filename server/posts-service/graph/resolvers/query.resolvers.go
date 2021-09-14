@@ -5,6 +5,7 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
 )
@@ -16,6 +17,18 @@ func (r *queryResolver) GetPosts(ctx context.Context) ([]*model.Post, error) {
 	}
 
 	return currentPosts, nil
+}
+
+func (r *queryResolver) GetData(ctx context.Context, id string) (string, error) {
+	currentPosts := r.repo.GetCurrentPosts()
+
+	for _, post := range currentPosts {
+		if post.ID == id {
+			return post.Data.Content, nil
+		}
+	}
+
+	return "", errors.New("post with id " + id + " not found")
 }
 
 // Query returns generated.QueryResolver implementation.

@@ -1,5 +1,7 @@
 import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {GQLService} from "../service/gql.service";
+import {AuthLibService} from "auth-lib";
+import {DataLibService} from "data-lib";
 
 @Component({
   selector: 'app-create-post',
@@ -14,6 +16,8 @@ export class CreatePostComponent implements OnInit {
   content_type: string = '';
 
   constructor(private gqlService: GQLService,
+              private authService: AuthLibService,
+              private dataService: DataLibService,
               private cd: ChangeDetectorRef) {
   }
 
@@ -42,12 +46,7 @@ export class CreatePostComponent implements OnInit {
 
   createPost() {
     if (this.fileBase64) {
-      this.gqlService.createPost(this.fileBase64, this.description, 'user3').subscribe((data: any) => {
-        // TODO add to shared lib list of posts
-        console.log('got data', data.data)
-      }, (error: any) => {
-        console.error('there was an error sending the query', error)
-      })
+      this.gqlService.createPost(this.fileBase64, this.description, this.authService.userName);
     }
   }
 
