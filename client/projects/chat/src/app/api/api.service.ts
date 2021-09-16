@@ -1,21 +1,61 @@
 import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
-import {Observable} from "rxjs";
+import {Observable, Subscription} from "rxjs";
 import {DatePipe} from "@angular/common";
+import {ChatSubscriptionGqlService} from "./chat-subscription-gql";
+import {SubscriptionClient} from "subscriptions-transport-ws";
+import {HttpLink} from "apollo-angular/http";
+import {WebSocketLink} from "@apollo/client/link/ws";
+import {InMemoryCache, split} from "@apollo/client/core";
+import {getMainDefinition} from "@apollo/client/utilities";
 
 @Injectable({
   providedIn: 'root',
 })
 export class ApiService {
 
-  messages : any[] = [];
+  messages: any[] = [];
+  chatPartner = '';
 
   private query: QueryRef<any> | undefined;
-  private apollo: ApolloBase;
+  private apollo!: ApolloBase;
+  private webSocketClient!: SubscriptionClient;
 
   constructor(private apolloProvider: Apollo,
-              private datePipe: DatePipe) {
-    this.apollo = apolloProvider.use('chat');
+              private datePipe: DatePipe,
+              private chatSubGql: ChatSubscriptionGqlService,
+              private httpLink: HttpLink) {
+    this.start();
+  }
+
+  private start() {
+    const http = this.httpLink.create({
+      uri: 'http://localhost:8081/query'
+    });
+
+    this.webSocketClient = new SubscriptionClient('ws://localhost:8081/query', {
+      reconnect: true,
+    });
+    const ws = new WebSocketLink(this.webSocketClient);
+
+    const link = split(
+      // split based on operation type
+      ({query}) => {
+        let definition = getMainDefinition(query);
+        return (
+          definition.kind === 'OperationDefinition' && definition.operation === 'subscription'
+        );
+      },
+      ws,
+      http,
+    );
+
+    this.apolloProvider.createNamed('chat', {
+      cache: new InMemoryCache(),
+      link: link
+    });
+
+    this.apollo = this.apolloProvider.use('chat');
   }
 
   writeDm(msg: string, from: string, to: string): Observable<any> {
@@ -44,6 +84,15 @@ export class ApiService {
         input: createDmRequest
       }
     });
+  }
+
+  subscribeToChat(): Observable<any> {
+    return this.apollo.subscribe({query: this.chatSubGql.document})
+  }
+
+  unsubscribeToChat() {
+    this.webSocketClient.unsubscribeAll();
+    this.webSocketClient.close(true);
   }
 
   getChat(user1: string, user2: string): Observable<any> {
