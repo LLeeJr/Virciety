@@ -1,0 +1,33 @@
+type File {
+    id: String!
+    content: String!
+    contentType: String!
+}
+
+input CreatePostRequest {
+    username:       String!
+    description:    String!
+    data:           String!
+}
+
+input EditPostRequest {
+    id: String!
+    newDescription: String!
+}
+
+input UnLikePostRequest {
+    id: String!
+    username: String!
+}
+
+input RemovePostRequest {
+    id: String!
+}
+
+type Post {
+    id: String! # timestamp(created)__username
+    description: String!
+    data: File!
+    likedBy: [String!]!
+    comments: [String!]!
+}

@@ -1,0 +1,4 @@
+type Query {
+    getPosts: [Post!]!
+    getData(id: String!): String!
+}
