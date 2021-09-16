@@ -36,6 +36,8 @@ func (r *mutationResolver) CreateDm(ctx context.Context, input *model.CreateDmRe
 	//msg := fmt.Sprintf("created new DM: %s <-> %s", dmEvent.From, dmEvent.To)
 	//r.publisher.AddMessageToQuery()
 
+	r.dmChan <- dm
+
 	return dm, nil
 }
 
@@ -52,12 +54,15 @@ func (r *queryResolver) GetChat(ctx context.Context, input model.GetChatRequest)
 }
 
 func (r *queryResolver) GetOpenChats(ctx context.Context, userName string) ([]*model.Chat, error) {
-
 	chats, err := r.repo.GetOpenChats(ctx, userName)
 	if err != nil {
 		return nil, err
 	}
 	return chats, nil
+}
+
+func (r *subscriptionResolver) DmAdded(ctx context.Context) (<-chan *model.Dm, error) {
+	return r.dmChan, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
@@ -66,5 +71,9 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Subscription returns generated.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }

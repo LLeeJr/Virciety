@@ -2,6 +2,7 @@ package graph
 
 import (
 	"dm-service/database"
+	"dm-service/graph/model"
 	"dm-service/queue"
 )
 
@@ -13,10 +14,12 @@ func NewResolver(repo database.Repository, publisher queue.Publisher) *Resolver 
 	return &Resolver{
 		repo:   repo,
 		publisher: publisher,
+		dmChan: make(chan *model.Dm),
 	}
 }
 
 type Resolver struct {
-	repo		database.Repository
-	publisher	queue.Publisher
+	repo      database.Repository
+	publisher queue.Publisher
+	dmChan    chan *model.Dm
 }

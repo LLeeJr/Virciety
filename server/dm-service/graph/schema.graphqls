@@ -13,6 +13,10 @@ type Dm {
   msg: String!
 }
 
+type Subscription {
+  dmAdded: Dm!
+}
+
 type Chat {
   withUser: String!
   preview: String!
