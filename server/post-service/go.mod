@@ -10,4 +10,5 @@ require (
 	github.com/rs/cors v1.6.0
 	github.com/streadway/amqp v1.0.0
 	github.com/vektah/gqlparser/v2 v2.1.0
+	go.mongodb.org/mongo-driver v1.7.2 // indirect
 )

@@ -1,13 +1,10 @@
 package database
 
 import (
-	"database/sql"
-	"github.com/lib/pq"
-	"log"
+	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"posts-service/graph/model"
-	"posts-service/util"
-	"strings"
-	"time"
 )
 
 type Repository interface {
@@ -24,21 +21,28 @@ type Repository interface {
 }
 
 type repo struct {
-	DB             *sql.DB
+	postCollection *mongo.Collection
 	currentPosts   []*model.Post
 	currentEventId int
 }
 
-func NewRepo(db *sql.DB) (Repository, error) {
+func NewRepo() (Repository, error) {
+	client, err := dbConnect()
+	if err != nil {
+		return nil, err
+	}
+
+	db := client.Database("post-service")
+
 	return &repo{
-		DB:             db,
+		postCollection: db.Collection("post-events"),
 		currentEventId: 0,
 		currentPosts:   make([]*model.Post, 0),
 	}, nil
 }
 
 func (repo *repo) InsertPostEvent(postEvent PostEvent) (err error) {
-	sqlQuery := `INSERT INTO "post-events" ("postId", "eventTime", "eventType", username, description, data, liked, comments)
+	/*sqlQuery := `INSERT INTO "post-events" ("postId", "eventTime", "eventType", username, description, data, liked, comments)
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8) returning id`
 
 	newTime, _ := time.Parse("2006-01-02 15:04:05", postEvent.EventTime)
@@ -52,19 +56,22 @@ func (repo *repo) InsertPostEvent(postEvent PostEvent) (err error) {
 
 	//TODO update currentPosts when id > repo.currentEventId
 
-	repo.currentEventId = id
+	repo.currentEventId = id*/
+
+	insertResult, err := repo.postCollection.InsertOne(ctx, bson.D{
+		{"test", "test"},
+	})
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(insertResult.InsertedID)
 
 	return
 }
 
 func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
 	err := repo.InsertPostEvent(postEvent)
-	if err != nil {
-		return nil, err
-	}
-
-	// create file for new post data
-	err = util.SaveFile(postEvent.Data.Content, postEvent.Data.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -84,12 +91,12 @@ func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
 }
 
 func (repo *repo) GetPosts() ([]*model.Post, error) {
-	currentPosts := make([]*model.Post, 0)
+	/*currentPosts := make([]*model.Post, 0)
 
 	// first get all rows with event_type = "CreatePost" and latestEventId
 	sqlQuery := `select "postId", description, data, liked, comments, id from "post-events" where id > $1 and "eventType" = $2 ORDER BY "id" ASC`
 
-	rows, err := repo.DB.Query(sqlQuery, repo.currentEventId, "CreatePost")
+	rows, err := repo.client.Query(sqlQuery, repo.currentEventId, "CreatePost")
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +146,7 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 	for _, post := range currentPosts {
 		sqlQuery = `select liked, description from "post-events" where id = (select max(id) from "post-events" where "postId" = $1 and ("eventType" = $2 or "eventType" = $3 or "eventType" = $4))`
 
-		row := repo.DB.QueryRow(sqlQuery, post.ID, "EditPost", "LikePost", "UnlikePost")
+		row := repo.client.QueryRow(sqlQuery, post.ID, "EditPost", "LikePost", "UnlikePost")
 
 		switch err = row.Scan(pq.Array(&post.LikedBy), &post.Description); err {
 		case sql.ErrNoRows:
@@ -154,7 +161,7 @@ func (repo *repo) GetPosts() ([]*model.Post, error) {
 	}
 
 	// Update runtime data
-	repo.currentPosts = append(repo.currentPosts, currentPosts...)
+	repo.currentPosts = append(repo.currentPosts, currentPosts...)*/
 
 	return repo.currentPosts, nil
 }
@@ -174,13 +181,13 @@ func (repo *repo) GetPostById(id string) (int, *model.Post) {
 }
 
 func (repo *repo) RemovePost(postEvent PostEvent, index int) (string, error) {
-	// remove from currentPosts
+	/*// remove from currentPosts
 	repo.currentPosts = append(repo.currentPosts[:index], repo.currentPosts[index+1:]...)
 
 	// delete all events relating to the id
 	sqlQuery := `delete from "post-events" where "postId" = $1`
 
-	_, err := repo.DB.Exec(sqlQuery, postEvent.PostID)
+	_, err := repo.client.Exec(sqlQuery, postEvent.PostID)
 	if err != nil {
 		return "failed", err
 	}
@@ -189,7 +196,7 @@ func (repo *repo) RemovePost(postEvent PostEvent, index int) (string, error) {
 	err = repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return "failed", err
-	}
+	}*/
 
 	return "success", nil
 }
