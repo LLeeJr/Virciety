@@ -1,15 +1,17 @@
 package database
 
 import (
-	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"posts-service/graph/model"
+	"strings"
 )
 
 type Repository interface {
 	InsertPostEvent(post PostEvent) error
-	CreatePost(postEvent PostEvent) (*model.Post, error)
+	InsertFile(base64File string) (*model.File, error)
+	CreatePost(postEvent PostEvent, base64File string) (*model.Post, error)
 	GetPosts() ([]*model.Post, error)
 	GetCurrentPosts() []*model.Post
 	GetPostById(id string) (int, *model.Post)
@@ -22,6 +24,7 @@ type Repository interface {
 
 type repo struct {
 	postCollection *mongo.Collection
+	bucket         *gridfs.Bucket
 	currentPosts   []*model.Post
 	currentEventId int
 }
@@ -33,9 +36,14 @@ func NewRepo() (Repository, error) {
 	}
 
 	db := client.Database("post-service")
+	bucket, err := gridfs.NewBucket(db)
+	if err != nil {
+		return nil, err
+	}
 
 	return &repo{
 		postCollection: db.Collection("post-events"),
+		bucket:         bucket,
 		currentEventId: 0,
 		currentPosts:   make([]*model.Post, 0),
 	}, nil
@@ -58,20 +66,42 @@ func (repo *repo) InsertPostEvent(postEvent PostEvent) (err error) {
 
 	repo.currentEventId = id*/
 
-	insertResult, err := repo.postCollection.InsertOne(ctx, bson.D{
-		{"test", "test"},
-	})
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(insertResult.InsertedID)
-
 	return
 }
 
-func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
-	err := repo.InsertPostEvent(postEvent)
+func (repo *repo) InsertFile(base64File string) (*model.File, error) {
+	fileName := uuid.NewString()
+
+	properties := strings.Split(base64File, ";base64,")
+	contentType := strings.Split(properties[0], ":")
+
+	uploadStream, err := repo.bucket.OpenUploadStream(
+		fileName,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer uploadStream.Close()
+
+	_, err = uploadStream.Write([]byte(base64File))
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.File{
+		Name:        fileName,
+		Content:     base64File,
+		ContentType: contentType[1],
+	}, nil
+}
+
+func (repo *repo) CreatePost(postEvent PostEvent, base64File string) (*model.Post, error) {
+	file, err := repo.InsertFile(base64File)
+	if err != nil {
+		return nil, err
+	}
+
+	err = repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +109,7 @@ func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
 	post := &model.Post{
 		ID:          postEvent.PostID,
 		Description: postEvent.Description,
-		Data:        postEvent.Data,
+		Data:        file,
 		LikedBy:     postEvent.LikedBy,
 		Comments:    postEvent.Comments,
 	}

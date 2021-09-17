@@ -98,7 +98,6 @@ func convertCommentEventToPostEvent(repo database.Repository, data []byte) (*dat
 		PostID:      commentEvent.PostID,
 		Username:    info[1],
 		Description: post.Description,
-		Data:        post.Data,
 		LikedBy:     post.LikedBy,
 		Comments:    post.Comments,
 	}, nil

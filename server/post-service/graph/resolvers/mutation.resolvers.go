@@ -12,15 +12,10 @@ import (
 	"posts-service/util"
 	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error) {
 	created := time.Now().Format("2006-01-02 15:04:05")
-
-	properties := strings.Split(newPost.Data, ";base64,")
-	contentType := strings.Split(properties[0], ":")
 
 	postEvent := database.PostEvent{
 		EventTime:   created,
@@ -28,17 +23,12 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 		PostID:      created + "__" + newPost.Username,
 		Username:    newPost.Username,
 		Description: newPost.Description,
-		Data: &model.File{
-			ID:          uuid.NewString(),
-			Content:     properties[1],
-			ContentType: contentType[1],
-		},
-		LikedBy:  make([]string, 0),
-		Comments: make([]string, 0),
+		LikedBy:     make([]string, 0),
+		Comments:    make([]string, 0),
 	}
 
 	// save event in database
-	post, err := r.repo.CreatePost(postEvent)
+	post, err := r.repo.CreatePost(postEvent, newPost.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +58,6 @@ func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequ
 		PostID:      post.ID,
 		Username:    info[1],
 		Description: post.Description,
-		Data:        post.Data,
 		LikedBy:     post.LikedBy,
 		Comments:    post.Comments,
 	}
@@ -99,7 +88,6 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 		PostID:      post.ID,
 		Username:    info[1],
 		Description: post.Description,
-		Data:        post.Data,
 		LikedBy:     make([]string, 0),
 		Comments:    make([]string, 0),
 	}
@@ -141,7 +129,6 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRe
 		PostID:      post.ID,
 		Username:    info[1],
 		Description: post.Description,
-		Data:        post.Data,
 		LikedBy:     post.LikedBy,
 		Comments:    post.Comments,
 	}
@@ -184,7 +171,6 @@ func (r *mutationResolver) UnlikePost(ctx context.Context, unlike model.UnLikePo
 		PostID:      post.ID,
 		Username:    info[1],
 		Description: post.Description,
-		Data:        post.Data,
 		LikedBy:     post.LikedBy,
 		Comments:    post.Comments,
 	}
