@@ -28,18 +28,4 @@
          (change)="onFileSelected($event)">
 </div>
 
-<div *ngIf="fileBackend">
-  <div>
-    <label>Media from backend:</label>
-  </div>
-  <div *ngIf="content_type.startsWith('image'); else elseBlock">
-    <img src="{{fileBackend}}" alt="Photo you want to upload" width="300px">
-  </div>
-  <ng-template #elseBlock>
-    <video width="300px" controls>
-      <source src="{{fileBackend}}">
-    </video>
-  </ng-template>
-</div>
-
 

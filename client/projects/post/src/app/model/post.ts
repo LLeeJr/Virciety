@@ -4,23 +4,21 @@ export class Post {
     id: string;
     content: string;
     contentType: string;
-    fileUrl: string;
   };
   public description: string;
   public likedBy: string[];
   public comments: string[];
 
-  constructor(getPost: any) {
+  constructor(data: any) {
     this.data = {
-      id: getPost.data.id,
+      id: data.data.name,
       content: '',
-      contentType: getPost.data.contentType,
-      fileUrl: '',
+      contentType: data.data.contentType,
     };
 
-    this.id = getPost.id;
-    this.likedBy = getPost.likedBy;
-    this.comments = getPost.comments;
-    this.description = getPost.description;
+    this.id = data.id;
+    this.likedBy = data.likedBy;
+    this.comments = data.comments;
+    this.description = data.description;
   }
 }

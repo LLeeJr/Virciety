@@ -1,7 +1,6 @@
 import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {GQLService} from "../service/gql.service";
 import {AuthLibService} from "auth-lib";
-import {DataLibService} from "data-lib";
 
 @Component({
   selector: 'app-create-post',
@@ -11,22 +10,21 @@ import {DataLibService} from "data-lib";
 export class CreatePostComponent implements OnInit {
   fileBase64: any;
   file: any;
-  fileBackend: any;
   description: string = '';
   content_type: string = '';
 
   constructor(private gqlService: GQLService,
               private authService: AuthLibService,
-              private dataService: DataLibService,
               private cd: ChangeDetectorRef) {
   }
 
   ngOnInit(): void { }
 
   onFileSelected(event: any) {
-    this.fileBackend = null;
+    // get selected file
     this.file = event.target.files[0];
 
+    // get file data as base64 string
     if (this.file) {
       const reader = new FileReader();
       reader.readAsDataURL(this.file);
@@ -46,7 +44,7 @@ export class CreatePostComponent implements OnInit {
 
   createPost() {
     if (this.fileBase64) {
-      this.gqlService.createPost(this.fileBase64, this.description, this.authService.userName);
+      this.gqlService.createPost(this.fileBase64, this.description, this.authService.userName).then(() => console.log("File upload complete"));
     }
   }
 

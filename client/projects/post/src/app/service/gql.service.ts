@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase, gql} from "apollo-angular";
-import {HttpLink} from "apollo-angular/http";
 import {InMemoryCache} from "@apollo/client/core";
 import {Post} from "../model/post";
 import {DataLibService} from "data-lib";
+import {HttpLink} from "apollo-angular/http";
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +16,7 @@ export class GQLService {
       getPosts {
         id
         data {
-          id
+          name
           contentType
         }
         description
@@ -38,7 +38,7 @@ export class GQLService {
         id
         description
         data {
-          id
+          name
           contentType
         }
         likedBy
@@ -69,7 +69,6 @@ export class GQLService {
   }
 
   getPosts() {
-    console.log("Get Posts");
     this.apollo
       .watchQuery({
         query: this.GET_POSTS,
@@ -98,13 +97,12 @@ export class GQLService {
       for (let post of this.dataService.getPosts()) {
         if (post.id === id) {
           post.data.content = data.getData;
-          post.data.fileUrl = `data:${post.data.contentType};base64,${data.getData}`
         }
       }
     });
   }
 
-  createPost(fileBase64: string, description: string, username: string) {
+  async createPost(fileBase64: string, description: string, username: string) {
     this.apollo.mutate({
       mutation: this.CREATE_POST,
       variables: {
@@ -116,7 +114,7 @@ export class GQLService {
       console.log('got data', data.data);
       const post = new Post(data.data.createPost);
 
-      post.data.fileUrl = fileBase64;
+      post.data.content = fileBase64;
       this.dataService.addPost(post);
     }, (error: any) => {
       console.error('there was an error sending the query', error);

@@ -1,11 +1,11 @@
 <div *ngFor="let post of posts" style="margin-top: 10px">
-  <div *ngIf="post.data.fileUrl !== ''; else loading">
+  <div *ngIf="post.data.content !== ''; else loading">
     <div *ngIf="post.data.contentType.startsWith('image'); else elseBlock">
-      <img src="{{post.data.fileUrl}}" alt="{{post.id}}" width="300px">
+      <img src="{{post.data.content}}" alt="{{post.id}}" width="300px">
     </div>
     <ng-template #elseBlock>
       <video width="300px" controls>
-        <source src="{{post.data.fileUrl}}">
+        <source src="{{post.data.content}}">
       </video>
     </ng-template>
   </div>

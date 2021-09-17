@@ -6,7 +6,7 @@ import {Subject} from "rxjs";
 })
 export class DataLibService {
 
-  private posts: any;
+  private posts: any = [];
   private _posts = new Subject<any>();
 
   constructor() { }
