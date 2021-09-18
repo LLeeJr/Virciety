@@ -1,4 +1,4 @@
 type Query {
-    getPosts: [Post!]!
+    getPosts(id: String!, fetchLimit: Int!): [Post!]!
     getData(id: String!): String!
 }

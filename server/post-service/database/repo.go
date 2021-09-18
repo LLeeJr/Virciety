@@ -1,10 +1,15 @@
 package database
 
 import (
+	"bytes"
+	"fmt"
 	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"posts-service/graph/model"
+	"reflect"
 	"strings"
 )
 
@@ -12,7 +17,7 @@ type Repository interface {
 	InsertPostEvent(post PostEvent) error
 	InsertFile(base64File string) (*model.File, error)
 	CreatePost(postEvent PostEvent, base64File string) (*model.Post, error)
-	GetPosts() ([]*model.Post, error)
+	GetPosts(fetchLimit int) ([]*model.Post, error)
 	GetCurrentPosts() []*model.Post
 	GetPostById(id string) (int, *model.Post)
 	RemovePost(postEvent PostEvent, index int) (string, error)
@@ -23,10 +28,11 @@ type Repository interface {
 }
 
 type repo struct {
-	postCollection *mongo.Collection
-	bucket         *gridfs.Bucket
-	currentPosts   []*model.Post
-	currentEventId int
+	postCollection       *mongo.Collection
+	fileCollection       *mongo.Collection
+	bucket               *gridfs.Bucket
+	currentPosts         []*model.Post
+	lastFetchedEventTime string
 }
 
 func NewRepo() (Repository, error) {
@@ -42,31 +48,21 @@ func NewRepo() (Repository, error) {
 	}
 
 	return &repo{
-		postCollection: db.Collection("post-events"),
-		bucket:         bucket,
-		currentEventId: 0,
-		currentPosts:   make([]*model.Post, 0),
+		postCollection:       db.Collection("post-events"),
+		fileCollection:       bucket.GetFilesCollection(),
+		bucket:               bucket,
+		lastFetchedEventTime: "",
+		currentPosts:         make([]*model.Post, 0),
 	}, nil
 }
 
-func (repo *repo) InsertPostEvent(postEvent PostEvent) (err error) {
-	/*sqlQuery := `INSERT INTO "post-events" ("postId", "eventTime", "eventType", username, description, data, liked, comments)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8) returning id`
+func (repo *repo) InsertPostEvent(postEvent PostEvent) error {
+	_, err := repo.postCollection.InsertOne(ctx, postEvent)
+	if err != nil {
+		return err
+	}
 
-	newTime, _ := time.Parse("2006-01-02 15:04:05", postEvent.EventTime)
-
-	id := 0
-
-	data := postEvent.Data.ID + "." + postEvent.Data.ContentType
-
-	err = repo.DB.QueryRow(sqlQuery, postEvent.PostID, newTime, postEvent.EventType, postEvent.Username, postEvent.Description, data,
-		pq.Array(postEvent.LikedBy), pq.Array(postEvent.Comments)).Scan(&id)
-
-	//TODO update currentPosts when id > repo.currentEventId
-
-	repo.currentEventId = id*/
-
-	return
+	return err
 }
 
 func (repo *repo) InsertFile(base64File string) (*model.File, error) {
@@ -75,9 +71,10 @@ func (repo *repo) InsertFile(base64File string) (*model.File, error) {
 	properties := strings.Split(base64File, ";base64,")
 	contentType := strings.Split(properties[0], ":")
 
-	uploadStream, err := repo.bucket.OpenUploadStream(
-		fileName,
-	)
+	uploadOpts := options.GridFSUpload().
+		SetMetadata(bson.D{{"contentType", contentType[1]}})
+
+	uploadStream, err := repo.bucket.OpenUploadStream(fileName, uploadOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +98,8 @@ func (repo *repo) CreatePost(postEvent PostEvent, base64File string) (*model.Pos
 		return nil, err
 	}
 
+	postEvent.FileID = file.Name
+
 	err = repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return nil, err
@@ -115,85 +114,88 @@ func (repo *repo) CreatePost(postEvent PostEvent, base64File string) (*model.Pos
 	}
 
 	// add to currentPosts
-	repo.currentPosts = append(repo.currentPosts, post)
+	repo.currentPosts = append([]*model.Post{post}, repo.currentPosts...)
 
 	return post, nil
 }
 
-func (repo *repo) GetPosts() ([]*model.Post, error) {
-	/*currentPosts := make([]*model.Post, 0)
+func (repo *repo) GetPosts(fetchLimit int) ([]*model.Post, error) {
+	currentPosts := make([]*model.Post, 0)
 
-	// first get all rows with event_type = "CreatePost" and latestEventId
-	sqlQuery := `select "postId", description, data, liked, comments, id from "post-events" where id > $1 and "eventType" = $2 ORDER BY "id" ASC`
+	limit := int64(fetchLimit)
 
-	rows, err := repo.client.Query(sqlQuery, repo.currentEventId, "CreatePost")
+	// sort post-events by descending event-time (the newest first) and set fetch limit
+	opts := options.Find()
+	opts.SetSort(bson.D{{"event_time", -1}})
+	opts.Limit = &limit
+
+	// check if it is the first time getting data
+	key := "$lt"
+	if repo.lastFetchedEventTime == "" {
+		key = "$gt"
+	}
+
+	// get all post events with event_type = "CreatePost" sorted by event_time
+	cursor, err := repo.postCollection.Find(ctx, bson.D{
+		{"event_type", "CreatePost"},
+		{"event_time", bson.D{{key, repo.lastFetchedEventTime}}},
+	}, opts)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	oldId := repo.currentEventId
-	id := repo.currentEventId
+	for cursor.Next(ctx) {
+		var postEvent PostEvent
+		if err = cursor.Decode(&postEvent); err != nil {
+			return nil, err
+		}
 
-	for rows.Next() {
-		var post model.Post
-		var fileProperties string // "fileid.contenttype"
-
-		err = rows.Scan(&post.ID, &post.Description, &fileProperties, pq.Array(&post.LikedBy), pq.Array(&post.Comments), &id)
+		// get file content for post
+		var buf bytes.Buffer
+		_, err := repo.bucket.DownloadToStreamByName(postEvent.FileID, &buf)
 		if err != nil {
-			repo.currentEventId = oldId
 			return nil, err
 		}
 
-		// id = 0, contenttype = 1
-		idContentType := strings.Split(fileProperties, ".")
-
-		content, err := util.LoadFile(idContentType[0])
-		if err != nil {
-			repo.currentEventId = oldId
+		// get file contentType
+		var file bson.M
+		if err = repo.fileCollection.FindOne(ctx, bson.M{"filename": postEvent.FileID}).Decode(&file); err != nil {
 			return nil, err
 		}
 
-		post.Data = &model.File{
-			ID:          idContentType[0],
-			Content:     content,
-			ContentType: idContentType[1],
+		// convert interface{} to map and get contentType
+		var contentType reflect.Value
+		metaData := file["metadata"]
+		v := reflect.ValueOf(metaData)
+		if v.Kind() == reflect.Map {
+			for _, key := range v.MapKeys() {
+				contentType = v.MapIndex(key)
+			}
 		}
 
-		currentPosts = append(currentPosts, &post)
+		// add new post to output for getPosts
+		currentPosts = append(currentPosts, &model.Post{
+			ID:          postEvent.PostID,
+			Description: postEvent.Description,
+			Data: &model.File{
+				Name:        postEvent.FileID,
+				Content:     string(buf.Bytes()),
+				ContentType: fmt.Sprint(contentType.Interface()),
+			},
+			LikedBy:  postEvent.LikedBy,
+			Comments: postEvent.Comments,
+		})
+
+		// update last fetched event time
+		repo.lastFetchedEventTime = postEvent.EventTime
 	}
 
-	// when value of id hasn't changed, then list is already recent
-	if id == repo.currentEventId {
-		log.Printf("Post list is recent")
-		return repo.currentPosts, nil
-	}
+	// TODO get edited data
 
-	repo.currentEventId = id
+	// update runtime data
+	repo.currentPosts = append(repo.currentPosts, currentPosts...)
 
-	// then search for newest edit event (includes EditPost, LikePost, UnlikePost)
-	// and add all data to posts
-	for _, post := range currentPosts {
-		sqlQuery = `select liked, description from "post-events" where id = (select max(id) from "post-events" where "postId" = $1 and ("eventType" = $2 or "eventType" = $3 or "eventType" = $4))`
-
-		row := repo.client.QueryRow(sqlQuery, post.ID, "EditPost", "LikePost", "UnlikePost")
-
-		switch err = row.Scan(pq.Array(&post.LikedBy), &post.Description); err {
-		case sql.ErrNoRows:
-			// nothing happens because it is not really an error
-			// since a post doesn't have to be edited
-		case nil:
-			log.Printf("Edited data added to " + post.ID)
-		default:
-			repo.currentEventId = oldId
-			return nil, err
-		}
-	}
-
-	// Update runtime data
-	repo.currentPosts = append(repo.currentPosts, currentPosts...)*/
-
-	return repo.currentPosts, nil
+	return currentPosts, nil
 }
 
 func (repo *repo) GetCurrentPosts() []*model.Post {

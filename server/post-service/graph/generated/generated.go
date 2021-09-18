@@ -67,7 +67,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		GetData  func(childComplexity int, id string) int
-		GetPosts func(childComplexity int) int
+		GetPosts func(childComplexity int, id string, fetchLimit int) int
 	}
 }
 
@@ -79,7 +79,7 @@ type MutationResolver interface {
 	UnlikePost(ctx context.Context, unlike model.UnLikePostRequest) (string, error)
 }
 type QueryResolver interface {
-	GetPosts(ctx context.Context) ([]*model.Post, error)
+	GetPosts(ctx context.Context, id string, fetchLimit int) ([]*model.Post, error)
 	GetData(ctx context.Context, id string) (string, error)
 }
 
@@ -231,7 +231,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.GetPosts(childComplexity), true
+		args, err := ec.field_Query_getPosts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetPosts(childComplexity, args["id"].(string), args["fetchLimit"].(int)), true
 
 	}
 	return 0, false
@@ -338,7 +343,7 @@ type Post {
     unlikePost(unlike: UnLikePostRequest!): String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
-    getPosts: [Post!]!
+    getPosts(id: String!, fetchLimit: Int!): [Post!]!
     getData(id: String!): String!
 }`, BuiltIn: false},
 }
@@ -450,6 +455,30 @@ func (ec *executionContext) field_Query_getData_args(ctx context.Context, rawArg
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getPosts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["fetchLimit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fetchLimit"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fetchLimit"] = arg1
 	return args, nil
 }
 
@@ -997,9 +1026,16 @@ func (ec *executionContext) _Query_getPosts(ctx context.Context, field graphql.C
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getPosts_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetPosts(rctx)
+		return ec.resolvers.Query().GetPosts(rctx, args["id"].(string), args["fetchLimit"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2807,6 +2843,21 @@ func (ec *executionContext) marshalNFile2ᚖpostsᚑserviceᚋgraphᚋmodelᚐFi
 		return graphql.Null
 	}
 	return ec._File(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNPost2postsᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {

@@ -23,6 +23,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 		PostID:      created + "__" + newPost.Username,
 		Username:    newPost.Username,
 		Description: newPost.Description,
+		FileID:      "",
 		LikedBy:     make([]string, 0),
 		Comments:    make([]string, 0),
 	}
@@ -58,6 +59,7 @@ func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequ
 		PostID:      post.ID,
 		Username:    info[1],
 		Description: post.Description,
+		FileID:      post.Data.Name,
 		LikedBy:     post.LikedBy,
 		Comments:    post.Comments,
 	}
@@ -88,6 +90,7 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 		PostID:      post.ID,
 		Username:    info[1],
 		Description: post.Description,
+		FileID:      post.Data.Name,
 		LikedBy:     make([]string, 0),
 		Comments:    make([]string, 0),
 	}
@@ -129,6 +132,7 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRe
 		PostID:      post.ID,
 		Username:    info[1],
 		Description: post.Description,
+		FileID:      post.Data.Name,
 		LikedBy:     post.LikedBy,
 		Comments:    post.Comments,
 	}
@@ -171,6 +175,7 @@ func (r *mutationResolver) UnlikePost(ctx context.Context, unlike model.UnLikePo
 		PostID:      post.ID,
 		Username:    info[1],
 		Description: post.Description,
+		FileID:      post.Data.Name,
 		LikedBy:     post.LikedBy,
 		Comments:    post.Comments,
 	}
