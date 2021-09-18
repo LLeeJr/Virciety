@@ -24,4 +24,8 @@ export class PostComponent implements OnInit {
       this.posts = posts;
     });
   }
+
+  getMorePosts() {
+    this.gqlService.refreshPosts()
+  }
 }

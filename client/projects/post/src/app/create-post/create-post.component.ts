@@ -9,7 +9,6 @@ import {AuthLibService} from "auth-lib";
 })
 export class CreatePostComponent implements OnInit {
   fileBase64: any;
-  file: any;
   description: string = '';
   content_type: string = '';
 
@@ -22,12 +21,12 @@ export class CreatePostComponent implements OnInit {
 
   onFileSelected(event: any) {
     // get selected file
-    this.file = event.target.files[0];
+    const file = event.target.files[0] as File;
 
     // get file data as base64 string
-    if (this.file) {
+    if (file) {
       const reader = new FileReader();
-      reader.readAsDataURL(this.file);
+      reader.readAsDataURL(file);
 
       reader.onload = () => {
         if (reader.result) {
@@ -44,7 +43,13 @@ export class CreatePostComponent implements OnInit {
 
   createPost() {
     if (this.fileBase64) {
-      this.gqlService.createPost(this.fileBase64, this.description, this.authService.userName).then(() => console.log("File upload complete"));
+      this.gqlService.createPost(this.fileBase64, this.description, this.authService.userName).then(() => {
+        this.fileBase64 = null
+        this.description = ''
+        this.content_type = ''
+        // TODO alert and redirect to posts
+        console.log("File upload complete")
+      });
     }
   }
 

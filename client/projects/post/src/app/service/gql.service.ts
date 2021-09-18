@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import {Apollo, ApolloBase, gql} from "apollo-angular";
+import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
 import {InMemoryCache} from "@apollo/client/core";
 import {Post} from "../model/post";
 import {DataLibService} from "data-lib";
@@ -12,8 +12,8 @@ export class GQLService {
 // ------------------------- Queries, Mutations and Subscriptions
 
   private GET_POSTS = gql`
-    {
-      getPosts {
+    query getPosts($id: String!, $fetchLimit: Int!) {
+      getPosts(id: $id, fetchLimit: $fetchLimit) {
         id
         data {
           name
@@ -50,6 +50,12 @@ export class GQLService {
   // ------------------------- Queries, Mutations and Subscriptions end
 
   private apollo: ApolloBase;
+  private getPostQuery: QueryRef<any, {
+    id: string;
+    fetchLimit: number;
+  }> | undefined;
+  private lastPostID: string = "";
+  private fetchLimit: number = 1;
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink,
@@ -69,36 +75,51 @@ export class GQLService {
   }
 
   getPosts() {
-    this.apollo
+    this.getPostQuery = this.apollo
       .watchQuery({
         query: this.GET_POSTS,
-      }).valueChanges.subscribe((data: any) => {
-        let posts = [];
-
-        for (let getPost of data.data.getPosts) {
-          const post: Post = new Post(getPost);
-
-          this.getData(post.id);
-
-          posts.push(post);
-        }
-
-        this.dataService.setPosts(posts.reverse());
+        variables: {
+          id: this.lastPostID,
+          fetchLimit: this.fetchLimit
+        },
       });
+
+    this.getPostQuery.valueChanges.subscribe(({data}: any) => {
+      console.log(data);
+
+      for (let getPost of data.getPosts) {
+        const post: Post = new Post(getPost);
+
+        this.lastPostID = post.id;
+        this.dataService.addPost(post);
+        this.getData(post);
+      }
+    }, (error: any) => {
+      console.error('there was an error sending the getPost-query', error);
+    });
   }
 
-  getData(id: string) {
+  refreshPosts() {
+    if (this.getPostQuery) {
+      this.getPostQuery.setVariables({
+        id: this.lastPostID,
+        fetchLimit: this.fetchLimit,
+      }).then(() => {
+        this.getPostQuery?.refetch()
+      });
+    }
+  }
+
+  getData(post: Post) {
     this.apollo.watchQuery({
       query: this.GET_DATA,
       variables: {
-        id: id,
+        id: post.id,
       },
     }).valueChanges.subscribe(({data}: any) => {
-      for (let post of this.dataService.getPosts()) {
-        if (post.id === id) {
-          post.data.content = data.getData;
-        }
-      }
+      post.data.content = data.getData;
+    }, (error: any) => {
+      console.error('there was an error sending the getData-query', error);
     });
   }
 
@@ -115,9 +136,9 @@ export class GQLService {
       const post = new Post(data.data.createPost);
 
       post.data.content = fileBase64;
-      this.dataService.addPost(post);
+      this.dataService.addNewPost(post);
     }, (error: any) => {
-      console.error('there was an error sending the query', error);
+      console.error('there was an error sending the createPost-mutation', error);
     });
   }
 }

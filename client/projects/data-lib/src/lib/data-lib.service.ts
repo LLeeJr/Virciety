@@ -25,9 +25,14 @@ export class DataLibService {
   }
 
   addPost(post: any)  {
-    this.posts.reverse();
     this.posts.push(post);
-    this.posts.reverse();
     this._posts.next(this.posts);
+  }
+
+  addNewPost(post: any) {
+    this.posts.reverse()
+    this.posts.push(post)
+    this.posts.reverse()
+    this._posts.next(this.posts)
   }
 }
