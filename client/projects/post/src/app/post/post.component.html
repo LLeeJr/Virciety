@@ -1,4 +1,4 @@
-<div *ngFor="let post of posts" style="margin-top: 10px">
+<div *ngFor="let post of posts | async" style="margin-top: 10px">
   <div *ngIf="post.data.content !== ''; else loading">
     <div *ngIf="post.data.contentType.startsWith('image'); else elseBlock">
       <img src="{{post.data.content}}" alt="{{post.id}}" width="300px">
@@ -15,6 +15,6 @@
   <p>{{ post.description }} -- {{ post.id }}</p>
 </div>
 
-<div>
-  <button (click)="getMorePosts()">Get more posts...</button>
+<div *ngIf="oldestPostReached">
+  <h3>You are up-to-date!</h3>
 </div>
