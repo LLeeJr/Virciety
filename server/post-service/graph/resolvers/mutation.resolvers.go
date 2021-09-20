@@ -34,6 +34,8 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 		return nil, err
 	}
 
+	r.postChan <- post
+
 	// put event on queue for notifications
 	// r.producerQueue.AddMessageToQuery(postEvent)
 
