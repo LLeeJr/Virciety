@@ -1,18 +1,23 @@
-<div *ngFor="let post of posts | async" style="margin-top: 10px">
-  <div *ngIf="post.data.content !== ''; else loading">
-    <div *ngIf="post.data.contentType.startsWith('image'); else elseBlock">
-      <img src="{{post.data.content}}" alt="{{post.id}}" width="300px">
+<div infiniteScroll
+     [infiniteScrollDistance]="2"
+     [infiniteScrollThrottle]="50"
+     (scrolled)="onScroll()">
+  <div *ngFor="let post of posts | async">
+    <div *ngIf="post.data.content !== ''; else loading">
+      <div *ngIf="post.data.contentType.startsWith('image'); else elseBlock">
+        <img src="{{post.data.content}}" alt="{{post.id}}" width="300px">
+      </div>
+      <ng-template #elseBlock>
+        <video width="300px" controls>
+          <source src="{{post.data.content}}">
+        </video>
+      </ng-template>
     </div>
-    <ng-template #elseBlock>
-      <video width="300px" controls>
-        <source src="{{post.data.content}}">
-      </video>
+    <ng-template #loading>
+      Loading...
     </ng-template>
+    <p>{{ post.description }} -- {{ post.id }}</p>
   </div>
-  <ng-template #loading>
-    Loading...
-  </ng-template>
-  <p>{{ post.description }} -- {{ post.id }}</p>
 </div>
 
 <div *ngIf="oldestPostReached">

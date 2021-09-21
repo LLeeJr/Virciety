@@ -5,7 +5,7 @@ import {Post} from "../../../post/src/app/model/post";
   providedIn: 'root'
 })
 export class DataLibService {
-   private _posts: Post[] = [];
+  private _posts: Post[] = [];
 
   constructor() { }
 

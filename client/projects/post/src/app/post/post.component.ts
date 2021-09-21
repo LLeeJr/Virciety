@@ -1,4 +1,4 @@
-import {Component, HostListener, OnDestroy, OnInit} from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import { Post } from "../model/post";
 import {GQLService} from "../service/gql.service";
 import {Observable} from "rxjs";
@@ -22,18 +22,13 @@ export class PostComponent implements OnInit, OnDestroy {
     this.gqlService.oldestPostReached = false;
   }
 
-  @HostListener("window:scroll", [])
-  onScroll(): void {
-    if (this.bottomReached() && !this.oldestPostReached) {
-      this.gqlService.refreshPosts();
-    }
-  }
-
-  bottomReached(): boolean {
-    return (window.innerHeight + window.scrollY) >= document.body.offsetHeight;
-  }
-
   get oldestPostReached(): boolean {
     return this.gqlService.oldestPostReached;
+  }
+
+  onScroll() {
+    if (!this.oldestPostReached) {
+      this.gqlService.refreshPosts();
+    }
   }
 }
