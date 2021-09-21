@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { PostRoutingModule } from './post-routing.module';
 import { PostComponent } from './post.component';
 import {InfiniteScrollModule} from "ngx-infinite-scroll";
+import {MaterialModule} from "../material.module";
 
 
 @NgModule({
@@ -13,7 +14,8 @@ import {InfiniteScrollModule} from "ngx-infinite-scroll";
   imports: [
     CommonModule,
     PostRoutingModule,
-    InfiniteScrollModule
+    InfiniteScrollModule,
+    MaterialModule,
   ]
 })
 export class PostModule { }

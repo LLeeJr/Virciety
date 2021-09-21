@@ -3,23 +3,43 @@
      [infiniteScrollThrottle]="50"
      (scrolled)="onScroll()">
   <div *ngFor="let post of posts | async">
-    <div *ngIf="post.data.content !== ''; else loading">
-      <div *ngIf="post.data.contentType.startsWith('image'); else elseBlock">
-        <img src="{{post.data.content}}" alt="{{post.id}}" width="300px">
-      </div>
-      <ng-template #elseBlock>
-        <video width="300px" controls>
-          <source src="{{post.data.content}}">
-        </video>
-      </ng-template>
-    </div>
-    <ng-template #loading>
-      Loading...
-    </ng-template>
-    <p>{{ post.description }} -- {{ post.id }}</p>
+    <mat-card class="post-card" style="width: 300px; margin-bottom: 10px; margin-top: 10px">
+      <mat-card-header>
+        <div mat-card-avatar class="example-header-image"></div>
+        <mat-card-title>Username</mat-card-title>
+      </mat-card-header>
+      <ng-container [ngTemplateOutlet]="post.data.content !== '' ? media_tp : loading_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
+      <mat-card-content>
+        <p>
+          {{post.description}}
+        </p>
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-button>LIKE</button>
+        <button mat-button>SHARE</button>
+      </mat-card-actions>
+    </mat-card>
   </div>
 </div>
 
 <div *ngIf="oldestPostReached">
   <h3>You are up-to-date!</h3>
 </div>
+
+<ng-template #media_tp let-post='post'>
+  <ng-container [ngTemplateOutlet]="post.data.contentType.startsWith('image') ? image_tp : video_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
+</ng-template>
+
+<ng-template #loading_tp let-post='post'>
+  <mat-spinner></mat-spinner>
+</ng-template>
+
+<ng-template #image_tp let-post='post'>
+  <img mat-card-image src="{{post.data.content}}" alt="{{post.id}}">
+</ng-template>
+
+<ng-template #video_tp let-post='post'>
+  <video mat-card-image controls>
+    <source src="{{post.data.content}}">
+  </video>
+</ng-template>
