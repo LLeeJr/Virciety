@@ -8,6 +8,7 @@ export class Post {
   public description: string;
   public likedBy: string[];
   public comments: string[];
+  public username: string;
 
   constructor(data: any) {
     this.data = {
@@ -20,5 +21,6 @@ export class Post {
     this.likedBy = data.likedBy;
     this.comments = data.comments;
     this.description = data.description;
+    this.username = data.username;
   }
 }

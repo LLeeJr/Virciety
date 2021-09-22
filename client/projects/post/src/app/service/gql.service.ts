@@ -136,16 +136,18 @@ export class GQLService {
   }
 
   getPosts(): any {
-    this.getPostQuery = this.apollo
-      .watchQuery({
-        query: GET_POSTS,
-        variables: {
-          id: this.lastPostID,
-          fetchLimit: this.fetchLimit
-        },
-      });
+    if (this.dataService.posts.length === 0) {
+      this.getPostQuery = this.apollo
+        .watchQuery({
+          query: GET_POSTS,
+          variables: {
+            id: this.lastPostID,
+            fetchLimit: this.fetchLimit
+          },
+        });
+    }
 
-    return this.getPostQuery.valueChanges.pipe(map(({data}: any) => {
+    return this.getPostQuery?.valueChanges.pipe(map(({data}: any) => {
       console.log(data);
 
       if (data.getPosts.length == 0) {
@@ -155,11 +157,15 @@ export class GQLService {
       const posts = this.dataService.posts;
 
       for (let getPost of data.getPosts) {
+        if (posts.some(p => p.id === getPost.id)) {
+          console.log("post already exists");
+          continue;
+        }
+
         const post: Post = new Post(getPost);
-
         this.lastPostID = post.id;
-        this.getData(post);
 
+        this.getData(post);
         posts.push(post);
       }
 

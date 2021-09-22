@@ -11,6 +11,7 @@ export const GET_POSTS = gql`
           contentType
         }
         description
+        username
         comments
         likedBy
       }
@@ -32,6 +33,7 @@ export const CREATE_POST = gql`
           name
           contentType
         }
+        username
         likedBy
         comments
       }
@@ -47,6 +49,7 @@ export const NEW_POST_CREATED = gql`
           name
           contentType
         }
+        username
         likedBy
         comments
       }

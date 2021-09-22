@@ -6,10 +6,13 @@
     <mat-card class="post-card" style="width: 300px; margin-bottom: 10px; margin-top: 10px">
       <mat-card-header>
         <div mat-card-avatar class="example-header-image"></div>
-        <mat-card-title>Username</mat-card-title>
+        <mat-card-title>{{post.username}}</mat-card-title>
       </mat-card-header>
       <ng-container [ngTemplateOutlet]="post.data.content !== '' ? media_tp : loading_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
       <mat-card-content>
+        <p *ngIf="post.likedBy.length !== 0">
+          Liked by ...
+        </p>
         <p>
           {{post.description}}
         </p>
@@ -22,7 +25,7 @@
   </div>
 </div>
 
-<div *ngIf="oldestPostReached">
+<div *ngIf="oldestPostReached; else loading_tp">
   <h3>You are up-to-date!</h3>
 </div>
 
