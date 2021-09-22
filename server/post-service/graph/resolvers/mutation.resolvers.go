@@ -105,17 +105,18 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 	return ok, nil
 }
 
-func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequest) (string, error) {
+func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequest) ([]string, error) {
 	// get post data out of current saved posts and remove it out of the list
 	_, post := r.repo.GetPostById(like.ID)
 	if post == nil {
 		errMsg := "no post with id " + like.ID + " found"
-		return "failed", errors.New(errMsg)
+		return nil, errors.New(errMsg)
 	}
 
 	// process the data and create new post event
 	event := "LikePost"
 	index := util.Search(post.LikedBy, like.Username)
+
 	// unlike the post
 	if index != -1 {
 		event = "UnlikePost"
@@ -136,15 +137,15 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 	}
 
 	// save event in database
-	ok, err := r.repo.LikePost(postEvent)
+	err := r.repo.LikePost(postEvent)
 	if err != nil {
-		return ok, err
+		return nil, err
 	}
 
 	// put event on queue for notifications
 	// r.producerQueue.AddMessageToQuery(postEvent)
 
-	return ok, nil
+	return post.LikedBy, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

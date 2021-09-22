@@ -22,7 +22,7 @@ type Repository interface {
 	GetPostById(id string) (int, *model.Post)
 	RemovePost(postEvent PostEvent, index int) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
-	LikePost(postEvent PostEvent) (string, error)
+	LikePost(postEvent PostEvent) error
 	AddComment(postEvent PostEvent) (string, error)
 }
 
@@ -191,7 +191,32 @@ func (repo *repo) GetPosts(fetchLimit int) ([]*model.Post, error) {
 		repo.lastFetchedEventTime = postEvent.EventTime
 	}
 
-	// TODO get edited data
+	max := int64(1)
+	for _, post := range currentPosts {
+		// Sort event_time and get one element which will be the most recent edited post in relation to liked, unliked and description
+		opts.Limit = &max
+		cursor, err = repo.postCollection.Find(ctx, bson.D{
+			{"id", post.ID},
+			{"event_type", bson.D{
+				{"$in", bson.A{"EditPost", "LikePost", "UnlikePost"}},
+			}},
+		}, opts)
+		if err != nil {
+			return nil, err
+		}
+
+		for cursor.Next(ctx) {
+			var postEvent PostEvent
+			if err = cursor.Decode(&postEvent); err != nil {
+				return nil, err
+			}
+
+			// Add editable data
+			post.LikedBy = postEvent.LikedBy
+			post.Description = postEvent.Description
+			post.Comments = postEvent.Comments
+		}
+	}
 
 	// update runtime data
 	repo.currentPosts = append(repo.currentPosts, currentPosts...)
@@ -243,13 +268,13 @@ func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
 	return "success", nil
 }
 
-func (repo *repo) LikePost(postEvent PostEvent) (string, error) {
+func (repo *repo) LikePost(postEvent PostEvent) error {
 	err := repo.InsertPostEvent(postEvent)
 	if err != nil {
-		return "failed", err
+		return err
 	}
 
-	return "success", nil
+	return nil
 }
 
 func (repo *repo) AddComment(postEvent PostEvent) (string, error) {

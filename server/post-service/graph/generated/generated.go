@@ -81,7 +81,7 @@ type MutationResolver interface {
 	CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error)
 	EditPost(ctx context.Context, edit model.EditPostRequest) (string, error)
 	RemovePost(ctx context.Context, removeID string) (string, error)
-	LikePost(ctx context.Context, like model.LikePostRequest) (string, error)
+	LikePost(ctx context.Context, like model.LikePostRequest) ([]string, error)
 }
 type QueryResolver interface {
 	GetPosts(ctx context.Context, id string, fetchLimit int) ([]*model.Post, error)
@@ -367,7 +367,7 @@ type Post {
     createPost(newPost: CreatePostRequest!): Post!
     editPost(edit: EditPostRequest!): String!
     removePost(removeID: String!): String!
-    likePost(like: LikePostRequest!): String!
+    likePost(like: LikePostRequest!): [String!]!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
     getPosts(id: String!, fetchLimit: Int!): [Post!]!
@@ -803,9 +803,9 @@ func (ec *executionContext) _Mutation_likePost(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
