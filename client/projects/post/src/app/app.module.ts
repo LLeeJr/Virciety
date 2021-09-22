@@ -6,17 +6,23 @@ import { AppComponent } from './app.component';
 import {HttpClientModule} from "@angular/common/http";
 import { CreatePostComponent } from './create-post/create-post.component';
 import {FormsModule} from "@angular/forms";
+import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import {DialogLikedBy} from "./post/post.component";
+import {MatDialogModule} from "@angular/material/dialog";
 
 @NgModule({
   declarations: [
     AppComponent,
-    CreatePostComponent
+    CreatePostComponent,
+    DialogLikedBy
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    FormsModule
+    FormsModule,
+    BrowserAnimationsModule,
+    MatDialogModule
   ],
   providers: [],
   bootstrap: [AppComponent]

@@ -11,15 +11,20 @@
       <ng-container [ngTemplateOutlet]="post.data.content !== '' ? media_tp : loading_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
       <mat-card-content>
         <p *ngIf="post.likedBy.length !== 0">
-          Liked by ...
+          <a (click)="openLikedByDialog(post.likedBy)">{{post.likedBy.length > 1 ? post.likedBy.length + ' likes' : '1 like'}}</a>
         </p>
-        <p>
-          {{post.description}}
-        </p>
+        <div>
+          <div *ngIf="!post.editMode">{{post.description}}</div>
+          <div *ngIf="post.editMode">
+            <mat-form-field appearance="fill">
+              <mat-label>New Description</mat-label>
+              <input matInput placeholder="new description" [(ngModel)]="post.description">
+            </mat-form-field>
+          </div>
+        </div>
       </mat-card-content>
       <mat-card-actions>
-        <button mat-button>LIKE</button>
-        <button mat-button>SHARE</button>
+        <ng-container [ngTemplateOutlet]="post.editMode ? edit_buttons_tp : normal_buttons_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
       </mat-card-actions>
     </mat-card>
   </div>
@@ -45,4 +50,17 @@
   <video mat-card-image controls>
     <source src="{{post.data.content}}">
   </video>
+</ng-template>
+
+<ng-template #edit_buttons_tp let-post='post'>
+  <button mat-button (click)="this.post.editMode = false;this.editPost(post.id, post.description)">Save</button>
+  <button mat-button (click)="this.post.editMode = false">Cancel</button>
+</ng-template>
+
+<ng-template #normal_buttons_tp let-post='post'>
+  <button mat-button (click)="this.likePost(post)">
+    <mat-icon>favorite</mat-icon>
+    Like
+  </button>
+  <button mat-button (click)="post.editMode = true">Edit</button>
 </ng-template>

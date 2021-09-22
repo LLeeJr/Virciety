@@ -5,7 +5,7 @@ import {Post} from "../model/post";
 import {DataLibService} from "data-lib";
 import {HttpLink} from "apollo-angular/http";
 import {getMainDefinition} from "@apollo/client/utilities";
-import {CREATE_POST, GET_DATA, GET_POSTS, NEW_POST_CREATED} from "./gql-request-strings";
+import {CREATE_POST, EDIT_POST, GET_DATA, GET_POSTS, LIKE_POST, NEW_POST_CREATED} from "./gql-request-strings";
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
 
@@ -72,6 +72,46 @@ export class GQLService {
 
   // Getter + Setter end
 
+  getPosts(): any {
+    if (this.dataService.posts.length === 0) {
+      this.getPostQuery = this.apollo
+        .watchQuery({
+          query: GET_POSTS,
+          variables: {
+            id: this.lastPostID,
+            fetchLimit: this.fetchLimit
+          },
+        });
+    }
+
+    return this.getPostQuery?.valueChanges.pipe(map(({data}: any) => {
+      console.log('GetPostData: ', data);
+
+      if (data.getPosts.length == 0) {
+        this._oldestPostReached = true;
+      }
+
+      const posts = this.dataService.posts;
+
+      for (let getPost of data.getPosts) {
+        if (posts.some(p => p.id === getPost.id)) {
+          console.log("post already exists");
+          continue;
+        }
+
+        const post: Post = new Post(getPost);
+        this.lastPostID = post.id;
+
+        this.getData(post);
+        posts.push(post);
+      }
+
+      return posts;
+    }, (error: any) => {
+      console.error('there was an error sending the getPost-query', error);
+    }));
+  }
+
   refreshPosts() {
     if (this.getPostQuery) {
       this.getPostQuery.setVariables({
@@ -98,7 +138,7 @@ export class GQLService {
     });
   }
 
-  async createPost(fileBase64: string, description: string, username: string) {
+  async createPost(fileBase64: string, description: string, username: string = 'user3') {
     this.apollo.mutate({
       mutation: CREATE_POST,
       variables: {
@@ -110,7 +150,7 @@ export class GQLService {
         useMultipart: true,
       }
       }).subscribe(({data}: any) => {
-      console.log('got data', data);
+      console.log('CreatePostData: ', data);
       const post = new Post(data.createPost);
 
       post.data.content = fileBase64;
@@ -120,11 +160,40 @@ export class GQLService {
     });
   }
 
+  likePost(post: Post, username: string = 'user4') {
+    this.apollo.mutate({
+      mutation: LIKE_POST,
+      variables: {
+        id: post.id,
+        username: username
+      }
+    }).subscribe(({data}: any) => {
+      console.log('LikePostData: ', data);
+      post.likedBy = data.likePost;
+    }, (error: any) => {
+      console.error('there was an error sending the likePost-mutation', error);
+    })
+  }
+
+  editPost(id: string, newDescription: string) {
+    this.apollo.mutate({
+      mutation: EDIT_POST,
+      variables: {
+        id: id,
+        newDescription: newDescription
+      }
+    }).subscribe(({data}) => {
+      console.log('EditPostData: ', data)
+    }, (error: any) => {
+      console.error('there was an error sending the likePost-mutation', error);
+    });
+  }
+
   private getPostCreated() {
     this.apollo.subscribe({
       query: NEW_POST_CREATED,
     }).subscribe(({data}: any) => {
-      console.log(data);
+      console.log('GetPostCreatedData: ', data);
       const post = new Post(data.newPostCreated);
 
       if (!this.dataService.addNewPost(post)) {
@@ -133,46 +202,5 @@ export class GQLService {
     }, (error: any) => {
       console.error('there was an error sending the newPostCreated-subscription', error)
     });
-  }
-
-  getPosts(): any {
-    if (this.dataService.posts.length === 0) {
-      this.getPostQuery = this.apollo
-        .watchQuery({
-          query: GET_POSTS,
-          variables: {
-            id: this.lastPostID,
-            fetchLimit: this.fetchLimit
-          },
-        });
-    }
-
-    return this.getPostQuery?.valueChanges.pipe(map(({data}: any) => {
-      console.log(data);
-
-      if (data.getPosts.length == 0) {
-        this._oldestPostReached = true;
-      }
-
-      const posts = this.dataService.posts;
-
-      for (let getPost of data.getPosts) {
-        if (posts.some(p => p.id === getPost.id)) {
-          console.log("post already exists");
-          continue;
-        }
-
-        const post: Post = new Post(getPost);
-        this.lastPostID = post.id;
-
-        this.getData(post);
-        posts.push(post);
-      }
-
-      return posts;
-    }, (error: any) => {
-      console.error('there was an error sending the getPost-query', error);
-    }));
-
   }
 }

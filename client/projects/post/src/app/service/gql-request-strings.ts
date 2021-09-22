@@ -40,6 +40,18 @@ export const CREATE_POST = gql`
     }
   `;
 
+export const LIKE_POST = gql`
+    mutation likePost($id: String!, $username: String!) {
+      likePost(like: {id: $id, username: $username})
+    }
+  `;
+
+export const EDIT_POST = gql`
+    mutation editPost($id: String!, $newDescription: String!) {
+      editPost(edit: {id: $id, newDescription: $newDescription})
+    }
+  `;
+
 export const NEW_POST_CREATED = gql`
     subscription newPostCreated {
       newPostCreated {

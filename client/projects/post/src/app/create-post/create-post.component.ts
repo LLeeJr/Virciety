@@ -43,7 +43,8 @@ export class CreatePostComponent implements OnInit {
 
   createPost() {
     if (this.fileBase64) {
-      this.gqlService.createPost(this.fileBase64, this.description, this.authService.userName).then(() => {
+      // TODO uncomment
+      this.gqlService.createPost(this.fileBase64, this.description/*, this.authService.userName*/).then(() => {
         this.fileBase64 = null
         this.description = ''
         this.content_type = ''
