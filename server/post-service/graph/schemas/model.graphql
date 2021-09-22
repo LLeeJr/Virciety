@@ -15,7 +15,7 @@ input EditPostRequest {
     newDescription: String!
 }
 
-input UnLikePostRequest {
+input LikePostRequest {
     id: String!
     username: String!
 }
@@ -28,6 +28,7 @@ type Post {
     id: String! # timestamp(created)__username
     description: String!
     data: File!
+    username: String!
     likedBy: [String!]!
     comments: [String!]!
 }

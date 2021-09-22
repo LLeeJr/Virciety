@@ -19,19 +19,20 @@ type File struct {
 	ContentType string `json:"contentType"`
 }
 
+type LikePostRequest struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+}
+
 type Post struct {
 	ID          string   `json:"id"`
 	Description string   `json:"description"`
 	Data        *File    `json:"data"`
+	Username    string   `json:"username"`
 	LikedBy     []string `json:"likedBy"`
 	Comments    []string `json:"comments"`
 }
 
 type RemovePostRequest struct {
 	ID string `json:"id"`
-}
-
-type UnLikePostRequest struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
 }

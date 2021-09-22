@@ -10,7 +10,6 @@ import (
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
 	"posts-service/util"
-	"strings"
 	"time"
 )
 
@@ -51,15 +50,13 @@ func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequ
 	}
 
 	// process the data and create new post event
-	info := strings.Split(post.ID, "__")
-
 	post.Description = edit.NewDescription
 
 	postEvent := database.PostEvent{
 		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   "EditPost",
 		PostID:      post.ID,
-		Username:    info[1],
+		Username:    post.Username,
 		Description: post.Description,
 		FileID:      post.Data.Name,
 		LikedBy:     post.LikedBy,
@@ -84,13 +81,11 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 	}
 
 	// process the data and create new post event
-	info := strings.Split(post.ID, "__")
-
 	postEvent := database.PostEvent{
 		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   "RemovePost",
 		PostID:      post.ID,
-		Username:    info[1],
+		Username:    post.Username,
 		Description: post.Description,
 		FileID:      post.Data.Name,
 		LikedBy:     make([]string, 0),
@@ -110,7 +105,7 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 	return ok, nil
 }
 
-func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRequest) (string, error) {
+func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequest) (string, error) {
 	// get post data out of current saved posts and remove it out of the list
 	_, post := r.repo.GetPostById(like.ID)
 	if post == nil {
@@ -119,20 +114,21 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRe
 	}
 
 	// process the data and create new post event
-	info := strings.Split(post.ID, "__")
-
-	if util.Contains(post.LikedBy, like.Username) {
-		errMsg := "user " + like.Username + " already liked the post with id " + like.ID
-		return "failed", errors.New(errMsg)
+	event := "LikePost"
+	index := util.Search(post.LikedBy, like.Username)
+	// unlike the post
+	if index != -1 {
+		event = "UnlikePost"
+		post.LikedBy = append(post.LikedBy[:index], post.LikedBy[index+1:]...)
+	} else {
+		post.LikedBy = append(post.LikedBy, like.Username)
 	}
-
-	post.LikedBy = append(post.LikedBy, like.Username)
 
 	postEvent := database.PostEvent{
 		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
-		EventType:   "LikePost",
+		EventType:   event,
 		PostID:      post.ID,
-		Username:    info[1],
+		Username:    post.Username,
 		Description: post.Description,
 		FileID:      post.Data.Name,
 		LikedBy:     post.LikedBy,
@@ -146,49 +142,6 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.UnLikePostRe
 	}
 
 	// put event on queue for notifications
-	// r.producerQueue.AddMessageToQuery(postEvent)
-
-	return ok, nil
-}
-
-func (r *mutationResolver) UnlikePost(ctx context.Context, unlike model.UnLikePostRequest) (string, error) {
-	// get post data out of current saved posts and remove it out of the list
-	_, post := r.repo.GetPostById(unlike.ID)
-	if post == nil {
-		errMsg := "no post with id " + unlike.ID + " found"
-		return "failed", errors.New(errMsg)
-	}
-
-	// process the data and create new post event
-	info := strings.Split(post.ID, "__")
-
-	index := util.Search(post.LikedBy, unlike.Username)
-
-	if index == -1 {
-		errMsg := "user " + unlike.Username + " hasn't liked the post with id " + unlike.ID
-		return "failed", errors.New(errMsg)
-	}
-
-	post.LikedBy = append(post.LikedBy[:index], post.LikedBy[index+1:]...)
-
-	postEvent := database.PostEvent{
-		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
-		EventType:   "UnlikePost",
-		PostID:      post.ID,
-		Username:    info[1],
-		Description: post.Description,
-		FileID:      post.Data.Name,
-		LikedBy:     post.LikedBy,
-		Comments:    post.Comments,
-	}
-
-	// save event in database
-	ok, err := r.repo.UnlikePost(postEvent)
-	if err != nil {
-		return ok, err
-	}
-
-	// put event on queue for notifications for deleting like notification?
 	// r.producerQueue.AddMessageToQuery(postEvent)
 
 	return ok, nil

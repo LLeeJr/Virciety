@@ -23,7 +23,6 @@ type Repository interface {
 	RemovePost(postEvent PostEvent, index int) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
 	LikePost(postEvent PostEvent) (string, error)
-	UnlikePost(postEvent PostEvent) (string, error)
 	AddComment(postEvent PostEvent) (string, error)
 }
 
@@ -109,6 +108,7 @@ func (repo *repo) CreatePost(postEvent PostEvent, base64File string) (*model.Pos
 		ID:          postEvent.PostID,
 		Description: postEvent.Description,
 		Data:        file,
+		Username:    postEvent.Username,
 		LikedBy:     postEvent.LikedBy,
 		Comments:    postEvent.Comments,
 	}
@@ -182,6 +182,7 @@ func (repo *repo) GetPosts(fetchLimit int) ([]*model.Post, error) {
 				Content:     string(buf.Bytes()),
 				ContentType: fmt.Sprint(contentType.Interface()),
 			},
+			Username: postEvent.Username,
 			LikedBy:  postEvent.LikedBy,
 			Comments: postEvent.Comments,
 		})
@@ -243,15 +244,6 @@ func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
 }
 
 func (repo *repo) LikePost(postEvent PostEvent) (string, error) {
-	err := repo.InsertPostEvent(postEvent)
-	if err != nil {
-		return "failed", err
-	}
-
-	return "success", nil
-}
-
-func (repo *repo) UnlikePost(postEvent PostEvent) (string, error) {
 	err := repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return "failed", err
