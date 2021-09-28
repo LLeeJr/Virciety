@@ -35,4 +35,7 @@ export class ChatComponent implements OnInit {
     }
   }
 
+  setChatPartner(withUser: string) {
+    this.api.chatPartner = withUser;
+  }
 }

@@ -8,6 +8,7 @@ import {HttpLink} from "apollo-angular/http";
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {InMemoryCache, split} from "@apollo/client/core";
 import {getMainDefinition} from "@apollo/client/utilities";
+import {AuthLibService} from "auth-lib";
 
 @Injectable({
   providedIn: 'root',
@@ -22,8 +23,9 @@ export class ApiService {
   private webSocketClient!: SubscriptionClient;
 
   constructor(private apolloProvider: Apollo,
-              private datePipe: DatePipe,
+              private auth: AuthLibService,
               private chatSubGql: ChatSubscriptionGqlService,
+              private datePipe: DatePipe,
               private httpLink: HttpLink) {
     this.start();
   }
@@ -58,7 +60,9 @@ export class ApiService {
     this.apollo = this.apolloProvider.use('chat');
   }
 
-  writeDm(msg: string, from: string, to: string): Observable<any> {
+  writeDm(msg: string): Observable<any> {
+    const from = this.auth.userName;
+    const to = this.chatPartner;
     const date = new Date();
     const formDate =this.datePipe.transform(date, 'yyyy-MM-dd HH:mm:ss');
     const id = `${from}__${formDate}__${to}`;
@@ -95,7 +99,9 @@ export class ApiService {
     this.webSocketClient.close(true);
   }
 
-  getChat(user1: string, user2: string): Observable<any> {
+  getChat(): Observable<any> {
+    const user1 = this.auth.userName;
+    const user2 = this.chatPartner;
     const query = gql`
     query getChat($input: GetChatRequest!){
       getChat(input: $input)

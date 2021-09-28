@@ -1,50 +1,54 @@
-import { Component, OnInit } from '@angular/core';
-import {ActivatedRoute} from "@angular/router";
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {ApiService} from "../../api/api.service";
-import {AuthLibService} from "auth-lib";
+import {Dm} from "../../data/dm";
 
 @Component({
   selector: 'app-open-chat',
   templateUrl: './open-chat.component.html',
   styleUrls: ['./open-chat.component.scss']
 })
-export class OpenChatComponent implements OnInit {
+export class OpenChatComponent implements OnInit, OnDestroy {
 
   user1: string | null = '';
-  user2: string | null = '';
-  messages: {
-    __typename: string,
-    id: string,
-    msg: string,
-  }[] = [];
+  messages: Dm[] = [];
 
   message: string = '';
 
-  constructor(private readonly route: ActivatedRoute,
-              private api: ApiService,
-              private auth: AuthLibService) { }
+  constructor(public api: ApiService) { }
+
+  ngOnDestroy(): void {
+    this.messages = [];
+  }
 
   ngOnInit(): void {
+    console.log('Open Chat');
 
-    this.route.paramMap.subscribe((params) => {
-      if (params.has('id')) {
-        this.user2 = this.route.snapshot.paramMap.get('id');
-      }
-    })
-
-    this.user1 = this.auth.userName;
-
-    if (this.user1 !== null && this.user2 !== null) {
-      this.api.getChat(this.user1, this.user2).subscribe(value => {
+    if (this.user1 !== null && this.api.chatPartner !== null) {
+      this.api.getChat().subscribe(value => {
         this.messages = value.data.getChat;
       });
     }
 
+    console.log('Subscribe to chat...');
+    this.api.subscribeToChat().subscribe(value => {
+      if (!value || !value.data || !value.data.dmAdded) {
+        return;
+      }
+
+      const { data } = value
+
+      const {__typename, id, msg} = data.dmAdded;
+
+      const dm = new Dm(__typename, id, msg);
+      this.messages = Object.assign([], this.messages)
+      this.messages.push(dm);
+    });
+
   }
 
   async sendMessage() {
-    if (this.user1 !== null && this.user2 !== null && this.message.length > 0) {
-      await this.api.writeDm(this.message, this.user1, this.user2).toPromise();
+    if (this.message.length > 0) {
+      await this.api.writeDm(this.message).toPromise();
       this.message = '';
     }
   }

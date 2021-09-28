@@ -1,7 +1,7 @@
 <div *ngIf="openChats.length > 0">
   <h3>Recent Chats</h3>
   <div *ngFor="let chat of openChats">
-    <a [routerLink]="[chat.withUser]" style="cursor: pointer">
+    <a (click)="setChatPartner(chat.withUser)" [routerLink]="[chat.withUser]" style="cursor: pointer">
       {{chat.withUser}}: {{chat.preview}}
     </a>
   </div>
