@@ -81,7 +81,7 @@ type MutationResolver interface {
 	CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error)
 	EditPost(ctx context.Context, edit model.EditPostRequest) (string, error)
 	RemovePost(ctx context.Context, removeID string) (string, error)
-	LikePost(ctx context.Context, like model.LikePostRequest) ([]string, error)
+	LikePost(ctx context.Context, like model.LikePostRequest) (string, error)
 }
 type QueryResolver interface {
 	GetPosts(ctx context.Context, id string, fetchLimit int) ([]*model.Post, error)
@@ -344,11 +344,16 @@ input CreatePostRequest {
 input EditPostRequest {
     id: String!
     newDescription: String!
+    likedBy: [String!]!
+    comments: [String!]!
 }
 
 input LikePostRequest {
     id: String!
-    username: String!
+    description: String!
+    newLikedBy: [String!]!
+    comments: [String!]!
+    liked: Boolean!
 }
 
 input RemovePostRequest {
@@ -367,7 +372,7 @@ type Post {
     createPost(newPost: CreatePostRequest!): Post!
     editPost(edit: EditPostRequest!): String!
     removePost(removeID: String!): String!
-    likePost(like: LikePostRequest!): [String!]!
+    likePost(like: LikePostRequest!): String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
     getPosts(id: String!, fetchLimit: Int!): [Post!]!
@@ -803,9 +808,9 @@ func (ec *executionContext) _Mutation_likePost(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -2363,6 +2368,22 @@ func (ec *executionContext) unmarshalInputEditPostRequest(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
+		case "likedBy":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("likedBy"))
+			it.LikedBy, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "comments":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comments"))
+			it.Comments, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -2383,11 +2404,35 @@ func (ec *executionContext) unmarshalInputLikePostRequest(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "username":
+		case "description":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			it.Description, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "newLikedBy":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newLikedBy"))
+			it.NewLikedBy, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "comments":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comments"))
+			it.Comments, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "liked":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("liked"))
+			it.Liked, err = ec.unmarshalNBoolean2bool(ctx, v)
 			if err != nil {
 				return it, err
 			}

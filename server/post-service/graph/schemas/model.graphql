@@ -13,11 +13,16 @@ input CreatePostRequest {
 input EditPostRequest {
     id: String!
     newDescription: String!
+    likedBy: [String!]!
+    comments: [String!]!
 }
 
 input LikePostRequest {
     id: String!
-    username: String!
+    description: String!
+    newLikedBy: [String!]!
+    comments: [String!]!
+    liked: Boolean!
 }
 
 input RemovePostRequest {

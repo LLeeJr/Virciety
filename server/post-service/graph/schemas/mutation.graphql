@@ -2,5 +2,5 @@ type Mutation {
     createPost(newPost: CreatePostRequest!): Post!
     editPost(edit: EditPostRequest!): String!
     removePost(removeID: String!): String!
-    likePost(like: LikePostRequest!): [String!]!
+    likePost(like: LikePostRequest!): String!
 }

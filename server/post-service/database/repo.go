@@ -19,8 +19,6 @@ type Repository interface {
 	InsertFile(base64File string) (*model.File, error)
 	CreatePost(postEvent PostEvent, base64File string) (*model.Post, error)
 	GetPosts(id string, fetchLimit int) ([]*model.Post, error)
-	GetCurrentPosts() []*model.Post
-	GetPostById(id string) (int, *model.Post)
 	RemovePost(postEvent PostEvent, index int) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
 	LikePost(postEvent PostEvent) error
@@ -226,14 +224,6 @@ func (repo *repo) GetPosts(id string, fetchLimit int) ([]*model.Post, error) {
 	}
 
 	return currentPosts, nil
-}
-
-func (repo *repo) GetCurrentPosts() []*model.Post {
-	return nil
-}
-
-func (repo *repo) GetPostById(id string) (int, *model.Post) {
-	return -1, nil
 }
 
 func (repo *repo) GetData(fileID string) (string, error) {

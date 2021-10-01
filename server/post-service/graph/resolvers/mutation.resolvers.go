@@ -5,11 +5,9 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 	"posts-service/database"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
-	"posts-service/util"
 	"time"
 )
 
@@ -42,25 +40,14 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 }
 
 func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequest) (string, error) {
-	// get post data out of current saved posts and remove it out of the list
-	_, post := r.repo.GetPostById(edit.ID)
-	if post == nil {
-		errMsg := "no post with id " + edit.ID + " found"
-		return "failed", errors.New(errMsg)
-	}
-
 	// process the data and create new post event
-	post.Description = edit.NewDescription
-
 	postEvent := database.PostEvent{
 		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   "EditPost",
-		PostID:      post.ID,
-		Username:    post.Username,
-		Description: post.Description,
-		FileID:      post.Data.Name,
-		LikedBy:     post.LikedBy,
-		Comments:    post.Comments,
+		PostID:      edit.ID,
+		Description: edit.NewDescription,
+		LikedBy:     edit.LikedBy,
+		Comments:    edit.Comments,
 	}
 
 	// save event in database
@@ -73,27 +60,20 @@ func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequ
 }
 
 func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (string, error) {
-	// get post data out of current saved posts
-	index, post := r.repo.GetPostById(removeID)
-	if post == nil {
-		errMsg := "no post with id " + removeID + " found"
-		return "failed", errors.New(errMsg)
-	}
-
 	// process the data and create new post event
 	postEvent := database.PostEvent{
 		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   "RemovePost",
-		PostID:      post.ID,
-		Username:    post.Username,
-		Description: post.Description,
-		FileID:      post.Data.Name,
+		PostID:      "",
+		Username:    "",
+		Description: "",
+		FileID:      "",
 		LikedBy:     make([]string, 0),
 		Comments:    make([]string, 0),
 	}
 
 	// save event in database
-	ok, err := r.repo.RemovePost(postEvent, index)
+	ok, err := r.repo.RemovePost(postEvent, 0)
 	if err != nil {
 		return ok, err
 	}
@@ -105,47 +85,33 @@ func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (str
 	return ok, nil
 }
 
-func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequest) ([]string, error) {
-	// get post data out of current saved posts and remove it out of the list
-	_, post := r.repo.GetPostById(like.ID)
-	if post == nil {
-		errMsg := "no post with id " + like.ID + " found"
-		return nil, errors.New(errMsg)
-	}
-
+func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequest) (string, error) {
 	// process the data and create new post event
 	event := "LikePost"
-	index := util.Search(post.LikedBy, like.Username)
 
-	// unlike the post
-	if index != -1 {
+	if !like.Liked {
 		event = "UnlikePost"
-		post.LikedBy = append(post.LikedBy[:index], post.LikedBy[index+1:]...)
-	} else {
-		post.LikedBy = append(post.LikedBy, like.Username)
 	}
 
 	postEvent := database.PostEvent{
 		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   event,
-		PostID:      post.ID,
-		Username:    post.Username,
-		Description: post.Description,
-		FileID:      post.Data.Name,
-		LikedBy:     post.LikedBy,
-		Comments:    post.Comments,
+		PostID:      like.ID,
+		Description: like.Description,
+		LikedBy:     like.NewLikedBy,
+		Comments:    like.Comments,
 	}
 
 	// save event in database
 	err := r.repo.LikePost(postEvent)
 	if err != nil {
-		return nil, err
+		return "failed", err
 	}
 
 	// put event on queue for notifications
 	// r.producerQueue.AddMessageToQuery(postEvent)
 
-	return post.LikedBy, nil
+	return "success", nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

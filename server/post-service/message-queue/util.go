@@ -6,6 +6,7 @@ import (
 	"github.com/streadway/amqp"
 	"log"
 	"posts-service/database"
+	"posts-service/graph/model"
 	"strings"
 )
 
@@ -73,7 +74,7 @@ func convertCommentEventToPostEvent(repo database.Repository, data []byte) (*dat
 		return nil, err
 	}
 
-	_, post := repo.GetPostById(commentEvent.PostID)
+	var post *model.Post
 	if post == nil {
 		errMsg := "no post with id " + commentEvent.PostID + " found"
 		return nil, errors.New(errMsg)
