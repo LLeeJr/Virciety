@@ -1,4 +1,4 @@
 type Query {
     getPosts(id: String!, fetchLimit: Int!): [Post!]!
-    getData(id: String!): String!
+    getData(fileID: String!): String!
 }

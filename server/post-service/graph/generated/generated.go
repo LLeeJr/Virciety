@@ -68,7 +68,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetData  func(childComplexity int, id string) int
+		GetData  func(childComplexity int, fileID string) int
 		GetPosts func(childComplexity int, id string, fetchLimit int) int
 	}
 
@@ -85,7 +85,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	GetPosts(ctx context.Context, id string, fetchLimit int) ([]*model.Post, error)
-	GetData(ctx context.Context, id string) (string, error)
+	GetData(ctx context.Context, fileID string) (string, error)
 }
 type SubscriptionResolver interface {
 	NewPostCreated(ctx context.Context) (<-chan *model.Post, error)
@@ -227,7 +227,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetData(childComplexity, args["id"].(string)), true
+		return e.complexity.Query.GetData(childComplexity, args["fileID"].(string)), true
 
 	case "Query.getPosts":
 		if e.complexity.Query.GetPosts == nil {
@@ -371,7 +371,7 @@ type Post {
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
     getPosts(id: String!, fetchLimit: Int!): [Post!]!
-    getData(id: String!): String!
+    getData(fileID: String!): String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/subscription.graphql", Input: `type Subscription {
     newPostCreated: Post!
@@ -462,14 +462,14 @@ func (ec *executionContext) field_Query_getData_args(ctx context.Context, rawArg
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["fileID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileID"))
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["id"] = arg0
+	args["fileID"] = arg0
 	return args, nil
 }
 
@@ -1085,7 +1085,7 @@ func (ec *executionContext) _Query_getData(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetData(rctx, args["id"].(string))
+		return ec.resolvers.Query().GetData(rctx, args["fileID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

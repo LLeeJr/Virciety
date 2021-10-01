@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,21 +18,20 @@ type Repository interface {
 	InsertPostEvent(post PostEvent) error
 	InsertFile(base64File string) (*model.File, error)
 	CreatePost(postEvent PostEvent, base64File string) (*model.Post, error)
-	GetPosts(fetchLimit int) ([]*model.Post, error)
+	GetPosts(id string, fetchLimit int) ([]*model.Post, error)
 	GetCurrentPosts() []*model.Post
 	GetPostById(id string) (int, *model.Post)
 	RemovePost(postEvent PostEvent, index int) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
 	LikePost(postEvent PostEvent) error
 	AddComment(postEvent PostEvent) (string, error)
+	GetData(fileID string) (string, error)
 }
 
 type repo struct {
-	postCollection       *mongo.Collection
-	fileCollection       *mongo.Collection
-	bucket               *gridfs.Bucket
-	currentPosts         []*model.Post
-	lastFetchedEventTime string
+	postCollection *mongo.Collection
+	fileCollection *mongo.Collection
+	bucket         *gridfs.Bucket
 }
 
 func NewRepo() (Repository, error) {
@@ -47,11 +47,9 @@ func NewRepo() (Repository, error) {
 	}
 
 	return &repo{
-		postCollection:       db.Collection("post-events"),
-		fileCollection:       bucket.GetFilesCollection(),
-		bucket:               bucket,
-		lastFetchedEventTime: "",
-		currentPosts:         make([]*model.Post, 0),
+		postCollection: db.Collection("post-events"),
+		fileCollection: bucket.GetFilesCollection(),
+		bucket:         bucket,
 	}, nil
 }
 
@@ -113,16 +111,36 @@ func (repo *repo) CreatePost(postEvent PostEvent, base64File string) (*model.Pos
 		Comments:    postEvent.Comments,
 	}
 
-	// add to currentPosts
-	repo.currentPosts = append([]*model.Post{post}, repo.currentPosts...)
-
 	return post, nil
 }
 
-func (repo *repo) GetPosts(fetchLimit int) ([]*model.Post, error) {
+func (repo *repo) GetPosts(id string, fetchLimit int) ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
-
 	limit := int64(fetchLimit)
+
+	lastFetchedEventTime := ""
+	if id != "" {
+		projection := bson.D{
+			{"_id", 0},
+			{"event_time", 1},
+		}
+
+		objID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return nil, err
+		}
+
+		var result bson.M
+		err = repo.postCollection.FindOne(ctx, bson.D{
+			{"_id", objID},
+			{"event_type", "CreatePost"},
+		}, options.FindOne().SetProjection(projection)).Decode(&result)
+		if err != nil {
+			return nil, err
+		}
+
+		lastFetchedEventTime = fmt.Sprint(result["event_time"])
+	}
 
 	// sort post-events by descending event-time (the newest first) and set fetch limit
 	opts := options.Find()
@@ -131,14 +149,14 @@ func (repo *repo) GetPosts(fetchLimit int) ([]*model.Post, error) {
 
 	// check if it is the first time getting data
 	key := "$lt"
-	if repo.lastFetchedEventTime == "" {
+	if lastFetchedEventTime == "" {
 		key = "$gt"
 	}
 
 	// get all post events with event_type = "CreatePost" sorted by event_time
 	cursor, err := repo.postCollection.Find(ctx, bson.D{
 		{"event_type", "CreatePost"},
-		{"event_time", bson.D{{key, repo.lastFetchedEventTime}}},
+		{"event_time", bson.D{{key, lastFetchedEventTime}}},
 	}, opts)
 	if err != nil {
 		return nil, err
@@ -147,13 +165,6 @@ func (repo *repo) GetPosts(fetchLimit int) ([]*model.Post, error) {
 	for cursor.Next(ctx) {
 		var postEvent PostEvent
 		if err = cursor.Decode(&postEvent); err != nil {
-			return nil, err
-		}
-
-		// get file content for post
-		var buf bytes.Buffer
-		_, err := repo.bucket.DownloadToStreamByName(postEvent.FileID, &buf)
-		if err != nil {
 			return nil, err
 		}
 
@@ -175,20 +186,16 @@ func (repo *repo) GetPosts(fetchLimit int) ([]*model.Post, error) {
 
 		// add new post to output for getPosts
 		currentPosts = append(currentPosts, &model.Post{
-			ID:          postEvent.PostID,
+			ID:          postEvent.ID.Hex(),
 			Description: postEvent.Description,
 			Data: &model.File{
 				Name:        postEvent.FileID,
-				Content:     string(buf.Bytes()),
 				ContentType: fmt.Sprint(contentType.Interface()),
 			},
 			Username: postEvent.Username,
 			LikedBy:  postEvent.LikedBy,
 			Comments: postEvent.Comments,
 		})
-
-		// update last fetched event time
-		repo.lastFetchedEventTime = postEvent.EventTime
 	}
 
 	max := int64(1)
@@ -218,24 +225,26 @@ func (repo *repo) GetPosts(fetchLimit int) ([]*model.Post, error) {
 		}
 	}
 
-	// update runtime data
-	repo.currentPosts = append(repo.currentPosts, currentPosts...)
-
 	return currentPosts, nil
 }
 
 func (repo *repo) GetCurrentPosts() []*model.Post {
-	return repo.currentPosts
+	return nil
 }
 
 func (repo *repo) GetPostById(id string) (int, *model.Post) {
-	for i, post := range repo.currentPosts {
-		if post.ID == id {
-			return i, post
-		}
+	return -1, nil
+}
+
+func (repo *repo) GetData(fileID string) (string, error) {
+	// get file content for post
+	var buf bytes.Buffer
+	_, err := repo.bucket.DownloadToStreamByName(fileID, &buf)
+	if err != nil {
+		return "", err
 	}
 
-	return -1, nil
+	return string(buf.Bytes()), nil
 }
 
 func (repo *repo) RemovePost(postEvent PostEvent, index int) (string, error) {
