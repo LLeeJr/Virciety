@@ -53,7 +53,7 @@
 </ng-template>
 
 <ng-template #edit_buttons_tp let-post='post'>
-  <button mat-button (click)="this.post.editMode = false;this.editPost(post.id, post.description)">Save</button>
+  <button mat-button (click)="this.post.editMode = false;this.editPost(post)">Save</button>
   <button mat-button (click)="this.post.editMode = false">Cancel</button>
 </ng-template>
 
@@ -62,5 +62,6 @@
     <mat-icon>favorite</mat-icon>
     Like
   </button>
-  <button mat-button (click)="post.editMode = true">Edit</button>
+  <!--TODO add this.authService.username as condition-->
+  <button mat-button *ngIf="post.username === 'user3'" (click)="post.editMode = true">Edit</button>
 </ng-template>

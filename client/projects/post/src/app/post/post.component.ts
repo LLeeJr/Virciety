@@ -37,8 +37,28 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   likePost(post: Post) {
-    // TODO uncomment
-    this.gqlService.likePost(post/*, this.authService.userName*/);
+    // TODO uncomment this
+    const username: string = /*this.authService.userName*/ 'user4'
+    let liked: boolean = true
+
+    // check if it's a like or unlike
+    const index = post.likedBy.indexOf(username, 0)
+    if (index > -1) {
+      const newLikedBy: string[] = []
+      post.likedBy.forEach((user, i) => {
+        if (index !== i) {
+          newLikedBy.push(user)
+        }
+      })
+      post.likedBy = newLikedBy
+      liked = false
+    } else {
+      const newLikedBy: string[] = [username]
+      post.likedBy.forEach(user => newLikedBy.push(user))
+      post.likedBy = newLikedBy
+    }
+
+    this.gqlService.likePost(post, liked);
   }
 
   openLikedByDialog(likedBy: string[]) {
@@ -47,8 +67,8 @@ export class PostComponent implements OnInit, OnDestroy {
     });
   }
 
-  editPost(id: string, newDescription: string) {
-    this.gqlService.editPost(id, newDescription);
+  editPost(post: Post) {
+    this.gqlService.editPost(post);
   }
 }
 

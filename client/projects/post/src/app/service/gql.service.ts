@@ -5,7 +5,7 @@ import {Post} from "../model/post";
 import {DataLibService} from "data-lib";
 import {HttpLink} from "apollo-angular/http";
 import {getMainDefinition} from "@apollo/client/utilities";
-import {CREATE_POST, EDIT_POST, GET_DATA, GET_POSTS, LIKE_POST, NEW_POST_CREATED} from "./gql-request-strings";
+import {CREATE_POST, EDIT_POST, GET_DATA, GET_POSTS, LIKE_POST} from "./gql-request-strings";
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
 
@@ -18,7 +18,6 @@ export class GQLService {
     id: string;
     fetchLimit: number;
   }> | undefined;
-
 
   private lastPostID: string = "";
   private _fetchLimit: number = 5;
@@ -119,7 +118,10 @@ export class GQLService {
         fetchLimit: this.fetchLimit,
       }).then(() => {
         this.getPostQuery?.refetch();
-      });
+      },
+        error => {
+        console.error('there was an error refreshing getPost-query', error);
+        });
     } else {
       console.error('getPostQuery is null|undefined');
     }
@@ -129,7 +131,7 @@ export class GQLService {
     this.apollo.watchQuery({
       query: GET_DATA,
       variables: {
-        id: post.id,
+        fileID: post.data.id,
       },
     }).valueChanges.subscribe(({data}: any) => {
       post.data.content = data.getData;
@@ -160,27 +162,31 @@ export class GQLService {
     });
   }
 
-  likePost(post: Post, username: string = 'user4') {
+  likePost(post: Post, liked: boolean) {
     this.apollo.mutate({
       mutation: LIKE_POST,
       variables: {
         id: post.id,
-        username: username
+        description: post.description,
+        newLikedBy: post.likedBy,
+        comments: post.comments,
+        liked: liked,
       }
     }).subscribe(({data}: any) => {
       console.log('LikePostData: ', data);
-      post.likedBy = data.likePost;
     }, (error: any) => {
       console.error('there was an error sending the likePost-mutation', error);
     })
   }
 
-  editPost(id: string, newDescription: string) {
+  editPost(post: Post) {
     this.apollo.mutate({
       mutation: EDIT_POST,
       variables: {
-        id: id,
-        newDescription: newDescription
+        id: post.id,
+        newDescription: post.description,
+        likedBy: post.likedBy,
+        comments: post.comments,
       }
     }).subscribe(({data}) => {
       console.log('EditPostData: ', data)
@@ -190,17 +196,27 @@ export class GQLService {
   }
 
   private getPostCreated() {
-    this.apollo.subscribe({
+    /*this.getPostQuery?.subscribeToMore({
+      document: NEW_POST_CREATED,
+      updateQuery: (prev: any, {data}: any) => {
+        console.log('GetPostCreatedData: ', data);
+        console.log('GetPostCreatedData prev: ', prev);
+      }
+    })*/
+
+
+    /*this.apollo.subscribe({
       query: NEW_POST_CREATED,
     }).subscribe(({data}: any) => {
-      console.log('GetPostCreatedData: ', data);
+
+      if (data.newPostCreated.username === 'user3') {
+        return
+      }
       const post = new Post(data.newPostCreated);
 
-      if (!this.dataService.addNewPost(post)) {
-        this.getData(post);
-      }
+      this.getData(post);
     }, (error: any) => {
       console.error('there was an error sending the newPostCreated-subscription', error)
-    });
+    });*/
   }
 }

@@ -19,8 +19,8 @@ export const GET_POSTS = gql`
   `;
 
 export const GET_DATA = gql`
-    query getData($id: String!) {
-      getData(id: $id)
+    query getData($fileID: String!) {
+      getData(fileID: $fileID)
     }
   `;
 
@@ -41,14 +41,14 @@ export const CREATE_POST = gql`
   `;
 
 export const LIKE_POST = gql`
-    mutation likePost($id: String!, $username: String!) {
-      likePost(like: {id: $id, username: $username})
+    mutation likePost($id: String!, $description: String!, $newLikedBy: [String!]!, $comments: [String!]!, $liked: Boolean!) {
+      likePost(like: {id: $id, description: $description, newLikedBy: $newLikedBy, comments: $comments, liked: $liked})
     }
   `;
 
 export const EDIT_POST = gql`
-    mutation editPost($id: String!, $newDescription: String!) {
-      editPost(edit: {id: $id, newDescription: $newDescription})
+    mutation editPost($id: String!, $newDescription: String!, $likedBy: [String!]!, $comments: [String!]!) {
+      editPost(edit: {id: $id, newDescription: $newDescription, likedBy: $likedBy, comments: $comments})
     }
   `;
 
