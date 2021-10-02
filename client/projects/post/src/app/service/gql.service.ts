@@ -52,13 +52,17 @@ export class GQLService {
             fields: {
               getPosts: {
                 keyArgs: [],
-                merge(existing = [], incoming, { args = { 'id': '' }}) {
+                merge(existing = [], incoming, { args}) {
+                  console.log('Existing: ', existing);
+                  console.log('Incoming: ', incoming);
+                  console.log('Args: ', args);
+
                   if (incoming.length === 0) {
                     GQLService._oldestPostReached = true;
                     return existing;
                   }
 
-                  if (args && args['id'] === 'true') {
+                  if (args && (args['id'] === 'remove' || args['id'] === 'create')) {
                     return incoming
                   }
 
@@ -86,7 +90,7 @@ export class GQLService {
   // Getter + Setter end
 
   getPosts(): any {
-    if (this.dataService.posts.length === 0) {
+    if (!this.getPostQuery) {
       this.getPostQuery = this.apollo
         .watchQuery({
           query: GET_POSTS,
@@ -152,7 +156,9 @@ export class GQLService {
     });
   }
 
-  async createPost(fileBase64: string, description: string, username: string = 'user3') {
+  // when a post is created before posts are fetched from server, smth doesn't work as it should
+  // could be not a problem in usage with mfe
+  async createPost(contentType: string, fileBase64: string, description: string, username: string = 'user3') {
     this.apollo.mutate({
       mutation: CREATE_POST,
       variables: {
@@ -160,15 +166,37 @@ export class GQLService {
         description: description,
         data: fileBase64
       },
+      update: (cache, {data}: any) => {
+        const existingPosts: any = cache.readQuery({
+          query: GET_POSTS
+        });
+
+        const post = new Post(data.createPost);
+
+        post.data.content = fileBase64;
+        this.dataService.addNewPost(post);
+
+        let newPosts;
+
+        if (existingPosts) {
+          newPosts = [data.createPost, ...existingPosts.getPosts];
+        } else {
+          newPosts = [data.createPost];
+        }
+
+        cache.writeQuery({
+          query: GET_POSTS,
+          variables: {
+            id: 'create',
+          },
+          data: { getPosts : newPosts }
+        });
+      },
       context: {
         useMultipart: true,
       }
       }).subscribe(({data}: any) => {
       console.log('CreatePostData: ', data);
-      const post = new Post(data.createPost);
-
-      post.data.content = fileBase64;
-      this.dataService.addNewPost(post);
     }, (error: any) => {
       console.error('there was an error sending the createPost-mutation', error);
     });
@@ -225,7 +253,7 @@ export class GQLService {
         cache.writeQuery({
           query: GET_POSTS,
           variables: {
-            id: "true"
+            id: 'remove'
           },
           data: { getPosts : newPosts }
         });

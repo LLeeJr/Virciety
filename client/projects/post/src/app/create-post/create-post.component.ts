@@ -11,6 +11,7 @@ export class CreatePostComponent implements OnInit {
   fileBase64: any;
   description: string = '';
   content_type: string = '';
+  filename: string | undefined;
 
   constructor(private gqlService: GQLService,
               private authService: AuthLibService,
@@ -22,6 +23,7 @@ export class CreatePostComponent implements OnInit {
   onFileSelected(event: any) {
     // get selected file
     const file = event.target.files[0] as File;
+    this.filename = file.name;
 
     // get file data as base64 string
     if (file) {
@@ -44,12 +46,10 @@ export class CreatePostComponent implements OnInit {
   createPost() {
     if (this.fileBase64) {
       // TODO uncomment
-      this.gqlService.createPost(this.fileBase64, this.description/*, this.authService.userName*/).then(() => {
-        this.fileBase64 = null
-        this.description = ''
-        this.content_type = ''
+      this.gqlService.createPost(this.content_type, this.fileBase64, this.description/*, this.authService.userName*/).then(() => {
+        this.reset();
         // TODO alert and redirect to posts
-        console.log("File upload complete")
+        console.log("File upload complete");
       });
     }
   }
@@ -58,5 +58,12 @@ export class CreatePostComponent implements OnInit {
     alert(`Content-Type ${this.content_type} is not supported`);
     this.content_type = '';
     this.cd.detectChanges();
+  }
+
+  reset() {
+    this.fileBase64 = null;
+    this.description = '';
+    this.content_type = '';
+    this.filename = undefined;
   }
 }

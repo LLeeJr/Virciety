@@ -23,9 +23,17 @@
   </ng-template>
 </div>
 
-<div class="file-upload" style="margin-top: 10px">
-  <input type="file" class="file-input"
-         (change)="onFileSelected($event)">
-</div>
+<input type="file" class="file-input" (click)="reset()"
+       (change)="onFileSelected($event)" #fileUpload>
 
+<div class="file-upload">
+
+  {{filename || "No file uploaded yet."}}
+
+  <button mat-mini-fab color="accent" class="upload-btn"
+          (click)="fileUpload.click()">
+    <mat-icon>attach_file</mat-icon>
+  </button>
+
+</div>
 
