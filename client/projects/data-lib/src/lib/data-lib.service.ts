@@ -13,6 +13,10 @@ export class DataLibService {
     return this._posts;
   }
 
+  removePost(id: string) {
+    this._posts = this._posts.filter(post => post.id !== id);
+  }
+
   addNewPost(newPost: Post): boolean {
     this._posts.reverse();
     this._posts.push(newPost);

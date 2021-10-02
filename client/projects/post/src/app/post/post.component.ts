@@ -23,11 +23,16 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.gqlService.oldestPostReached = false;
+    GQLService._oldestPostReached = false;
   }
 
   get oldestPostReached(): boolean {
-    return this.gqlService.oldestPostReached;
+    // TODO when changing components and coming back to this one
+    // check whether it is necessary to refetch newer posts than the newest this client has
+    // ideas: send newest post id to server and ask whether new posts are there
+    // subscription notification maybe?
+    //
+    return GQLService._oldestPostReached;
   }
 
   onScroll() {
@@ -38,24 +43,24 @@ export class PostComponent implements OnInit, OnDestroy {
 
   likePost(post: Post) {
     // TODO uncomment this
-    const username: string = /*this.authService.userName*/ 'user4'
-    let liked: boolean = true
+    const username: string = /*this.authService.userName*/ 'user4';
+    let liked: boolean = true;
 
     // check if it's a like or unlike
-    const index = post.likedBy.indexOf(username, 0)
+    const index = post.likedBy.indexOf(username, 0);
     if (index > -1) {
       const newLikedBy: string[] = []
       post.likedBy.forEach((user, i) => {
         if (index !== i) {
-          newLikedBy.push(user)
+          newLikedBy.push(user);
         }
-      })
-      post.likedBy = newLikedBy
-      liked = false
+      });
+      post.likedBy = newLikedBy;
+      liked = false;
     } else {
-      const newLikedBy: string[] = [username]
-      post.likedBy.forEach(user => newLikedBy.push(user))
-      post.likedBy = newLikedBy
+      const newLikedBy: string[] = [username];
+      post.likedBy.forEach(user => newLikedBy.push(user));
+      post.likedBy = newLikedBy;
     }
 
     this.gqlService.likePost(post, liked);
@@ -69,6 +74,10 @@ export class PostComponent implements OnInit, OnDestroy {
 
   editPost(post: Post) {
     this.gqlService.editPost(post);
+  }
+
+  removePost(post: Post) {
+    this.gqlService.removePost(post);
   }
 }
 

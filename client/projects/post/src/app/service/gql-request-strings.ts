@@ -52,6 +52,12 @@ export const EDIT_POST = gql`
     }
   `;
 
+export const REMOVE_POST = gql`
+    mutation removePost($id: String!, $fileID: String!) {
+      removePost(remove: {id: $id, fileID: $fileID})
+    }
+  `;
+
 export const NEW_POST_CREATED = gql`
     subscription newPostCreated {
       newPostCreated {

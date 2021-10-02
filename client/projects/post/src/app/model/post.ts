@@ -1,7 +1,7 @@
 export class Post {
   public id: string;
   public data: {
-    id: string;
+    name: string;
     content: string;
     contentType: string;
   };
@@ -13,7 +13,7 @@ export class Post {
 
   constructor(data: any) {
     this.data = {
-      id: data.data.name,
+      name: data.data.name,
       content: '',
       contentType: data.data.contentType,
     };

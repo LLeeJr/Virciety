@@ -5,7 +5,7 @@ import {Post} from "../model/post";
 import {DataLibService} from "data-lib";
 import {HttpLink} from "apollo-angular/http";
 import {getMainDefinition} from "@apollo/client/utilities";
-import {CREATE_POST, EDIT_POST, GET_DATA, GET_POSTS, LIKE_POST} from "./gql-request-strings";
+import {CREATE_POST, EDIT_POST, GET_DATA, GET_POSTS, LIKE_POST, REMOVE_POST} from "./gql-request-strings";
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
 
@@ -21,7 +21,7 @@ export class GQLService {
 
   private lastPostID: string = "";
   private _fetchLimit: number = 5;
-  private _oldestPostReached: boolean = false;
+  static _oldestPostReached: boolean = false;
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink,
@@ -46,7 +46,29 @@ export class GQLService {
     )
 
     this.apolloProvider.createNamed('post', {
-      cache: new InMemoryCache(),
+      cache: new InMemoryCache({
+        typePolicies: {
+          Query: {
+            fields: {
+              getPosts: {
+                keyArgs: [],
+                merge(existing = [], incoming, { args = { 'id': '' }}) {
+                  if (incoming.length === 0) {
+                    GQLService._oldestPostReached = true;
+                    return existing;
+                  }
+
+                  if (args && args['id'] === 'true') {
+                    return incoming
+                  }
+
+                  return [...existing, ...incoming];
+                },
+              },
+            }
+          }
+        }
+      }),
       link: link,
     });
 
@@ -56,14 +78,6 @@ export class GQLService {
   }
 
   // Getter + Setter
-
-  get oldestPostReached(): boolean {
-    return this._oldestPostReached;
-  }
-
-  set oldestPostReached(value: boolean) {
-    this._oldestPostReached = value;
-  }
 
   get fetchLimit(): number {
     return this._fetchLimit;
@@ -86,15 +100,11 @@ export class GQLService {
     return this.getPostQuery?.valueChanges.pipe(map(({data}: any) => {
       console.log('GetPostData: ', data);
 
-      if (data.getPosts.length == 0) {
-        this._oldestPostReached = true;
-      }
-
       const posts = this.dataService.posts;
 
       for (let getPost of data.getPosts) {
         if (posts.some(p => p.id === getPost.id)) {
-          console.log("post already exists");
+          console.log('post already exists');
           continue;
         }
 
@@ -113,11 +123,13 @@ export class GQLService {
 
   refreshPosts() {
     if (this.getPostQuery) {
-      this.getPostQuery.setVariables({
-        id: this.lastPostID,
-        fetchLimit: this.fetchLimit,
+      this.getPostQuery.fetchMore({
+        variables: {
+          id: this.lastPostID,
+          fetchLimit: this.fetchLimit,
+        }
       }).then(() => {
-        this.getPostQuery?.refetch();
+        // console.log('getPost fetchMore success!');
       },
         error => {
         console.error('there was an error refreshing getPost-query', error);
@@ -131,7 +143,7 @@ export class GQLService {
     this.apollo.watchQuery({
       query: GET_DATA,
       variables: {
-        fileID: post.data.id,
+        fileID: post.data.name,
       },
     }).valueChanges.subscribe(({data}: any) => {
       post.data.content = data.getData;
@@ -192,6 +204,36 @@ export class GQLService {
       console.log('EditPostData: ', data)
     }, (error: any) => {
       console.error('there was an error sending the likePost-mutation', error);
+    });
+  }
+
+  removePost(post: Post) {
+    this.apollo.mutate({
+      mutation: REMOVE_POST,
+      variables: {
+        id: post.id,
+        fileID: post.data.name
+      },
+      update: (cache) => {
+        const existingPosts: any = cache.readQuery({
+          query: GET_POSTS,
+        });
+        const newPosts = existingPosts.getPosts.filter((getPost: any) => getPost.id !== post.id);
+
+        this.dataService.removePost(post.id);
+
+        cache.writeQuery({
+          query: GET_POSTS,
+          variables: {
+            id: "true"
+          },
+          data: { getPosts : newPosts }
+        });
+      },
+    }).subscribe(({data}: any) => {
+      console.log('RemovePostData: ', data);
+    }, (error: any) => {
+      console.error('there was an error sending the removePost-mutation', error);
     });
   }
 

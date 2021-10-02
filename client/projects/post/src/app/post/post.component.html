@@ -53,8 +53,9 @@
 </ng-template>
 
 <ng-template #edit_buttons_tp let-post='post'>
-  <button mat-button (click)="this.post.editMode = false;this.editPost(post)">Save</button>
+  <button mat-button (click)="this.post.editMode = false; this.editPost(post)">Save</button>
   <button mat-button (click)="this.post.editMode = false">Cancel</button>
+  <button mat-button color="warn" (click)="this.post.editMode = false; this.removePost(post)">Delete</button>
 </ng-template>
 
 <ng-template #normal_buttons_tp let-post='post'>
