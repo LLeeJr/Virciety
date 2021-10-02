@@ -39,5 +39,6 @@ type Post struct {
 }
 
 type RemovePostRequest struct {
-	ID string `json:"id"`
+	ID     string `json:"id"`
+	FileID string `json:"fileID"`
 }

@@ -17,7 +17,6 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 	postEvent := database.PostEvent{
 		EventTime:   created,
 		EventType:   "CreatePost",
-		PostID:      created + "__" + newPost.Username,
 		Username:    newPost.Username,
 		Description: newPost.Description,
 		FileID:      "",
@@ -59,21 +58,17 @@ func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequ
 	return ok, nil
 }
 
-func (r *mutationResolver) RemovePost(ctx context.Context, removeID string) (string, error) {
+func (r *mutationResolver) RemovePost(ctx context.Context, remove model.RemovePostRequest) (string, error) {
 	// process the data and create new post event
 	postEvent := database.PostEvent{
-		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
-		EventType:   "RemovePost",
-		PostID:      "",
-		Username:    "",
-		Description: "",
-		FileID:      "",
-		LikedBy:     make([]string, 0),
-		Comments:    make([]string, 0),
+		EventTime: time.Now().Format("2006-01-02 15:04:05"),
+		EventType: "RemovePost",
+		PostID:    remove.ID,
+		FileID:    remove.FileID,
 	}
 
 	// save event in database
-	ok, err := r.repo.RemovePost(postEvent, 0)
+	ok, err := r.repo.RemovePost(postEvent)
 	if err != nil {
 		return ok, err
 	}

@@ -27,6 +27,7 @@ input LikePostRequest {
 
 input RemovePostRequest {
     id: String!
+    fileID: String!
 }
 
 type Post {

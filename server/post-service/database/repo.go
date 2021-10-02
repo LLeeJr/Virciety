@@ -15,11 +15,11 @@ import (
 )
 
 type Repository interface {
-	InsertPostEvent(post PostEvent) error
+	InsertPostEvent(post PostEvent) (string, error)
 	InsertFile(base64File string) (*model.File, error)
 	CreatePost(postEvent PostEvent, base64File string) (*model.Post, error)
 	GetPosts(id string, fetchLimit int) ([]*model.Post, error)
-	RemovePost(postEvent PostEvent, index int) (string, error)
+	RemovePost(postEvent PostEvent) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
 	LikePost(postEvent PostEvent) error
 	AddComment(postEvent PostEvent) (string, error)
@@ -27,9 +27,10 @@ type Repository interface {
 }
 
 type repo struct {
-	postCollection *mongo.Collection
-	fileCollection *mongo.Collection
-	bucket         *gridfs.Bucket
+	postCollection   *mongo.Collection
+	fileCollection   *mongo.Collection
+	chunksCollection *mongo.Collection
+	bucket           *gridfs.Bucket
 }
 
 func NewRepo() (Repository, error) {
@@ -45,19 +46,20 @@ func NewRepo() (Repository, error) {
 	}
 
 	return &repo{
-		postCollection: db.Collection("post-events"),
-		fileCollection: bucket.GetFilesCollection(),
-		bucket:         bucket,
+		postCollection:   db.Collection("post-events"),
+		fileCollection:   bucket.GetFilesCollection(),
+		chunksCollection: bucket.GetChunksCollection(),
+		bucket:           bucket,
 	}, nil
 }
 
-func (repo *repo) InsertPostEvent(postEvent PostEvent) error {
-	_, err := repo.postCollection.InsertOne(ctx, postEvent)
+func (repo *repo) InsertPostEvent(postEvent PostEvent) (string, error) {
+	inserted, err := repo.postCollection.InsertOne(ctx, postEvent)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return err
+	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
 func (repo *repo) InsertFile(base64File string) (*model.File, error) {
@@ -95,13 +97,13 @@ func (repo *repo) CreatePost(postEvent PostEvent, base64File string) (*model.Pos
 
 	postEvent.FileID = file.Name
 
-	err = repo.InsertPostEvent(postEvent)
+	insertedID, err := repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return nil, err
 	}
 
 	post := &model.Post{
-		ID:          postEvent.PostID,
+		ID:          insertedID,
 		Description: postEvent.Description,
 		Data:        file,
 		Username:    postEvent.Username,
@@ -237,29 +239,72 @@ func (repo *repo) GetData(fileID string) (string, error) {
 	return string(buf.Bytes()), nil
 }
 
-func (repo *repo) RemovePost(postEvent PostEvent, index int) (string, error) {
-	/*// remove from currentPosts
-	repo.currentPosts = append(repo.currentPosts[:index], repo.currentPosts[index+1:]...)
+func (repo *repo) RemovePost(postEvent PostEvent) (string, error) {
+	// get fileID for deleting all chunks
+	projection := bson.D{
+		{"_id", 1},
+	}
 
-	// delete all events relating to the id
-	sqlQuery := `delete from "post-events" where "postId" = $1`
+	var result bson.M
+	if err := repo.fileCollection.FindOne(ctx, bson.M{"filename": postEvent.FileID}, options.FindOne().SetProjection(projection)).Decode(&result); err != nil {
+		return "failed", err
+	}
 
-	_, err := repo.client.Exec(sqlQuery, postEvent.PostID)
+	fileID := result["_id"].(primitive.ObjectID)
+
+	// delete file ref from fileCollection
+	_, err := repo.fileCollection.DeleteOne(ctx, bson.D{
+		{"_id", fileID},
+	})
+	if err != nil {
+		return "failed", err
+	}
+
+	// delete allChunks from chunksCollection
+	_, err = repo.chunksCollection.DeleteMany(ctx, bson.D{
+		{"files_id", fileID},
+	})
+	if err != nil {
+		return "failed", err
+	}
+
+	// convert hex-string into primitive.objectID
+	objID, err := primitive.ObjectIDFromHex(postEvent.PostID)
+	if err != nil {
+		return "failed", err
+	}
+
+	// delete that one CreatePost-Event
+	_, err = repo.postCollection.DeleteOne(ctx, bson.D{
+		{"_id", objID},
+		{"event_type", "CreatePost"},
+	})
+	if err != nil {
+		return "failed", err
+	}
+
+	// delete all other events
+	_, err = repo.postCollection.DeleteMany(ctx, bson.D{
+		{"id", postEvent.PostID},
+		{"event_type", bson.D{
+			{"$in", bson.A{"EditPost", "LikePost", "UnlikePost"}},
+		}},
+	})
 	if err != nil {
 		return "failed", err
 	}
 
 	// new current post events
-	err = repo.InsertPostEvent(postEvent)
+	_, err = repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return "failed", err
-	}*/
+	}
 
 	return "success", nil
 }
 
 func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
-	err := repo.InsertPostEvent(postEvent)
+	_, err := repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return "failed", err
 	}
@@ -268,7 +313,7 @@ func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
 }
 
 func (repo *repo) LikePost(postEvent PostEvent) error {
-	err := repo.InsertPostEvent(postEvent)
+	_, err := repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return err
 	}
@@ -277,7 +322,7 @@ func (repo *repo) LikePost(postEvent PostEvent) error {
 }
 
 func (repo *repo) AddComment(postEvent PostEvent) (string, error) {
-	err := repo.InsertPostEvent(postEvent)
+	_, err := repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return "failure", nil
 	}

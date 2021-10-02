@@ -55,7 +55,7 @@ type ComplexityRoot struct {
 		CreatePost func(childComplexity int, newPost model.CreatePostRequest) int
 		EditPost   func(childComplexity int, edit model.EditPostRequest) int
 		LikePost   func(childComplexity int, like model.LikePostRequest) int
-		RemovePost func(childComplexity int, removeID string) int
+		RemovePost func(childComplexity int, remove model.RemovePostRequest) int
 	}
 
 	Post struct {
@@ -80,7 +80,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error)
 	EditPost(ctx context.Context, edit model.EditPostRequest) (string, error)
-	RemovePost(ctx context.Context, removeID string) (string, error)
+	RemovePost(ctx context.Context, remove model.RemovePostRequest) (string, error)
 	LikePost(ctx context.Context, like model.LikePostRequest) (string, error)
 }
 type QueryResolver interface {
@@ -173,7 +173,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RemovePost(childComplexity, args["removeID"].(string)), true
+		return e.complexity.Mutation.RemovePost(childComplexity, args["remove"].(model.RemovePostRequest)), true
 
 	case "Post.comments":
 		if e.complexity.Post.Comments == nil {
@@ -358,6 +358,7 @@ input LikePostRequest {
 
 input RemovePostRequest {
     id: String!
+    fileID: String!
 }
 
 type Post {
@@ -371,7 +372,7 @@ type Post {
 	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation {
     createPost(newPost: CreatePostRequest!): Post!
     editPost(edit: EditPostRequest!): String!
-    removePost(removeID: String!): String!
+    removePost(remove: RemovePostRequest!): String!
     likePost(like: LikePostRequest!): String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
@@ -436,15 +437,15 @@ func (ec *executionContext) field_Mutation_likePost_args(ctx context.Context, ra
 func (ec *executionContext) field_Mutation_removePost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["removeID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeID"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg0 model.RemovePostRequest
+	if tmp, ok := rawArgs["remove"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remove"))
+		arg0, err = ec.unmarshalNRemovePostRequest2postsᚑserviceᚋgraphᚋmodelᚐRemovePostRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["removeID"] = arg0
+	args["remove"] = arg0
 	return args, nil
 }
 
@@ -754,7 +755,7 @@ func (ec *executionContext) _Mutation_removePost(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RemovePost(rctx, args["removeID"].(string))
+		return ec.resolvers.Mutation().RemovePost(rctx, args["remove"].(model.RemovePostRequest))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2456,6 +2457,14 @@ func (ec *executionContext) unmarshalInputRemovePostRequest(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "fileID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileID"))
+			it.FileID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -3032,6 +3041,11 @@ func (ec *executionContext) marshalNPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPo
 		return graphql.Null
 	}
 	return ec._Post(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRemovePostRequest2postsᚑserviceᚋgraphᚋmodelᚐRemovePostRequest(ctx context.Context, v interface{}) (model.RemovePostRequest, error) {
+	res, err := ec.unmarshalInputRemovePostRequest(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
