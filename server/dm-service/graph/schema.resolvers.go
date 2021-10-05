@@ -8,17 +8,20 @@ import (
 	"dm-service/database"
 	"dm-service/graph/generated"
 	"dm-service/graph/model"
-	"github.com/google/uuid"
+	"dm-service/util"
+	"errors"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func (r *mutationResolver) CreateDm(ctx context.Context, msg string, username string, roomName string) (*model.Dm, error) {
-
 	r.mu.Lock()
 	room := r.Rooms[roomName]
 	if room == nil {
 		room = &Chatroom{
 			Name: roomName,
+			Member: []string{username},
 			Observers: map[string]struct {
 				Username string
 				Message  chan *model.Dm
@@ -26,8 +29,11 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, username st
 		}
 		r.Rooms[roomName] = room
 	}
+	if !util.Contains(room.Member, username) {
+		room.Member = append(room.Member, username)
+	}
 	r.mu.Unlock()
-	
+
 	id := uuid.NewString()
 	dmEvent := database.DmEvent{
 		EventTime: time.Now().Format("2006-01-02 15:04:05"),
@@ -49,7 +55,7 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, username st
 		observer.Message <- dm
 	}
 	r.mu.Unlock()
-	
+
 	// post message on queue
 	r.publisher.AddMessageToEvent(dmEvent, "Dm-Service")
 	r.publisher.AddMessageToCommand("Dm-Service")
@@ -65,6 +71,7 @@ func (r *queryResolver) GetRoom(ctx context.Context, name string) (*model.Chatro
 	if room == nil {
 		room = &Chatroom{
 			Name: name,
+			Member: make([]string, 0),
 			Observers: map[string]struct {
 				Username string
 				Message  chan *model.Dm
@@ -75,14 +82,38 @@ func (r *queryResolver) GetRoom(ctx context.Context, name string) (*model.Chatro
 	r.mu.Unlock()
 
 	chatroom := &model.Chatroom{
-		Name:     room.Name,
+		Member:   room.Member,
 		Messages: room.Messages,
+		Name:     room.Name,
 	}
 
 	return chatroom, nil
 }
 
-// GetDms Deprecated
+func (r *queryResolver) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error) {
+	r.mu.Lock()
+	rooms := make([]*model.Chatroom, 0)
+	if len(r.Rooms) == 0 {
+		return nil, errors.New("no rooms available")
+	}
+	for _, chatroom := range r.Rooms {
+		if util.Contains(chatroom.Member, userName) {
+			rooms = append(rooms, &model.Chatroom{
+				Member:   chatroom.Member,
+				Messages: chatroom.Messages,
+				Name:     chatroom.Name,
+			})
+		}
+	}
+	r.mu.Unlock()
+
+	if len(rooms) == 0 {
+		return nil, errors.New("no rooms available for this user")
+	}
+
+	return rooms, nil
+}
+
 func (r *queryResolver) GetDms(ctx context.Context) ([]*model.Dm, error) {
 	dms, err := r.repo.GetDms(ctx)
 	if err != nil {
@@ -91,12 +122,10 @@ func (r *queryResolver) GetDms(ctx context.Context) ([]*model.Dm, error) {
 	return dms, nil
 }
 
-// GetChat Deprecated
 func (r *queryResolver) GetChat(ctx context.Context, input model.GetChatRequest) ([]*model.Dm, error) {
 	return r.repo.GetChat(ctx, input.User1, input.User2)
 }
 
-// GetOpenChats Deprecated
 func (r *queryResolver) GetOpenChats(ctx context.Context, userName string) ([]*model.Chat, error) {
 	chats, err := r.repo.GetOpenChats(ctx, userName)
 	if err != nil {
@@ -119,10 +148,10 @@ func (r *subscriptionResolver) DmAdded(ctx context.Context, roomName string) (<-
 		r.Rooms[roomName] = room
 	}
 	r.mu.Unlock()
-	
+
 	id := uuid.NewString()
 	events := make(chan *model.Dm, 1)
-	
+
 	go func() {
 		<-ctx.Done()
 		r.mu.Lock()
@@ -156,6 +185,7 @@ type subscriptionResolver struct{ *Resolver }
 type Chatroom struct {
 	Name      string
 	Messages  []*model.Dm
+	Member    []string
 	Observers map[string]struct {
 		Username string
 		Message  chan *model.Dm

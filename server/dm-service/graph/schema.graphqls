@@ -4,14 +4,16 @@
 
 type Query {
   getRoom(name:String!): Chatroom
+  getRoomsByUser(userName: String!): [Chatroom]
   getDms: [Dm!]!
   getChat(input: GetChatRequest!): [Dm!]!
   getOpenChats(userName: String!): [Chat!]!
 }
 
 type Chatroom {
-  name: String!
+  member: [String!]!
   messages: [Dm!]!
+  name: String!
 }
 
 type Dm {

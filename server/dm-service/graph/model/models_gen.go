@@ -8,8 +8,9 @@ type Chat struct {
 }
 
 type Chatroom struct {
-	Name     string `json:"name"`
-	Messages []*Dm  `json:"messages"`
+	Member   []string `json:"member"`
+	Messages []*Dm    `json:"messages"`
+	Name     string   `json:"name"`
 }
 
 type Dm struct {
