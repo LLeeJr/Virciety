@@ -148,21 +148,51 @@ export class ApiService {
     return this.query.valueChanges;
   }
 
-  getDms(): Observable<any> {
-    const DMS_QUERY = gql`
-    query {
-      getDms {
-        id,
-        msg
+  getRoomsByUser(): Observable<any> {
+    const userName = this.auth.userName;
+    const query = gql`
+    query getRoom($userName: String!) {
+      getRoom(userName: $userName)
+      {
+        name,
+        member,
+        messages{
+          msg
+        },
       }
-    }
-  `;
+    }`;
 
-    this.query = this.apollo.watchQuery({
-      query: DMS_QUERY,
-      variables: {}
+    this.query = this.apollo.watchQuery<any>({
+      query: query,
+      variables: {
+        userName: userName
+      }
     });
 
     return this.query.valueChanges;
   }
+
+  getRoom(roomName: string): Observable<any> {
+    const query = gql`
+    query getRoom($name: String!) {
+      getRoom(name: $name)
+      {
+        name,
+        member,
+        messages{
+          msg
+        },
+      }
+    }`;
+
+    this.query = this.apollo.watchQuery<any>({
+      query: query,
+      variables: {
+        name: roomName
+      }
+    });
+
+    return this.query.valueChanges;
+  }
+
 }
