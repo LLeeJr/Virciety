@@ -15,13 +15,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func (r *mutationResolver) CreateDm(ctx context.Context, msg string, username string, roomName string) (*model.Dm, error) {
+func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName string, roomName string) (*model.Dm, error) {
 	r.mu.Lock()
 	room := r.Rooms[roomName]
 	if room == nil {
 		room = &Chatroom{
-			Name: roomName,
-			Member: []string{username},
+			Name:   roomName,
+			Member: []string{userName},
 			Observers: map[string]struct {
 				Username string
 				Message  chan *model.Dm
@@ -29,17 +29,17 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, username st
 		}
 		r.Rooms[roomName] = room
 	}
-	if !util.Contains(room.Member, username) {
-		room.Member = append(room.Member, username)
+	if !util.Contains(room.Member, userName) {
+		room.Member = append(room.Member, userName)
 	}
 	r.mu.Unlock()
 
 	id := uuid.NewString()
 	dmEvent := database.DmEvent{
-		EventTime: time.Now().Format("2006-01-02 15:04:05"),
+		EventTime: time.Now(),
 		EventType: "CreateDm",
 		DmID:      id,
-		From:      username,
+		From:      userName,
 		Msg:       msg,
 	}
 
@@ -70,7 +70,7 @@ func (r *queryResolver) GetRoom(ctx context.Context, name string) (*model.Chatro
 	room := r.Rooms[name]
 	if room == nil {
 		room = &Chatroom{
-			Name: name,
+			Name:   name,
 			Member: make([]string, 0),
 			Observers: map[string]struct {
 				Username string

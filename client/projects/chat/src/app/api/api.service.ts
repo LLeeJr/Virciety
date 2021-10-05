@@ -17,6 +17,7 @@ export class ApiService {
 
   messages: any[] = [];
   chatPartner = '';
+  selectedRoom = '';
 
   private query: QueryRef<any> | undefined;
   private apollo!: ApolloBase;
@@ -61,16 +62,8 @@ export class ApiService {
   }
 
   writeDm(msg: string): Observable<any> {
-    const from = this.auth.userName;
-    const to = this.chatPartner;
-    const date = new Date();
-    const formDate =this.datePipe.transform(date, 'yyyy-MM-dd HH:mm:ss');
-    const id = `${from}__${formDate}__${to}`;
-
-    const createDmRequest = {
-      id: id,
-      msg: msg,
-    };
+    const userName = this.auth.userName;
+    const roomName = this.selectedRoom;
 
     const mutation = gql`
     mutation createDm($input: CreateDmRequest!){
@@ -85,8 +78,10 @@ export class ApiService {
     return this.apollo.mutate<any>({
       mutation: mutation,
       variables: {
-        input: createDmRequest
-      }
+        msg: msg,
+        username: userName,
+        roomName: roomName,
+      },
     });
   }
 

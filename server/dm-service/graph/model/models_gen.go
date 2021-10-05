@@ -2,6 +2,10 @@
 
 package model
 
+import (
+	"time"
+)
+
 type Chat struct {
 	WithUser string `json:"withUser"`
 	Preview  string `json:"preview"`
@@ -14,8 +18,10 @@ type Chatroom struct {
 }
 
 type Dm struct {
-	ID  string `json:"id"`
-	Msg string `json:"msg"`
+	ID        string    `json:"id"`
+	Msg       string    `json:"msg"`
+	CreatedBy string    `json:"createdBy"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type GetChatRequest struct {

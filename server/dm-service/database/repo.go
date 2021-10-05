@@ -6,10 +6,11 @@ import (
 	"dm-service/graph/model"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type DmEvent struct {
-	EventTime string `json:"eventTime"`
+	EventTime time.Time `json:"eventTime"`
 	EventType string `json:"eventType"`
 	DmID string `json:"id"`
 	From string `json:"from"`
@@ -101,6 +102,8 @@ func (r *repo) CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error)
 
 	id := dmEvent.DmID
 	dm := &model.Dm{
+		CreatedAt: dmEvent.EventTime,
+		CreatedBy: dmEvent.From,
 		ID:  id,
 		Msg: dmEvent.Msg,
 	}

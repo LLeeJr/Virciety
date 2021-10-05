@@ -19,7 +19,11 @@ type Chatroom {
 type Dm {
   id: String!
   msg: String!
+  createdBy: String!
+  createdAt: Time!
 }
+
+scalar Time
 
 type Subscription {
   dmAdded(roomName: String!): Dm!
@@ -31,7 +35,7 @@ type Chat {
 }
 
 type Mutation {
-  createDm(msg: String!, username: String!, roomName: String!): Dm!
+  createDm(msg: String!, userName: String!, roomName: String!): Dm!
 }
 
 input GetChatRequest {

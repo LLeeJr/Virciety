@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -58,12 +59,14 @@ type ComplexityRoot struct {
 	}
 
 	Dm struct {
-		ID  func(childComplexity int) int
-		Msg func(childComplexity int) int
+		CreatedAt func(childComplexity int) int
+		CreatedBy func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Msg       func(childComplexity int) int
 	}
 
 	Mutation struct {
-		CreateDm func(childComplexity int, msg string, username string, roomName string) int
+		CreateDm func(childComplexity int, msg string, userName string, roomName string) int
 	}
 
 	Query struct {
@@ -80,7 +83,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreateDm(ctx context.Context, msg string, username string, roomName string) (*model.Dm, error)
+	CreateDm(ctx context.Context, msg string, userName string, roomName string) (*model.Dm, error)
 }
 type QueryResolver interface {
 	GetRoom(ctx context.Context, name string) (*model.Chatroom, error)
@@ -143,6 +146,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Chatroom.Name(childComplexity), true
 
+	case "Dm.createdAt":
+		if e.complexity.Dm.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Dm.CreatedAt(childComplexity), true
+
+	case "Dm.createdBy":
+		if e.complexity.Dm.CreatedBy == nil {
+			break
+		}
+
+		return e.complexity.Dm.CreatedBy(childComplexity), true
+
 	case "Dm.id":
 		if e.complexity.Dm.ID == nil {
 			break
@@ -167,7 +184,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateDm(childComplexity, args["msg"].(string), args["username"].(string), args["roomName"].(string)), true
+		return e.complexity.Mutation.CreateDm(childComplexity, args["msg"].(string), args["userName"].(string), args["roomName"].(string)), true
 
 	case "Query.getChat":
 		if e.complexity.Query.GetChat == nil {
@@ -340,7 +357,11 @@ type Chatroom {
 type Dm {
   id: String!
   msg: String!
+  createdBy: String!
+  createdAt: Time!
 }
+
+scalar Time
 
 type Subscription {
   dmAdded(roomName: String!): Dm!
@@ -352,7 +373,7 @@ type Chat {
 }
 
 type Mutation {
-  createDm(msg: String!, username: String!, roomName: String!): Dm!
+  createDm(msg: String!, userName: String!, roomName: String!): Dm!
 }
 
 input GetChatRequest {
@@ -396,14 +417,14 @@ func (ec *executionContext) field_Mutation_createDm_args(ctx context.Context, ra
 	}
 	args["msg"] = arg0
 	var arg1 string
-	if tmp, ok := rawArgs["username"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+	if tmp, ok := rawArgs["userName"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userName"))
 		arg1, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["username"] = arg1
+	args["userName"] = arg1
 	var arg2 string
 	if tmp, ok := rawArgs["roomName"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomName"))
@@ -826,6 +847,76 @@ func (ec *executionContext) _Dm_msg(ctx context.Context, field graphql.Collected
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Dm_createdBy(ctx context.Context, field graphql.CollectedField, obj *model.Dm) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Dm",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Dm_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Dm) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Dm",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_createDm(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -851,7 +942,7 @@ func (ec *executionContext) _Mutation_createDm(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateDm(rctx, args["msg"].(string), args["username"].(string), args["roomName"].(string))
+		return ec.resolvers.Mutation().CreateDm(rctx, args["msg"].(string), args["userName"].(string), args["roomName"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2401,6 +2492,16 @@ func (ec *executionContext) _Dm(ctx context.Context, sel ast.SelectionSet, obj *
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "createdBy":
+			out.Values[i] = ec._Dm_createdBy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._Dm_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2963,6 +3064,21 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	res, err := graphql.UnmarshalTime(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	res := graphql.MarshalTime(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
