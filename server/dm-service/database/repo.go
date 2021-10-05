@@ -14,7 +14,6 @@ type DmEvent struct {
 	DmID string `json:"id"`
 	From string `json:"from"`
 	To string `json:"to"`
-	Time string `json:"time"`
 	Msg string `json:"msg"`
 }
 
@@ -83,12 +82,12 @@ func NewRepo(db *sql.DB) (Repository, error) {
 
 func (r *repo) InsertDmEvent(ctx context.Context, dmEvent DmEvent) (err error) {
 	query := `INSERT INTO dms ("eventTime", "eventType", id, "fromUser", "toUser", "atTime", msg)
-              VALUES ($1, $2, $3, $4, $5, $6, $7) returning id`
+              VALUES ($1, $2, $3, $4, $5, $6) returning id`
 
 	id := ""
 
 	row := r.DB.QueryRowContext(ctx, query, dmEvent.EventTime, dmEvent.EventType,
-		dmEvent.DmID, dmEvent.From, dmEvent.To, dmEvent.Time, dmEvent.Msg)
+		dmEvent.DmID, dmEvent.From, dmEvent.To, dmEvent.Msg)
 
 	err = row.Scan(&id)
 
@@ -100,7 +99,7 @@ func (r *repo) InsertDmEvent(ctx context.Context, dmEvent DmEvent) (err error) {
 func (r *repo) CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error) {
 	_ = r.InsertDmEvent(ctx, dmEvent)
 
-	id := fmt.Sprintf("%s__%s__%s", dmEvent.From, dmEvent.Time, dmEvent.To)
+	id := dmEvent.DmID
 	dm := &model.Dm{
 		ID:  id,
 		Msg: dmEvent.Msg,
@@ -121,7 +120,7 @@ func (r *repo) GetChat(ctx context.Context, user1 string, user2 string) ([]*mode
 	for rows.Next() {
 		var dmEvent DmEvent
 		err := rows.Scan(&dmEvent.EventTime, &dmEvent.EventType, &dmEvent.DmID,
-			&dmEvent.From, &dmEvent.To, &dmEvent.Time, &dmEvent.Msg)
+			&dmEvent.From, &dmEvent.To, &dmEvent.Msg)
 		if err != nil {
 			continue
 		}
@@ -149,7 +148,7 @@ func (r *repo) GetDms(ctx context.Context) ([]*model.Dm, error) {
 	for rows.Next() {
 		var dmEvent DmEvent
 		err := rows.Scan(&dmEvent.EventTime, &dmEvent.EventType, &dmEvent.DmID,
-			&dmEvent.From, &dmEvent.To, &dmEvent.Time, &dmEvent.Msg)
+			&dmEvent.From, &dmEvent.To, &dmEvent.Msg)
 		if err != nil {
 			continue
 		}

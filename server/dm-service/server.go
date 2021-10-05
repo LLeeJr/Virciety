@@ -39,6 +39,7 @@ func main() {
 	go consumer.InitConsumer()
 
 	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
+	//srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
 
 	srv.AddTransport(transport.POST{})
 	srv.AddTransport(transport.Websocket{

@@ -3,9 +3,15 @@
 # https://gqlgen.com/getting-started/
 
 type Query {
+  getRoom(name:String!): Chatroom
   getDms: [Dm!]!
   getChat(input: GetChatRequest!): [Dm!]!
   getOpenChats(userName: String!): [Chat!]!
+}
+
+type Chatroom {
+  name: String!
+  messages: [Dm!]!
 }
 
 type Dm {
@@ -14,7 +20,7 @@ type Dm {
 }
 
 type Subscription {
-  dmAdded: Dm!
+  dmAdded(roomName: String!): Dm!
 }
 
 type Chat {
@@ -23,16 +29,12 @@ type Chat {
 }
 
 type Mutation {
-  createDm(input: CreateDmRequest): Dm!
-}
-
-
-input CreateDmRequest {
-  id: String!
-  msg: String!
+  createDm(msg: String!, username: String!, roomName: String!): Dm!
 }
 
 input GetChatRequest {
   user1: String!
   user2: String!
 }
+
+directive @user(username: String!) on SUBSCRIPTION

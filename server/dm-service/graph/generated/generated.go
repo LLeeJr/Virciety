@@ -42,6 +42,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	User func(ctx context.Context, obj interface{}, next graphql.Resolver, username string) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -50,36 +51,43 @@ type ComplexityRoot struct {
 		WithUser func(childComplexity int) int
 	}
 
+	Chatroom struct {
+		Messages func(childComplexity int) int
+		Name     func(childComplexity int) int
+	}
+
 	Dm struct {
 		ID  func(childComplexity int) int
 		Msg func(childComplexity int) int
 	}
 
 	Mutation struct {
-		CreateDm func(childComplexity int, input *model.CreateDmRequest) int
+		CreateDm func(childComplexity int, msg string, username string, roomName string) int
 	}
 
 	Query struct {
 		GetChat      func(childComplexity int, input model.GetChatRequest) int
 		GetDms       func(childComplexity int) int
 		GetOpenChats func(childComplexity int, userName string) int
+		GetRoom      func(childComplexity int, name string) int
 	}
 
 	Subscription struct {
-		DmAdded func(childComplexity int) int
+		DmAdded func(childComplexity int, roomName string) int
 	}
 }
 
 type MutationResolver interface {
-	CreateDm(ctx context.Context, input *model.CreateDmRequest) (*model.Dm, error)
+	CreateDm(ctx context.Context, msg string, username string, roomName string) (*model.Dm, error)
 }
 type QueryResolver interface {
+	GetRoom(ctx context.Context, name string) (*model.Chatroom, error)
 	GetDms(ctx context.Context) ([]*model.Dm, error)
 	GetChat(ctx context.Context, input model.GetChatRequest) ([]*model.Dm, error)
 	GetOpenChats(ctx context.Context, userName string) ([]*model.Chat, error)
 }
 type SubscriptionResolver interface {
-	DmAdded(ctx context.Context) (<-chan *model.Dm, error)
+	DmAdded(ctx context.Context, roomName string) (<-chan *model.Dm, error)
 }
 
 type executableSchema struct {
@@ -111,6 +119,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Chat.WithUser(childComplexity), true
 
+	case "Chatroom.messages":
+		if e.complexity.Chatroom.Messages == nil {
+			break
+		}
+
+		return e.complexity.Chatroom.Messages(childComplexity), true
+
+	case "Chatroom.name":
+		if e.complexity.Chatroom.Name == nil {
+			break
+		}
+
+		return e.complexity.Chatroom.Name(childComplexity), true
+
 	case "Dm.id":
 		if e.complexity.Dm.ID == nil {
 			break
@@ -135,7 +157,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateDm(childComplexity, args["input"].(*model.CreateDmRequest)), true
+		return e.complexity.Mutation.CreateDm(childComplexity, args["msg"].(string), args["username"].(string), args["roomName"].(string)), true
 
 	case "Query.getChat":
 		if e.complexity.Query.GetChat == nil {
@@ -168,12 +190,29 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetOpenChats(childComplexity, args["userName"].(string)), true
 
+	case "Query.getRoom":
+		if e.complexity.Query.GetRoom == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getRoom_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetRoom(childComplexity, args["name"].(string)), true
+
 	case "Subscription.dmAdded":
 		if e.complexity.Subscription.DmAdded == nil {
 			break
 		}
 
-		return e.complexity.Subscription.DmAdded(childComplexity), true
+		args, err := ec.field_Subscription_dmAdded_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.DmAdded(childComplexity, args["roomName"].(string)), true
 
 	}
 	return 0, false
@@ -214,7 +253,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 		}
 	case ast.Subscription:
-		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
+		next := ec._subscriptionMiddleware(ctx, rc.Operation, func(ctx context.Context) (interface{}, error) {
+			return ec._Subscription(ctx, rc.Operation.SelectionSet), nil
+		})
 
 		var buf bytes.Buffer
 		return func(ctx context.Context) *graphql.Response {
@@ -261,9 +302,15 @@ var sources = []*ast.Source{
 # https://gqlgen.com/getting-started/
 
 type Query {
+  getRoom(name:String!): Chatroom
   getDms: [Dm!]!
   getChat(input: GetChatRequest!): [Dm!]!
   getOpenChats(userName: String!): [Chat!]!
+}
+
+type Chatroom {
+  name: String!
+  messages: [Dm!]!
 }
 
 type Dm {
@@ -272,7 +319,7 @@ type Dm {
 }
 
 type Subscription {
-  dmAdded: Dm!
+  dmAdded(roomName: String!): Dm!
 }
 
 type Chat {
@@ -281,19 +328,15 @@ type Chat {
 }
 
 type Mutation {
-  createDm(input: CreateDmRequest): Dm!
-}
-
-
-input CreateDmRequest {
-  id: String!
-  msg: String!
+  createDm(msg: String!, username: String!, roomName: String!): Dm!
 }
 
 input GetChatRequest {
   user1: String!
   user2: String!
-}`, BuiltIn: false},
+}
+
+directive @user(username: String!) on SUBSCRIPTION`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -301,18 +344,51 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutation_createDm_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) dir_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.CreateDmRequest
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOCreateDmRequest2ᚖdmᚑserviceᚋgraphᚋmodelᚐCreateDmRequest(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["username"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createDm_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["msg"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("msg"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["msg"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["roomName"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomName"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["roomName"] = arg2
 	return args, nil
 }
 
@@ -361,6 +437,36 @@ func (ec *executionContext) field_Query_getOpenChats_args(ctx context.Context, r
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_getRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_dmAdded_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["roomName"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomName"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["roomName"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -394,6 +500,43 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ***************************** args.gotpl *****************************
 
 // region    ************************** directives.gotpl **************************
+
+func (ec *executionContext) _subscriptionMiddleware(ctx context.Context, obj *ast.OperationDefinition, next func(ctx context.Context) (interface{}, error)) func() graphql.Marshaler {
+	for _, d := range obj.Directives {
+		switch d.Name {
+		case "user":
+			rawArgs := d.ArgumentMap(ec.Variables)
+			args, err := ec.dir_user_args(ctx, rawArgs)
+			if err != nil {
+				ec.Error(ctx, err)
+				return func() graphql.Marshaler {
+					return graphql.Null
+				}
+			}
+			n := next
+			next = func(ctx context.Context) (interface{}, error) {
+				if ec.directives.User == nil {
+					return nil, errors.New("directive user is not implemented")
+				}
+				return ec.directives.User(ctx, obj, n, args["username"].(string))
+			}
+		}
+	}
+	tmp, err := next(ctx)
+	if err != nil {
+		ec.Error(ctx, err)
+		return func() graphql.Marshaler {
+			return graphql.Null
+		}
+	}
+	if data, ok := tmp.(func() graphql.Marshaler); ok {
+		return data
+	}
+	ec.Errorf(ctx, `unexpected type %T from directive, should be graphql.Marshaler`, tmp)
+	return func() graphql.Marshaler {
+		return graphql.Null
+	}
+}
 
 // endregion ************************** directives.gotpl **************************
 
@@ -467,6 +610,76 @@ func (ec *executionContext) _Chat_preview(ctx context.Context, field graphql.Col
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Chatroom_name(ctx context.Context, field graphql.CollectedField, obj *model.Chatroom) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Chatroom",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Chatroom_messages(ctx context.Context, field graphql.CollectedField, obj *model.Chatroom) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Chatroom",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Messages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Dm)
+	fc.Result = res
+	return ec.marshalNDm2ᚕᚖdmᚑserviceᚋgraphᚋmodelᚐDmᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Dm_id(ctx context.Context, field graphql.CollectedField, obj *model.Dm) (ret graphql.Marshaler) {
@@ -564,7 +777,7 @@ func (ec *executionContext) _Mutation_createDm(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateDm(rctx, args["input"].(*model.CreateDmRequest))
+		return ec.resolvers.Mutation().CreateDm(rctx, args["msg"].(string), args["username"].(string), args["roomName"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -579,6 +792,45 @@ func (ec *executionContext) _Mutation_createDm(ctx context.Context, field graphq
 	res := resTmp.(*model.Dm)
 	fc.Result = res
 	return ec.marshalNDm2ᚖdmᚑserviceᚋgraphᚋmodelᚐDm(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getRoom_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetRoom(rctx, args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Chatroom)
+	fc.Result = res
+	return ec.marshalOChatroom2ᚖdmᚑserviceᚋgraphᚋmodelᚐChatroom(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getDms(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -787,9 +1039,16 @@ func (ec *executionContext) _Subscription_dmAdded(ctx context.Context, field gra
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_dmAdded_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().DmAdded(rctx)
+		return ec.resolvers.Subscription().DmAdded(rctx, args["roomName"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1903,34 +2162,6 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputCreateDmRequest(ctx context.Context, obj interface{}) (model.CreateDmRequest, error) {
-	var it model.CreateDmRequest
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "msg":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("msg"))
-			it.Msg, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputGetChatRequest(ctx context.Context, obj interface{}) (model.GetChatRequest, error) {
 	var it model.GetChatRequest
 	var asMap = obj.(map[string]interface{})
@@ -1985,6 +2216,38 @@ func (ec *executionContext) _Chat(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "preview":
 			out.Values[i] = ec._Chat_preview(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var chatroomImplementors = []string{"Chatroom"}
+
+func (ec *executionContext) _Chatroom(ctx context.Context, sel ast.SelectionSet, obj *model.Chatroom) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, chatroomImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Chatroom")
+		case "name":
+			out.Values[i] = ec._Chatroom_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "messages":
+			out.Values[i] = ec._Chatroom_messages(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2077,6 +2340,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "getRoom":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getRoom(ctx, field)
+				return res
+			})
 		case "getDms":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -2785,12 +3059,11 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
-func (ec *executionContext) unmarshalOCreateDmRequest2ᚖdmᚑserviceᚋgraphᚋmodelᚐCreateDmRequest(ctx context.Context, v interface{}) (*model.CreateDmRequest, error) {
+func (ec *executionContext) marshalOChatroom2ᚖdmᚑserviceᚋgraphᚋmodelᚐChatroom(ctx context.Context, sel ast.SelectionSet, v *model.Chatroom) graphql.Marshaler {
 	if v == nil {
-		return nil, nil
+		return graphql.Null
 	}
-	res, err := ec.unmarshalInputCreateDmRequest(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
+	return ec._Chatroom(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {

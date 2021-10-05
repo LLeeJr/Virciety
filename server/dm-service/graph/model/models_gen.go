@@ -7,9 +7,9 @@ type Chat struct {
 	Preview  string `json:"preview"`
 }
 
-type CreateDmRequest struct {
-	ID  string `json:"id"`
-	Msg string `json:"msg"`
+type Chatroom struct {
+	Name     string `json:"name"`
+	Messages []*Dm  `json:"messages"`
 }
 
 type Dm struct {
