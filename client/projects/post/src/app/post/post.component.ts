@@ -20,6 +20,7 @@ export class PostComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.posts = this.gqlService.getPosts();
+    this.gqlService.getPostCreated();
   }
 
   ngOnDestroy(): void {

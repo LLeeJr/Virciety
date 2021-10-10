@@ -30,7 +30,11 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 		return nil, err
 	}
 
-	// r.postChan <- post
+	r.mu.Lock()
+	for _, observer := range r.observers {
+		observer <- post
+	}
+	r.mu.Unlock()
 
 	// put event on queue for notifications
 	// r.producerQueue.AddMessageToQuery(postEvent)

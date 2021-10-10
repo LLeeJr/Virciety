@@ -4,6 +4,7 @@ import (
 	"posts-service/database"
 	"posts-service/graph/model"
 	messagequeue "posts-service/message-queue"
+	"sync"
 )
 
 // This file will not be regenerated automatically.
@@ -13,13 +14,14 @@ import (
 type Resolver struct {
 	repo          database.Repository
 	producerQueue messagequeue.Publisher
-	postChan      chan *model.Post
+	observers     map[string]chan *model.Post
+	mu            sync.Mutex
 }
 
 func NewResolver(repo database.Repository, producerQueue messagequeue.Publisher) *Resolver {
 	return &Resolver{
 		repo:          repo,
 		producerQueue: producerQueue,
-		postChan:      make(chan *model.Post),
+		observers:     map[string]chan *model.Post{},
 	}
 }

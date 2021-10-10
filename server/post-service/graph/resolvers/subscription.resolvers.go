@@ -5,12 +5,32 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
+
+	"github.com/google/uuid"
 )
 
 func (r *subscriptionResolver) NewPostCreated(ctx context.Context) (<-chan *model.Post, error) {
-	return r.postChan, nil
+	fmt.Println("Subscribed")
+
+	id := uuid.NewString()
+	events := make(chan *model.Post, 1)
+
+	go func() {
+		<-ctx.Done()
+		r.mu.Lock()
+		fmt.Printf("Deleted id %v\n", id)
+		delete(r.observers, id)
+		r.mu.Unlock()
+	}()
+
+	r.mu.Lock()
+	r.observers[id] = events
+	r.mu.Unlock()
+
+	return events, nil
 }
 
 // Subscription returns generated.SubscriptionResolver implementation.

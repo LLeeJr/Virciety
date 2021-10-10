@@ -5,7 +5,15 @@ import {Post} from "../model/post";
 import {DataLibService} from "data-lib";
 import {HttpLink} from "apollo-angular/http";
 import {getMainDefinition} from "@apollo/client/utilities";
-import {CREATE_POST, EDIT_POST, GET_DATA, GET_POSTS, LIKE_POST, REMOVE_POST} from "./gql-request-strings";
+import {
+  CREATE_POST,
+  EDIT_POST,
+  GET_DATA,
+  GET_POSTS,
+  LIKE_POST,
+  NEW_POST_CREATED,
+  REMOVE_POST
+} from "./gql-request-strings";
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
 
@@ -77,8 +85,6 @@ export class GQLService {
     });
 
     this.apollo = this.apolloProvider.use('post');
-
-    this.getPostCreated();
   }
 
   // Getter + Setter
@@ -265,28 +271,18 @@ export class GQLService {
     });
   }
 
-  private getPostCreated() {
-    /*this.getPostQuery?.subscribeToMore({
-      document: NEW_POST_CREATED,
-      updateQuery: (prev: any, {data}: any) => {
-        console.log('GetPostCreatedData: ', data);
-        console.log('GetPostCreatedData prev: ', prev);
-      }
-    })*/
-
-
-    /*this.apollo.subscribe({
+  getPostCreated() {
+    this.apollo.subscribe({
       query: NEW_POST_CREATED,
     }).subscribe(({data}: any) => {
+      console.log('NewPostCreated: ', data);
 
-      if (data.newPostCreated.username === 'user3') {
-        return
-      }
       const post = new Post(data.newPostCreated);
 
+      this.dataService.addNewPost(post);
       this.getData(post);
     }, (error: any) => {
       console.error('there was an error sending the newPostCreated-subscription', error)
-    });*/
+    })
   }
 }
