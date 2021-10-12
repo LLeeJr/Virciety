@@ -275,12 +275,34 @@ export class GQLService {
     this.apollo.subscribe({
       query: NEW_POST_CREATED,
     }).subscribe(({data}: any) => {
-      console.log('NewPostCreated: ', data);
+      // console.log('NewPostCreated: ', data);
 
       const post = new Post(data.newPostCreated);
 
       this.dataService.addNewPost(post);
       this.getData(post);
+
+      const cache = this.apollo.client.cache;
+
+      const existingPosts: any = cache.readQuery({
+        query: GET_POSTS,
+      });
+
+      let newPosts;
+
+      if (existingPosts) {
+        newPosts = [data.newPostCreated, ...existingPosts.getPosts];
+      } else {
+        newPosts = [data.newPostCreated];
+      }
+
+      cache.writeQuery({
+        query: GET_POSTS,
+        variables: {
+          id: 'create',
+        },
+        data: { getPosts : newPosts }
+      });
     }, (error: any) => {
       console.error('there was an error sending the newPostCreated-subscription', error)
     })
