@@ -3,66 +3,22 @@
      [infiniteScrollThrottle]="50"
      (scrolled)="onScroll()">
   <div *ngFor="let post of posts | async">
-    <mat-card class="post-card" style="width: 300px; margin-bottom: 10px; margin-top: 10px">
-      <mat-card-header>
-        <div mat-card-avatar class="example-header-image"></div>
-        <mat-card-title>{{post.username}}</mat-card-title>
-      </mat-card-header>
-      <ng-container [ngTemplateOutlet]="post.data.content !== '' ? media_tp : loading_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
-      <mat-card-content>
-        <p *ngIf="post.likedBy.length !== 0">
-          <a (click)="openLikedByDialog(post.likedBy)">{{post.likedBy.length > 1 ? post.likedBy.length + ' likes' : '1 like'}}</a>
-        </p>
-        <div>
-          <div *ngIf="!post.editMode">{{post.description}}</div>
-          <div *ngIf="post.editMode">
-            <mat-form-field appearance="fill">
-              <mat-label>New Description</mat-label>
-              <input matInput placeholder="new description" [(ngModel)]="post.description">
-            </mat-form-field>
-          </div>
-        </div>
-      </mat-card-content>
-      <mat-card-actions>
-        <ng-container [ngTemplateOutlet]="post.editMode ? edit_buttons_tp : normal_buttons_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
-      </mat-card-actions>
+    <mat-card class="post-card">
+      <div *ngIf="post.commentMode">
+        <app-post-comment [post]="post"></app-post-comment>
+      </div>
+      <div *ngIf="!post.commentMode">
+        <app-post-media [post]="post"></app-post-media>
+      </div>
     </mat-card>
+  </div>
+
+  <div *ngIf="oldestPostReached; else loading_tp">
+    <h3>You are up-to-date!</h3>
   </div>
 </div>
 
-<div *ngIf="oldestPostReached; else loading_tp">
-  <h3>You are up-to-date!</h3>
-</div>
-
-<ng-template #media_tp let-post='post'>
-  <ng-container [ngTemplateOutlet]="post.data.contentType.startsWith('image') ? image_tp : video_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
-</ng-template>
-
-<ng-template #loading_tp let-post='post'>
+<ng-template #loading_tp>
   <mat-spinner></mat-spinner>
 </ng-template>
 
-<ng-template #image_tp let-post='post'>
-  <img mat-card-image src="{{post.data.content}}" alt="{{post.id}}">
-</ng-template>
-
-<ng-template #video_tp let-post='post'>
-  <video mat-card-image controls>
-    <source src="{{post.data.content}}">
-  </video>
-</ng-template>
-
-<ng-template #edit_buttons_tp let-post='post'>
-  <button mat-button (click)="this.post.editMode = false; this.editPost(post)">Save</button>
-  <button mat-button (click)="this.post.editMode = false">Cancel</button>
-  <button mat-button color="warn" (click)="this.post.editMode = false; this.removePost(post)">Delete</button>
-</ng-template>
-
-<ng-template #normal_buttons_tp let-post='post'>
-  <button mat-button (click)="this.likePost(post)">
-    <mat-icon>favorite</mat-icon>
-    Like
-  </button>
-  <!--TODO add this.authService.username as condition-->
-  <button mat-button *ngIf="post.username === 'user3'" (click)="post.editMode = true">Edit</button>
-</ng-template>

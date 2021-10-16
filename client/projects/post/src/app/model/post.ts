@@ -7,9 +7,10 @@ export class Post {
   };
   public description: string;
   public likedBy: string[];
-  public comments: string[];
+  public comments: any[];
   public username: string;
   public editMode: boolean;
+  public commentMode: boolean;
 
   constructor(data: any) {
     this.data = {
@@ -24,5 +25,6 @@ export class Post {
     this.description = data.description;
     this.username = data.username;
     this.editMode = false;
+    this.commentMode = false;
   }
 }

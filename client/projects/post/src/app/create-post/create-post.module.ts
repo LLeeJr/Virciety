@@ -8,14 +8,14 @@ import {FormsModule} from "@angular/forms";
 
 
 @NgModule({
-  declarations: [
-    CreatePostComponent
-  ],
-  imports: [
-    CommonModule,
-    CreatePostRoutingModule,
-    MaterialModule,
-    FormsModule,
-  ]
+    declarations: [
+        CreatePostComponent
+    ],
+    imports: [
+        CommonModule,
+        CreatePostRoutingModule,
+        MaterialModule,
+        FormsModule,
+    ]
 })
 export class CreatePostModule { }
