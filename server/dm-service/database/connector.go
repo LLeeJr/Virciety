@@ -1,21 +1,30 @@
 package database
 
 import (
-	"database/sql"
-	"log"
+	"context"
+	"fmt"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"time"
 )
 
-const dbsource = "postgresql://user:pass@localhost:5433/db?sslmode=disable"
+const url = "mongodb://user:pass@localhost:27018"
 
-func Connect() *sql.DB {
-	var db *sql.DB
-	{
-		var err error
-		db, err = sql.Open("postgres", dbsource)
-		if err != nil {
-			log.Fatal("can't connect to db", err)
-		}
+func Connect() (*mongo.Client, error) {
+	client, err := mongo.NewClient(options.Client().ApplyURI(url))
+	if err != nil {
+		return nil, err
 	}
 
-	return db
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = client.Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("[MONGO] Connected to mongo db, successfully!")
+
+	return client, nil
 }

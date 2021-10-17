@@ -5,22 +5,20 @@
 type Query {
   getRoom(name:String!): Chatroom
   getRoomsByUser(userName: String!): [Chatroom]
-  getDms: [Dm!]!
-  getChat(input: GetChatRequest!): [Dm!]!
-  getOpenChats(userName: String!): [Chat!]!
 }
 
 type Chatroom {
+  _id: String!
   member: [String!]!
-  messages: [Dm!]!
   name: String!
 }
 
 type Dm {
+  chatroomId: String!
+  createdAt: Time!
+  createdBy: String!
   id: String!
   msg: String!
-  createdBy: String!
-  createdAt: Time!
 }
 
 scalar Time
@@ -36,11 +34,6 @@ type Chat {
 
 type Mutation {
   createDm(msg: String!, userName: String!, roomName: String!): Dm!
-}
-
-input GetChatRequest {
-  user1: String!
-  user2: String!
 }
 
 directive @user(username: String!) on SUBSCRIPTION

@@ -12,19 +12,15 @@ type Chat struct {
 }
 
 type Chatroom struct {
-	Member   []string `json:"member"`
-	Messages []*Dm    `json:"messages"`
-	Name     string   `json:"name"`
+	ID     string   `json:"_id"`
+	Member []string `json:"member"`
+	Name   string   `json:"name"`
 }
 
 type Dm struct {
-	ID        string    `json:"id"`
-	Msg       string    `json:"msg"`
-	CreatedBy string    `json:"createdBy"`
-	CreatedAt time.Time `json:"createdAt"`
-}
-
-type GetChatRequest struct {
-	User1 string `json:"user1"`
-	User2 string `json:"user2"`
+	ChatroomID string    `json:"chatroomId"`
+	CreatedAt  time.Time `json:"createdAt"`
+	CreatedBy  string    `json:"createdBy"`
+	ID         string    `json:"id"`
+	Msg        string    `json:"msg"`
 }

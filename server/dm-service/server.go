@@ -26,8 +26,7 @@ func main() {
 		port = defaultPort
 	}
 
-	db := database.Connect()
-	repo, err := database.NewRepo(db)
+	repo, err := database.NewRepo()
 	if err != nil {
 		log.Fatal("err", err)
 	}
@@ -38,8 +37,8 @@ func main() {
 	consumer, _ := queue.NewConsumer(repo)
 	go consumer.InitConsumer()
 
-	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
-	//srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
+	//srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
 
 	srv.AddTransport(transport.POST{})
 	srv.AddTransport(transport.Websocket{
