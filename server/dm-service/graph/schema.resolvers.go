@@ -146,25 +146,29 @@ func (r *queryResolver) GetRoom(ctx context.Context, name string) (*model.Chatro
 }
 
 func (r *queryResolver) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error) {
-	r.mu.Lock()
-	rooms := make([]*model.Chatroom, 0)
-	if len(r.Rooms) == 0 {
-		return nil, errors.New("no rooms available")
+	rooms, err := r.repo.GetRoomsByUser(ctx, userName)
+	if err != nil {
+		return nil, err
 	}
+	r.mu.Lock()
+	ids := make([]string, 0)
 	for _, chatroom := range r.Rooms {
-		if util.Contains(chatroom.Member, userName) {
-			rooms = append(rooms, &model.Chatroom{
-				Member: chatroom.Member,
-				Name:   chatroom.Name,
-			})
+		ids = append(ids, chatroom.Id)
+	}
+	for _, room := range rooms {
+		if !util.Contains(ids, room.ID) {
+			r.Rooms[room.Name] = &Chatroom{
+				Id:        room.ID,
+				Name:      room.Name,
+				Member:    room.Member,
+				Observers: map[string]struct {
+					Username string
+					Message  chan *model.Dm
+				}{},
+			}
 		}
 	}
 	r.mu.Unlock()
-
-	if len(rooms) == 0 {
-		return nil, errors.New("no rooms available for this user")
-	}
-
 	return rooms, nil
 }
 

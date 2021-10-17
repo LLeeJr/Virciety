@@ -16,7 +16,7 @@ type UniqueUser struct {
 
 type Repository interface {
 	GetRoom(ctx context.Context, name string) (*model.Chatroom, error)
-	getRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error)
+	GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error)
 	CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error)
 	CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.Chatroom, error)
 	UpdateRoom(ctx context.Context, room *model.Chatroom) (string, error)
@@ -92,13 +92,14 @@ func (r repo) InsertDmEvent(ctx context.Context, dmEvent DmEvent) (string, error
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
+type Chatroom struct {
+	ID        primitive.ObjectID `bson:"_id"`
+	Member    []string           `bson:"member"`
+	Name      string             `bson:"name"`
+	EventType string             `bson:"eventtype"`
+}
+
 func (r repo) GetRoom(ctx context.Context, name string) (*model.Chatroom, error) {
-	type Chatroom struct {
-		ID        primitive.ObjectID `bson:"_id"`
-		Member    []string           `bson:"member"`
-		Name      string             `bson:"name"`
-		EventType string             `bson:"eventtype"`
-	}
 
 	var result *Chatroom
 	if err := r.roomCollection.FindOne(ctx, bson.D{
@@ -116,8 +117,31 @@ func (r repo) GetRoom(ctx context.Context, name string) (*model.Chatroom, error)
 	return room, nil
 }
 
-func (r repo) getRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error) {
-	panic("implement me")
+func (r repo) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error) {
+
+	var result []*Chatroom
+	cursor, err := r.roomCollection.Find(
+		ctx,
+		bson.D{
+			{"member", userName},
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(ctx, &result)
+	if err != nil {
+		return nil, err
+	}
+	rooms := make([]*model.Chatroom, 0)
+	for _, chatroom := range result {
+		rooms = append(rooms, &model.Chatroom{
+			ID:     chatroom.ID.Hex(),
+			Member: chatroom.Member,
+			Name:   chatroom.Name,
+		})
+	}
+
+	return rooms, err
 }
 
 func (r repo) CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error) {
