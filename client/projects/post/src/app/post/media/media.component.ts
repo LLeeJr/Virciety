@@ -11,7 +11,7 @@ import {AuthLibService} from "auth-lib";
 })
 export class MediaComponent implements OnInit {
 
-  @Input() post: Post
+  @Input() post: Post;
   editMode: boolean = false;
 
   constructor(private dialog: MatDialog,

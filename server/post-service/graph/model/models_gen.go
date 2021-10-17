@@ -2,6 +2,20 @@
 
 package model
 
+type AddCommentRequest struct {
+	PostID    string `json:"postID"`
+	Comment   string `json:"comment"`
+	CreatedBy string `json:"createdBy"`
+}
+
+type Comment struct {
+	ID        string `json:"id"`
+	PostID    string `json:"postID"`
+	Comment   string `json:"comment"`
+	CreatedBy string `json:"createdBy"`
+	CreatedAt string `json:"createdAt"`
+}
+
 type CreatePostRequest struct {
 	Username    string `json:"username"`
 	Description string `json:"description"`

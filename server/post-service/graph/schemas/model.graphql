@@ -30,11 +30,25 @@ input RemovePostRequest {
     fileID: String!
 }
 
+input AddCommentRequest {
+    postID: String!
+    comment: String!
+    createdBy: String!
+}
+
 type Post {
-    id: String! # timestamp(created)__username
+    id: String!
     description: String!
     data: File!
     username: String!
     likedBy: [String!]!
     comments: [String!]!
+}
+
+type Comment {
+    id: String!
+    postID: String!
+    comment: String!
+    createdBy: String!
+    createdAt: String!
 }

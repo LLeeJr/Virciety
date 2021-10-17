@@ -5,6 +5,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 	"posts-service/database"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
@@ -111,6 +112,17 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 	// r.producerQueue.AddMessageToQuery(postEvent)
 
 	return "success", nil
+}
+
+func (r *mutationResolver) AddComment(ctx context.Context, comment model.AddCommentRequest) (*model.Comment, error) {
+	newComment := &model.Comment{
+		PostID:    comment.PostID,
+		Comment:   comment.Comment,
+		CreatedBy: comment.CreatedBy,
+		CreatedAt: time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	return newComment, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

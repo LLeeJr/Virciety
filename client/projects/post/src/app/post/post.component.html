@@ -5,7 +5,7 @@
   <div *ngFor="let post of posts | async">
     <mat-card class="post-card">
       <div *ngIf="post.commentMode">
-        <app-post-comment [post]="post"></app-post-comment>
+        <app-post-comment (newCommentEvent)="addComment(post, $event)" [post]="post"></app-post-comment>
       </div>
       <div *ngIf="!post.commentMode">
         <app-post-media [post]="post"></app-post-media>

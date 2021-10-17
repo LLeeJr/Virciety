@@ -1,11 +1,13 @@
-import { Injectable } from '@angular/core';
+import {Injectable} from '@angular/core';
 import {Apollo, ApolloBase, QueryRef} from "apollo-angular";
 import {InMemoryCache, split} from "@apollo/client/core";
 import {Post} from "../model/post";
+import {Comment} from "../model/comment";
 import {DataLibService} from "data-lib";
 import {HttpLink} from "apollo-angular/http";
 import {getMainDefinition} from "@apollo/client/utilities";
 import {
+  ADD_COMMENT,
   CREATE_POST,
   EDIT_POST,
   GET_DATA,
@@ -237,7 +239,7 @@ export class GQLService {
     }).subscribe(({data}) => {
       console.log('EditPostData: ', data)
     }, (error: any) => {
-      console.error('there was an error sending the likePost-mutation', error);
+      console.error('there was an error sending the editPost-mutation', error);
     });
   }
 
@@ -306,5 +308,22 @@ export class GQLService {
     }, (error: any) => {
       console.error('there was an error sending the newPostCreated-subscription', error)
     })
+  }
+
+  addComment(post: Post, addCommentRequest: { createdBy: string; comment: string; postID: string }) {
+    this.apollo.mutate({
+      mutation: ADD_COMMENT,
+      variables: {
+        comment: addCommentRequest,
+      }
+    }).subscribe(({data}: any) => {
+      const comment = new Comment(data.addComment);
+
+      post.comments = [comment, ...post.comments];
+
+      console.log('AddCommentData: ', data)
+    }, (error: any) => {
+      console.error('there was an error sending the addComment-mutation', error);
+    });
   }
 }

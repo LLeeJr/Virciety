@@ -6,7 +6,7 @@
 
 <mat-card-content>
   <mat-list class="comment-list">
-    <mat-list-item *ngFor="let comment of comments">
+    <mat-list-item *ngFor="let comment of post.comments">
       <div mat-list-avatar class="example-header-image"></div>
       <div mat-line> {{comment.comment}} </div>
       <div mat-line>{{comment.createdBy}}</div>

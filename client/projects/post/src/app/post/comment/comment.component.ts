@@ -1,4 +1,4 @@
-import {Component, Input, OnInit} from '@angular/core';
+import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Post} from "../../model/post";
 
 @Component({
@@ -9,43 +9,17 @@ import {Post} from "../../model/post";
 export class CommentComponent implements OnInit {
 
   @Input() post: Post;
-  comments: any = [];
+  @Output() newCommentEvent = new EventEmitter<string>()
   comment: string = "";
 
   constructor() {
   }
 
   ngOnInit(): void {
-    this.comments = [
-      {
-        comment: 'Amazing pic!',
-        createdBy: 'Cubalatino',
-        createdAt:  new Date().getTime()
-      },
-      {
-        comment: 'Good job, Sir',
-        createdBy: 'Faboss',
-        createdAt:  new Date().getTime()
-      },
-      {
-        comment: 'Random Comment innit',
-        createdBy: 'RandomUser123',
-        createdAt:  new Date().getTime()
-      },
-    ];
-
-    this.comments.push(...this.post.comments);
   }
 
   addComment() {
-    // TODO uncomment this
-    const newComment = {
-      comment: this.comment,
-      createdBy: 'user3', //this.authService.username,
-      createdAt: new Date().getTime()
-    };
-
-    this.post.comments = [newComment, ...this.post.comments];
+    this.newCommentEvent.emit(this.comment);
   }
 
 }

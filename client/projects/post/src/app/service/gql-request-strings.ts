@@ -58,6 +58,18 @@ export const REMOVE_POST = gql`
     }
   `;
 
+export const ADD_COMMENT = gql`
+    mutation addComment($comment: AddCommentRequest!) {
+      addComment(comment: $comment) {
+        id
+        postID
+        comment
+        createdAt
+        createdBy
+      }
+    }
+  `;
+
 export const NEW_POST_CREATED = gql`
     subscription newPostCreated {
       newPostCreated {

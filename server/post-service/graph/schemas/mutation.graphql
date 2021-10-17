@@ -3,4 +3,5 @@ type Mutation {
     editPost(edit: EditPostRequest!): String!
     removePost(remove: RemovePostRequest!): String!
     likePost(like: LikePostRequest!): String!
+    addComment(comment: AddCommentRequest!): Comment!
 }

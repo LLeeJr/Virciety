@@ -37,4 +37,14 @@ export class PostComponent implements OnInit, OnDestroy {
       this.gqlService.refreshPosts();
     }
   }
+
+  addComment(post: Post, newComment: string) {
+    const addCommentRequest = {
+      postID: post.id,
+      comment: newComment,
+      createdBy: 'user3', //this.authService.username
+    };
+
+    this.gqlService.addComment(post, addCommentRequest);
+  }
 }

@@ -1,3 +1,5 @@
+import {Comment} from "./comment";
+
 export class Post {
   public id: string;
   public data: {
@@ -7,7 +9,7 @@ export class Post {
   };
   public description: string;
   public likedBy: string[];
-  public comments: any[];
+  public comments: Comment[];
   public username: string;
   public editMode: boolean;
   public commentMode: boolean;
