@@ -10,6 +10,7 @@ import (
 	"dm-service/graph/model"
 	"dm-service/util"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -107,27 +108,41 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName st
 }
 
 func (r *queryResolver) GetRoom(ctx context.Context, name string) (*model.Chatroom, error) {
-	room, err := r.repo.GetRoom(ctx, name)
-	if err != nil {
-		return nil, err
-	}
 
 	r.mu.Lock()
+	room := r.Rooms[name]
+
+	// if room does not exist in cache look for the room in db
 	if r.Rooms[name] == nil {
-		chatroom := &Chatroom{
-			Name:   name,
-			Member: room.Member,
-			Id:     room.ID,
-			Observers: map[string]struct {
-				Username string
-				Message  chan *model.Dm
-			}{},
+		chatroom, err := r.repo.GetRoom(ctx, name)
+		if err != nil {
+			return nil, err
 		}
-		r.Rooms[name] = chatroom
+
+		if chatroom != nil {
+			// room exists in db
+			room = &Chatroom{
+				Id:        chatroom.ID,
+				Name:      chatroom.Name,
+				Member:    chatroom.Member,
+				Observers: map[string]struct {
+					Username string
+					Message  chan *model.Dm
+				}{},
+			}
+			r.Rooms[name] = room
+		} else {
+			errorMsg := fmt.Sprint("no existing room with given name: ", name)
+			return nil, errors.New(errorMsg)
+		}
 	}
 	r.mu.Unlock()
 
-	return room, nil
+	return &model.Chatroom{
+		ID:        room.Id,
+		Name:      room.Name,
+		Member:    room.Member,
+	}, nil
 }
 
 func (r *queryResolver) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error) {
