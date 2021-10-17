@@ -10,7 +10,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
-	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 	"log"
 	"net/http"

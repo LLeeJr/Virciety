@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"dm-service/graph/model"
-	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -46,8 +45,6 @@ func (r repo) UpdateRoom(ctx context.Context, room *model.Chatroom) (string, err
 		},
 	}
 
-	fmt.Println("[MONGO] Updating room: ", room.ID)
-
 	_, err = r.roomCollection.UpdateOne(ctx,
 		query,
 		update,
@@ -63,7 +60,6 @@ func (r repo) CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.C
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("[MONGO] Created room: ", insertedId)
 
 	room := &model.Chatroom{
 		ID:       insertedId,

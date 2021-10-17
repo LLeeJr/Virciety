@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
@@ -23,8 +22,6 @@ func Connect() (*mongo.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("[MONGO] Connected to mongo db, successfully!")
 
 	return client, nil
 }
