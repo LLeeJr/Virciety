@@ -64,7 +64,6 @@ export const ADD_COMMENT = gql`
         id
         postID
         comment
-        createdAt
         createdBy
       }
     }

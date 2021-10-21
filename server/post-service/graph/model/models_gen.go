@@ -13,7 +13,7 @@ type Comment struct {
 	PostID    string `json:"postID"`
 	Comment   string `json:"comment"`
 	CreatedBy string `json:"createdBy"`
-	CreatedAt string `json:"createdAt"`
+	Event     string `json:"event"`
 }
 
 type CreatePostRequest struct {

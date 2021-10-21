@@ -5,7 +5,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"posts-service/database"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
@@ -119,8 +118,10 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.AddComm
 		PostID:    comment.PostID,
 		Comment:   comment.Comment,
 		CreatedBy: comment.CreatedBy,
-		CreatedAt: time.Now().Format("2006-01-02 15:04:05"),
+		Event:     "CreateComment",
 	}
+
+	r.producerQueue.AddMessageToCommand(*newComment)
 
 	return newComment, nil
 }

@@ -23,9 +23,7 @@ func main() {
 		port = defaultPort
 	}
 
-	db := database.GetDBConn()
-
-	repo, _ := database.NewRepo(db)
+	repo, _ := database.NewRepo()
 
 	producerQueue, _ := messagequeue.NewPublisher()
 	go producerQueue.InitPublisher()

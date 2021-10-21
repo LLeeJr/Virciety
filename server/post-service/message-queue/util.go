@@ -1,18 +1,16 @@
 package message_queue
 
 import (
-	"encoding/json"
-	"errors"
 	"github.com/streadway/amqp"
 	"log"
 	"posts-service/database"
 	"posts-service/graph/model"
-	"strings"
 )
 
 type RabbitMsg struct {
 	QueueName string             `json:"queueName"`
 	PostEvent database.PostEvent `json:"postEvent"`
+	Comment   model.Comment      `json:"comment"`
 }
 
 type ChannelConfig struct {
@@ -64,42 +62,4 @@ func initQueue(queueName string, exchangeName string, ch *amqp.Channel) {
 		false,
 		nil)
 	failOnError(err, "Failed to bind a queue")
-}
-
-func convertCommentEventToPostEvent(repo database.Repository, data []byte) (*database.PostEvent, error) {
-	var commentEvent database.CommentEvent
-
-	err := json.Unmarshal(data, &commentEvent)
-	if err != nil {
-		return nil, err
-	}
-
-	var post *model.Post
-	if post == nil {
-		errMsg := "no post with id " + commentEvent.PostID + " found"
-		return nil, errors.New(errMsg)
-	}
-
-	b, err := json.Marshal(&Comment{
-		ID:          commentEvent.CommentID,
-		Description: commentEvent.Description,
-		LikedBy:     commentEvent.LikedBy,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	post.Comments = append(post.Comments, string(b))
-
-	info := strings.Split(post.ID, "__")
-
-	return &database.PostEvent{
-		EventTime:   commentEvent.EventTime,
-		EventType:   commentEvent.EventType,
-		PostID:      commentEvent.PostID,
-		Username:    info[1],
-		Description: post.Description,
-		LikedBy:     post.LikedBy,
-		Comments:    post.Comments,
-	}, nil
 }

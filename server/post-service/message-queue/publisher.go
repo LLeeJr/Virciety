@@ -5,6 +5,7 @@ import (
 	"github.com/streadway/amqp"
 	"log"
 	"posts-service/database"
+	"posts-service/graph/model"
 )
 
 const QueryExchange = "query-exchange"
@@ -14,7 +15,7 @@ const EventExchange = "event-exchange"
 type Publisher interface {
 	InitPublisher()
 	AddMessageToQuery()
-	AddMessageToCommand()
+	AddMessageToCommand(comment model.Comment)
 	AddMessageToEvent(postEvent database.PostEvent)
 }
 
@@ -32,9 +33,10 @@ func (channel *ChannelConfig) AddMessageToQuery() {
 	}
 }
 
-func (channel *ChannelConfig) AddMessageToCommand() {
+func (channel *ChannelConfig) AddMessageToCommand(comment model.Comment) {
 	channel.CommandChan <- RabbitMsg{
 		QueueName: CommandExchange,
+		Comment:   comment,
 	}
 }
 
@@ -72,7 +74,17 @@ func (channel *ChannelConfig) InitPublisher() {
 }
 
 func (channel *ChannelConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
-	body, err := json.Marshal(msg.PostEvent)
+	var body []byte
+	var err error
+	//var corrID = uuid.NewString()
+	if msg.QueueName == QueryExchange {
+
+	} else if msg.QueueName == CommandExchange {
+		body, err = json.Marshal(msg.Comment)
+	} else {
+		body, err = json.Marshal(msg.PostEvent)
+	}
+	failOnError(err, "Failed to json.marshal request")
 
 	// publish message
 	err = ch.Publish(
@@ -84,6 +96,8 @@ func (channel *ChannelConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 			ContentType: "text/plain",
 			Body:        body,
 			MessageId:   "Post-Service",
+			/*ReplyTo: 	 	msg.ReplyTo,
+			CorrelationId: 	corrID,*/
 		})
 	failOnError(err, "Failed to publish a message")
 

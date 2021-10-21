@@ -50,5 +50,5 @@ type Comment {
     postID: String!
     comment: String!
     createdBy: String!
-    createdAt: String!
+    event: String!
 }

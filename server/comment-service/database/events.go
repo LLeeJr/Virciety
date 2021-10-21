@@ -1,11 +1,13 @@
 package database
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type CommentEvent struct {
-	EventTime   string   `json:"event_time"`
-	EventType   string   `json:"event_type"`
-	CommentID   string   `json:"id"`
-	Username    string   `json:"username"`
-	Description string   `json:"description"`
-	LikedBy     []string `json:"liked_by"`
-	PostID      string   `json:"post_id"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	EventTime string             `bson:"event_time,omitempty"`
+	EventType string             `bson:"event_type,omitempty"`
+	CommentID string             `bson:"id,omitempty"`
+	PostID    string             `bson:"post_id,omitempty"`
+	Comment   string             `bson:"comment,omitempty"`
+	CreatedBy string             `bson:"created_by,omitempty"`
 }

@@ -47,8 +47,8 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Comment struct {
 		Comment   func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
 		CreatedBy func(childComplexity int) int
+		Event     func(childComplexity int) int
 		ID        func(childComplexity int) int
 		PostID    func(childComplexity int) int
 	}
@@ -123,19 +123,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Comment.Comment(childComplexity), true
 
-	case "Comment.createdAt":
-		if e.complexity.Comment.CreatedAt == nil {
-			break
-		}
-
-		return e.complexity.Comment.CreatedAt(childComplexity), true
-
 	case "Comment.createdBy":
 		if e.complexity.Comment.CreatedBy == nil {
 			break
 		}
 
 		return e.complexity.Comment.CreatedBy(childComplexity), true
+
+	case "Comment.event":
+		if e.complexity.Comment.Event == nil {
+			break
+		}
+
+		return e.complexity.Comment.Event(childComplexity), true
 
 	case "Comment.id":
 		if e.complexity.Comment.ID == nil {
@@ -438,7 +438,7 @@ type Comment {
     postID: String!
     comment: String!
     createdBy: String!
-    createdAt: String!
+    event: String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation {
     createPost(newPost: CreatePostRequest!): Post!
@@ -768,7 +768,7 @@ func (ec *executionContext) _Comment_createdBy(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Comment_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Comment_event(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -786,7 +786,7 @@ func (ec *executionContext) _Comment_createdAt(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
+		return obj.Event, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2850,8 +2850,8 @@ func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "createdAt":
-			out.Values[i] = ec._Comment_createdAt(ctx, field, obj)
+		case "event":
+			out.Values[i] = ec._Comment_event(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

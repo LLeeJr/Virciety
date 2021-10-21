@@ -68,30 +68,19 @@ func (channel *ChannelConfig) InitConsumer() {
 
 	go func() {
 		for data := range queries {
-			log.Printf("Received a message with messageID %s : %s", data.MessageId, data.Body)
+			log.Printf("Received a query message with messageID %s : %s", data.MessageId, data.Body)
 		}
 	}()
 
 	go func() {
 		for data := range commands {
-			log.Printf("Received a message with messageID %s : %s", data.MessageId, data.Body)
+			log.Printf("Received a command message with messageID %s : %s", data.MessageId, data.Body)
 		}
 	}()
 
 	go func() {
 		for data := range events {
-			if data.MessageId == "Comment-Service" {
-				postEvent, err := convertCommentEventToPostEvent(channel.Repo, data.Body)
-
-				if err != nil {
-					log.Printf("Err in receiving comments: %s", err)
-					continue
-				}
-
-				log.Printf("Processed CommentEvent: %s", *postEvent)
-
-				channel.Repo.AddComment(*postEvent)
-			}
+			log.Printf("Received a event message with messageID %s : %s", data.MessageId, data.Body)
 		}
 	}()
 

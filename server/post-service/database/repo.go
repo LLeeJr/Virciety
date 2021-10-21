@@ -22,7 +22,6 @@ type Repository interface {
 	RemovePost(postEvent PostEvent) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
 	LikePost(postEvent PostEvent) error
-	AddComment(postEvent PostEvent) (string, error)
 	GetData(fileID string) (string, error)
 }
 
@@ -319,13 +318,4 @@ func (repo *repo) LikePost(postEvent PostEvent) error {
 	}
 
 	return nil
-}
-
-func (repo *repo) AddComment(postEvent PostEvent) (string, error) {
-	_, err := repo.InsertPostEvent(postEvent)
-	if err != nil {
-		return "failure", nil
-	}
-
-	return "success", nil
 }

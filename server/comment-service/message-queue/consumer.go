@@ -2,13 +2,16 @@ package message_queue
 
 import (
 	"comment-service/database"
+	"comment-service/model"
+	"encoding/json"
 	"github.com/streadway/amqp"
 	"log"
+	"time"
 )
 
-const QueryQueue = "post-service-query"
-const CommandQueue = "post-service-command"
-const EventQueue = "post-service-event"
+const QueryQueue = "comment-service-query"
+const CommandQueue = "comment-service-command"
+const EventQueue = "comment-service-event"
 
 type Consumer interface {
 	InitConsumer()
@@ -68,19 +71,55 @@ func (channel *ChannelConfig) InitConsumer() {
 
 	go func() {
 		for data := range queries {
-			log.Printf("Received a message with messageID %s : %s", data.MessageId, data.Body)
+			log.Printf("Received a query message with messageID %s : %s", data.MessageId, data.Body)
 		}
 	}()
 
 	go func() {
 		for data := range commands {
-			log.Printf("Received a message with messageID %s : %s", data.MessageId, data.Body)
+			log.Printf("Received a command message with messageID %s : %s", data.MessageId, data.Body)
+			if data.MessageId == "Post-Service" {
+				var comment model.Comment
+				err := json.Unmarshal(data.Body, &comment)
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				log.Printf("Comment: %v", comment)
+
+				var commentEvent database.CommentEvent
+				if comment.Event == "CreateComment" {
+					commentEvent = database.CommentEvent{
+						EventTime: time.Now().Format("2006-01-02 15:04:05"),
+						EventType: comment.Event,
+						PostID:    comment.PostID,
+						Comment:   comment.Comment,
+						CreatedBy: comment.CreatedBy,
+					}
+				} else {
+					commentEvent = database.CommentEvent{
+						EventTime: time.Now().Format("2006-01-02 15:04:05"),
+						EventType: comment.Event,
+						CommentID: comment.ID,
+						PostID:    comment.PostID,
+						Comment:   comment.Comment,
+						CreatedBy: comment.CreatedBy,
+					}
+				}
+
+				commentDB, err := channel.Repo.CreateComment(commentEvent)
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				log.Printf("CommentDB: %v", commentDB)
+			}
 		}
 	}()
 
 	go func() {
 		for data := range events {
-			log.Printf("Received a message with messageID %s : %s", data.MessageId, data.Body)
+			log.Printf("Received a event message with messageID %s : %s", data.MessageId, data.Body)
 		}
 	}()
 
