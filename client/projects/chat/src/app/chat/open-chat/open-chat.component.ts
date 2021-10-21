@@ -23,9 +23,9 @@ export class OpenChatComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     console.log('Open Chat');
 
-    if (this.user1 !== null && this.api.chatPartner !== null) {
-      this.api.getChat().subscribe(value => {
-        this.messages = value.data.getChat;
+    if (this.user1 !== null && this.api.chatMembers.length !== 0) {
+      this.api.getMessagesFromRoom().subscribe(value => {
+        this.messages = value.data.getMessagesFromRoom;
       });
     }
 
@@ -39,9 +39,9 @@ export class OpenChatComponent implements OnInit, OnDestroy {
 
       const {__typename, id, msg} = data.dmAdded;
 
-      const dm = new Dm(__typename, id, msg);
-      this.messages = Object.assign([], this.messages)
-      this.messages.push(dm);
+      // const dm = new Dm(__typename, id, msg);
+      // this.messages = Object.assign([], this.messages)
+      // this.messages.push(dm);
     });
 
   }
@@ -53,8 +53,4 @@ export class OpenChatComponent implements OnInit, OnDestroy {
     }
   }
 
-  getDate(message: { __typename: string; id: string; msg: string }) {
-    const data = message.id.split('__');
-    return data[1];
-  }
 }

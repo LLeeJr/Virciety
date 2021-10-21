@@ -1,8 +1,10 @@
-<div *ngIf="openChats.length > 0">
+<div *ngIf="chatrooms.length > 0">
   <h3>Recent Chats</h3>
-  <div *ngFor="let chat of openChats">
-    <a (click)="setChatPartner(chat.withUser)" [routerLink]="[chat.withUser]" style="cursor: pointer">
-      {{chat.withUser}}: {{chat.preview}}
+  <div *ngFor="let room of chatrooms">
+    <a (click)="setChatPartner(room)" [routerLink]="[room.name]"
+       style="cursor: pointer; text-decoration: none; color: inherit">
+      <h3>Chatroom: {{room.name}}</h3>
     </a>
+    <small *ngFor="let m of room.member">{{m}} {{room.member.indexOf(m) === room.member.length-1 ? '' : ','}} </small>
   </div>
 </div>

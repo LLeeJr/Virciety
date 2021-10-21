@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import {ApiService} from "../api/api.service";
 import {AuthLibService} from "auth-lib";
+import {Room} from "../data/room";
 
 @Component({
   selector: 'app-chat',
@@ -9,11 +10,7 @@ import {AuthLibService} from "auth-lib";
 })
 export class ChatComponent implements OnInit {
 
-  openChats: {
-    __typename: string,
-    preview: string,
-    withUser: string,
-  }[] = [];
+  chatrooms: Room[] = [];
 
   constructor(private api: ApiService,
               private auth: AuthLibService) {
@@ -22,20 +19,21 @@ export class ChatComponent implements OnInit {
   ngOnInit(): void {
     this.auth.getUserName().subscribe(user => {
       if (user !== '') {
-        this.api.getOpenChats(user).subscribe(value => {
-          this.openChats = value.data.getOpenChats;
+        this.api.getRoomsByUser(user).subscribe(value => {
+          this.chatrooms = value.data.getRoomsByUser;
         });
       }
     });
 
     if (this.auth.userName !== '') {
-      this.api.getOpenChats(this.auth.userName).subscribe(value => {
-        this.openChats = value.data.getOpenChats;
+      this.api.getRoomsByUser(this.auth.userName).subscribe(value => {
+        this.chatrooms = value.data.getRoomsByUser;
       });
     }
   }
 
-  setChatPartner(withUser: string) {
-    this.api.chatPartner = withUser;
+  setChatPartner(room: Room) {
+    this.api.chatMembers = room.member;
+    this.api.selectedRoom = room;
   }
 }

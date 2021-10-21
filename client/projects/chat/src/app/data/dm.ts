@@ -1,12 +1,16 @@
 
 export class Dm {
-  __typename: string;
-  id: string;
+  chatroomId: string;
+  createdAt: string;
+  createdBy: string;
   msg: string;
+  __typename: string;
 
-  constructor(typename: string, id: string, msg: string) {
-    this.__typename = typename;
-    this.id = id;
+  constructor(chatroomId: string, createdAt: string, createdBy: string, msg: string, typename: string) {
+    this.chatroomId = chatroomId;
+    this.createdAt = createdAt;
+    this.createdBy = createdBy;
     this.msg = msg;
+    this.__typename = typename;
   }
 }

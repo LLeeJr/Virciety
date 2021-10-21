@@ -7,10 +7,12 @@ import {Subscription, gql} from 'apollo-angular';
 })
 export class ChatSubscriptionGqlService extends Subscription {
   document = gql`
-  subscription dmAdded {
-    dmAdded {
-      id,
-      msg
+  subscription dmAdded($roomName: String!) {
+    dmAdded(roomName: $roomName) {
+      chatroomId,
+      createdAt,
+      createdBy,
+      msg,
     }
   }
   `;

@@ -9,6 +9,7 @@ import {WebSocketLink} from "@apollo/client/link/ws";
 import {InMemoryCache, split} from "@apollo/client/core";
 import {getMainDefinition} from "@apollo/client/utilities";
 import {AuthLibService} from "auth-lib";
+import {Room} from "../data/room";
 
 @Injectable({
   providedIn: 'root',
@@ -16,8 +17,8 @@ import {AuthLibService} from "auth-lib";
 export class ApiService {
 
   messages: any[] = [];
-  chatPartner = '';
-  selectedRoom = '';
+  chatMembers: string[] = [];
+  selectedRoom: Room;
 
   private query: QueryRef<any> | undefined;
   private apollo!: ApolloBase;
@@ -86,7 +87,12 @@ export class ApiService {
   }
 
   subscribeToChat(): Observable<any> {
-    return this.apollo.subscribe({query: this.chatSubGql.document})
+    return this.apollo.subscribe({
+      query: this.chatSubGql.document,
+      variables: {
+        roomName: this.selectedRoom.name
+      }
+    })
   }
 
   unsubscribeToChat() {
@@ -94,73 +100,44 @@ export class ApiService {
     this.webSocketClient.close(true);
   }
 
-  getChat(): Observable<any> {
-    const user1 = this.auth.userName;
-    const user2 = this.chatPartner;
+  getMessagesFromRoom(): Observable<any> {
     const query = gql`
-    query getChat($input: GetChatRequest!){
-      getChat(input: $input)
+    query getMessagesFromRoom($roomId: String!){
+      getMessagesFromRoom(roomId: $roomId)
       {
-        id,
-        msg
+        chatroomId,
+        createdAt,
+        createdBy,
+        msg,
       }
     }
     `;
 
-    const getChatRequest = {
-      user1: user1,
-      user2: user2,
-    }
-
     this.query = this.apollo.watchQuery<any>({
       query: query,
       variables: {
-        input: getChatRequest
+        roomId: this.selectedRoom._id,
       },
     });
 
     return this.query.valueChanges;
   }
 
-  getOpenChats(userName: string): Observable<any> {
+  getRoomsByUser(user: string): Observable<any> {
     const query = gql`
-    query getOpenChats($userName: String!){
-      getOpenChats(userName: $userName)
-      {
-        withUser,
-        preview
-      }
-    }
-    `;
-
-    this.query = this.apollo.watchQuery<any>({
-        query: query,
-        variables: {
-          userName: userName,
-        },
-      });
-
-    return this.query.valueChanges;
-  }
-
-  getRoomsByUser(): Observable<any> {
-    const userName = this.auth.userName;
-    const query = gql`
-    query getRoom($userName: String!) {
-      getRoom(userName: $userName)
+    query getRoomsByUser($userName: String!) {
+      getRoomsByUser(userName: $userName)
       {
         name,
         member,
-        messages{
-          msg
-        },
+        _id
       }
     }`;
 
     this.query = this.apollo.watchQuery<any>({
       query: query,
       variables: {
-        userName: userName
+        userName: user
       }
     });
 
