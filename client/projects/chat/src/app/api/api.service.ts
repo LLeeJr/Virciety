@@ -64,14 +64,16 @@ export class ApiService {
 
   writeDm(msg: string): Observable<any> {
     const userName = this.auth.userName;
-    const roomName = this.selectedRoom;
+    const roomName = this.selectedRoom.name;
 
     const mutation = gql`
-    mutation createDm($input: CreateDmRequest!){
-      createDm(input: $input)
+    mutation createDm($msg: String!, $userName: String!, $roomName: String!){
+      createDm(msg: $msg, userName: $userName, roomName: $roomName)
       {
-        id,
-        msg
+        chatroomId,
+        createdAt,
+        createdBy,
+        msg,
       }
     }
     `;
@@ -80,7 +82,7 @@ export class ApiService {
       mutation: mutation,
       variables: {
         msg: msg,
-        username: userName,
+        userName: userName,
         roomName: roomName,
       },
     });

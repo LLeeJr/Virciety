@@ -21,15 +21,12 @@ export class OpenChatComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    console.log('Open Chat');
-
     if (this.user1 !== null && this.api.chatMembers.length !== 0) {
       this.api.getMessagesFromRoom().subscribe(value => {
         this.messages = value.data.getMessagesFromRoom;
       });
     }
 
-    console.log('Subscribe to chat...');
     this.api.subscribeToChat().subscribe(value => {
       if (!value || !value.data || !value.data.dmAdded) {
         return;
@@ -37,11 +34,11 @@ export class OpenChatComponent implements OnInit, OnDestroy {
 
       const { data } = value
 
-      const {__typename, id, msg} = data.dmAdded;
+      const { chatroomId, createdAt, createdBy, msg, __typename } = data.dmAdded;
 
-      // const dm = new Dm(__typename, id, msg);
-      // this.messages = Object.assign([], this.messages)
-      // this.messages.push(dm);
+      const dm = new Dm(chatroomId, createdAt, createdBy, msg, __typename);
+      this.messages = Object.assign([], this.messages)
+      this.messages.push(dm);
     });
 
   }
