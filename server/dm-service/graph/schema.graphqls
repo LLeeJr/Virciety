@@ -5,6 +5,7 @@
 type Query {
   getRoom(name:String!): Chatroom
   getRoomsByUser(userName: String!): [Chatroom]
+  getMessagesFromRoom(roomId: String!): [Dm]
 }
 
 type Chatroom {

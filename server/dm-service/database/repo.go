@@ -21,12 +21,41 @@ type Repository interface {
 	UpdateRoom(ctx context.Context, room *model.Chatroom) (string, error)
 	InsertDmEvent(ctx context.Context, dmEvent DmEvent) (string, error)
 	InsertRoomEvent(ctx context.Context, roomEvent ChatroomEvent) (string, error)
+	GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, error)
 }
 
 type repo struct {
 	dmCollection   *mongo.Collection
 	roomCollection *mongo.Collection
 	bucket         *gridfs.Bucket
+}
+
+func (r repo) GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, error) {
+	var result []*DmEvent
+	cursor, err := r.dmCollection.Find(
+		ctx,
+		bson.D{
+			{"chatroomid", id},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(ctx, &result)
+	if err != nil {
+		return nil, err
+	}
+	dms := make([]*model.Dm, 0)
+	for _, event := range result {
+		dms = append(dms, &model.Dm{
+			ChatroomID: id,
+			CreatedAt:  event.CreatedAt,
+			CreatedBy:  event.CreatedBy,
+			Msg:        event.Msg,
+		})
+	}
+
+	return dms, err
 }
 
 func (r repo) UpdateRoom(ctx context.Context, room *model.Chatroom) (string, error) {
