@@ -47,4 +47,55 @@ export class PostComponent implements OnInit, OnDestroy {
 
     this.gqlService.addComment(post, addCommentRequest);
   }
+
+  triggerEvent(post: Post, event: string) {
+    if (event === 'like') {
+      this.likePost(post);
+    } else if (event === 'edit') {
+      this.editPost(post);
+    } else if (event === 'remove') {
+      this.removePost(post);
+    } else {
+      this.showComments(post);
+    }
+  }
+
+  likePost(post: Post) {
+    // TODO uncomment this
+    const username: string = /*this.authService.userName*/ 'user4';
+    let liked: boolean = true;
+
+    // check if it's a like or unlike
+    const index = post.likedBy.indexOf(username, 0);
+    if (index > -1) {
+      const newLikedBy: string[] = []
+      post.likedBy.forEach((user, i) => {
+        if (index !== i) {
+          newLikedBy.push(user);
+        }
+      });
+      post.likedBy = newLikedBy;
+      liked = false;
+    } else {
+      const newLikedBy: string[] = [username];
+      post.likedBy.forEach(user => newLikedBy.push(user));
+      post.likedBy = newLikedBy;
+    }
+
+    this.gqlService.likePost(post, liked);
+  }
+
+  editPost(post: Post) {
+    post.editMode = false;
+    this.gqlService.editPost(post);
+  }
+
+  removePost(post: Post) {
+    post.editMode = false;
+    this.gqlService.removePost(post);
+  }
+
+  showComments(post: Post) {
+    this.gqlService.getPostComments(post);
+  }
 }

@@ -8,7 +8,7 @@
         <app-post-comment (newCommentEvent)="addComment(post, $event)" [post]="post"></app-post-comment>
       </div>
       <div *ngIf="!post.commentMode">
-        <app-post-media [post]="post"></app-post-media>
+        <app-post-media (newEvent)="triggerEvent(post, $event)" [post]="post"></app-post-media>
       </div>
     </mat-card>
   </div>

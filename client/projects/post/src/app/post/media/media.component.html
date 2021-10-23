@@ -26,11 +26,11 @@
 </mat-card-actions>
 
 <ng-template #normal_buttons_tp>
-  <button mat-button (click)="likePost(post)">
+  <button mat-button (click)="triggerEvent('like')">
     <mat-icon>favorite</mat-icon>
     Like
   </button>
-  <button mat-button (click)="showComments(post)">
+  <button mat-button (click)="triggerEvent('comments')">
     <mat-icon>add_comment</mat-icon>
     Comment
   </button>
@@ -42,9 +42,9 @@
 </ng-template>
 
 <ng-template #edit_buttons_tp>
-  <button mat-button (click)="editPost(post)">Save</button>
+  <button mat-button (click)="triggerEvent('edit')">Save</button>
   <button mat-button (click)="post.editMode = false">Cancel</button>
-  <button mat-button color="warn" (click)="removePost(post)">Delete</button>
+  <button mat-button color="warn" (click)="triggerEvent('remove')">Delete</button>
 </ng-template>
 
 <ng-template #loading_tp>
