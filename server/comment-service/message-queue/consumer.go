@@ -14,7 +14,7 @@ const CommandQueue = "comment-service-command"
 const EventQueue = "comment-service-event"
 
 type Consumer interface {
-	InitConsumer()
+	InitConsumer(ch *amqp.Channel)
 }
 
 func NewConsumer(repo database.Repository) (Consumer, error) {
@@ -23,21 +23,12 @@ func NewConsumer(repo database.Repository) (Consumer, error) {
 	}, nil
 }
 
-func (channel *ChannelConfig) InitConsumer() {
-	// conn
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
-
+func (channel *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 	initQueue(QueryQueue, QueryExchange, ch)
 	initQueue(CommandQueue, CommandExchange, ch)
 	initQueue(EventQueue, EventExchange, ch)
 
-	queries, err := ch.Consume(
+	queries, _ := ch.Consume(
 		QueryQueue,
 		"",
 		true,
@@ -47,7 +38,7 @@ func (channel *ChannelConfig) InitConsumer() {
 		nil,
 	)
 
-	commands, err := ch.Consume(
+	commands, _ := ch.Consume(
 		CommandQueue,
 		"",
 		true,
@@ -57,7 +48,7 @@ func (channel *ChannelConfig) InitConsumer() {
 		nil,
 	)
 
-	events, err := ch.Consume(
+	events, _ := ch.Consume(
 		EventQueue,
 		"",
 		true,
@@ -71,7 +62,41 @@ func (channel *ChannelConfig) InitConsumer() {
 
 	go func() {
 		for data := range queries {
-			log.Printf("Received a query message with messageID %s : %s", data.MessageId, data.Body)
+			log.Printf("Received a query message with messageID %s : %s\n", data.MessageId, data.Body)
+			log.Printf("ReplyTo: %s, CorrelationID: %s", data.ReplyTo, data.CorrelationId)
+			if data.MessageId == "Post-Service" {
+				commentList := []*model.Comment{
+					{
+						ID:        "test",
+						PostID:    "test",
+						Comment:   "test",
+						CreatedBy: "test",
+						Event:     "test",
+					},
+					{
+						ID:        "test2",
+						PostID:    "test2",
+						Comment:   "test2",
+						CreatedBy: "test2",
+						Event:     "test2",
+					},
+				}
+
+				body, err := json.Marshal(commentList)
+
+				err = ch.Publish(
+					data.ReplyTo,
+					"",
+					false,
+					false,
+					amqp.Publishing{
+						ContentType: 	"text/plain",
+						CorrelationId: 	data.CorrelationId,
+						MessageId: 		"Comment-Service",
+						Body: 			body,
+					})
+				FailOnError(err, "Failed to publish a message")
+			}
 		}
 	}()
 

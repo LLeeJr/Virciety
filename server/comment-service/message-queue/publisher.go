@@ -12,7 +12,7 @@ const CommandExchange = "command-exchange"
 const EventExchange = "event-exchange"
 
 type Publisher interface {
-	InitPublisher()
+	InitPublisher(ch *amqp.Channel)
 	AddMessageToQuery()
 	AddMessageToCommand()
 	AddMessageToEvent(commentEvent database.CommentEvent)
@@ -45,16 +45,7 @@ func (channel *ChannelConfig) AddMessageToEvent(commentEvent database.CommentEve
 	}
 }
 
-func (channel *ChannelConfig) InitPublisher() {
-	// conn
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
-
+func (channel *ChannelConfig) InitPublisher(ch *amqp.Channel) {
 	initExchange(QueryExchange, ch)
 	initExchange(CommandExchange, ch)
 	initExchange(EventExchange, ch)
@@ -85,7 +76,7 @@ func (channel *ChannelConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 			Body:        body,
 			MessageId:   "Comment-Service",
 		})
-	failOnError(err, "Failed to publish a message")
+	FailOnError(err, "Failed to publish a message")
 
 	log.Printf("INFO: published msg on %s: %v", msg.QueueName, msg.CommentEvent)
 }

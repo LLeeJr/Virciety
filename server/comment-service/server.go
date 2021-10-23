@@ -9,6 +9,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
+	"github.com/streadway/amqp"
 	"log"
 	"net/http"
 	_ "net/http"
@@ -25,12 +26,22 @@ func main() {
 
 	repo, _ := database.NewRepo()
 
+	// rabbitmq connection
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	messagequeue.FailOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	messagequeue.FailOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
 	producerQueue, _ := messagequeue.NewPublisher()
-	go producerQueue.InitPublisher()
+	go producerQueue.InitPublisher(ch)
 
 	consumerQueue, _ := messagequeue.NewConsumer(repo)
-	go consumerQueue.InitConsumer()
+	go consumerQueue.InitConsumer(ch)
 
+	// graphql init
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
 
 	r := mux.NewRouter()

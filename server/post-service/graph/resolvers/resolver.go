@@ -16,12 +16,14 @@ type Resolver struct {
 	producerQueue messagequeue.Publisher
 	observers     map[string]chan *model.Post
 	mu            sync.Mutex
+	responses     map[string]chan []*model.Comment
 }
 
-func NewResolver(repo database.Repository, producerQueue messagequeue.Publisher) *Resolver {
+func NewResolver(repo database.Repository, producerQueue messagequeue.Publisher, responses map[string]chan []*model.Comment) *Resolver {
 	return &Resolver{
 		repo:          repo,
 		producerQueue: producerQueue,
 		observers:     map[string]chan *model.Post{},
+		responses: 	   responses,
 	}
 }

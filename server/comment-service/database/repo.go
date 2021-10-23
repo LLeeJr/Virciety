@@ -17,7 +17,7 @@ type Repository interface {
 	UnlikeComment(event CommentEvent) (string, error)
 }
 
-type repo struct {
+type Repo struct {
 	commentCollection *mongo.Collection
 }
 
@@ -29,12 +29,12 @@ func NewRepo() (Repository, error) {
 
 	db := client.Database("comment-service")
 
-	return &repo{
+	return &Repo{
 		commentCollection: db.Collection("comment-events"),
 	}, nil
 }
 
-func (repo *repo) InsertCommentEvent(commentEvent CommentEvent) (string, error) {
+func (repo *Repo) InsertCommentEvent(commentEvent CommentEvent) (string, error) {
 	inserted, err := repo.commentCollection.InsertOne(ctx, commentEvent)
 	if err != nil {
 		return "", err
@@ -43,7 +43,7 @@ func (repo *repo) InsertCommentEvent(commentEvent CommentEvent) (string, error) 
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (repo *repo) CreateComment(event CommentEvent) (*model.Comment, error) {
+func (repo *Repo) CreateComment(event CommentEvent) (*model.Comment, error) {
 	insertedID, err := repo.InsertCommentEvent(event)
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (repo *repo) CreateComment(event CommentEvent) (*model.Comment, error) {
 	return comment, nil
 }
 
-func (repo *repo) GetComments() (map[string][]*model.Comment, error) {
+func (repo *Repo) GetComments() (map[string][]*model.Comment, error) {
 	/*currentComments := make([]*model.Comment, 0)
 
 		// first get all rows with event_type = "CreateComment" and latestEventId
@@ -123,7 +123,7 @@ func (repo *repo) GetComments() (map[string][]*model.Comment, error) {
 	return nil, nil
 }
 
-func (repo *repo) GetCommentsByPostId(postId string) ([]*model.Comment, error) {
+func (repo *Repo) GetCommentsByPostId(postId string) ([]*model.Comment, error) {
 	/*comments, ok := repo.currentComments[postId]
 	if !ok {
 		errMsg := "no comments for post with id " + postId + " found"
@@ -134,7 +134,7 @@ func (repo *repo) GetCommentsByPostId(postId string) ([]*model.Comment, error) {
 	return nil, nil
 }
 
-func (repo *repo) GetCommentById(commentId string) (*model.Comment, int, string, error) {
+func (repo *Repo) GetCommentById(commentId string) (*model.Comment, int, string, error) {
 	/*// process data to get postId
 	info := strings.Split(commentId, "__")
 	index := -1
@@ -167,7 +167,7 @@ func (repo *repo) GetCommentById(commentId string) (*model.Comment, int, string,
 	return nil, 0, "", nil
 }
 
-func (repo *repo) RemoveComment(event CommentEvent, index int) (string, error) {
+func (repo *Repo) RemoveComment(event CommentEvent, index int) (string, error) {
 	/*// remove from currentComments
 	comments, err := repo.GetCommentsByPostId(event.PostID)
 	if err != nil {
@@ -198,7 +198,7 @@ func (repo *repo) RemoveComment(event CommentEvent, index int) (string, error) {
 	return "success", nil
 }
 
-func (repo *repo) EditComment(event CommentEvent) (string, error) {
+func (repo *Repo) EditComment(event CommentEvent) (string, error) {
 	_, err := repo.InsertCommentEvent(event)
 	if err != nil {
 		return "failed", err
@@ -207,7 +207,7 @@ func (repo *repo) EditComment(event CommentEvent) (string, error) {
 	return "success", nil
 }
 
-func (repo *repo) LikeComment(event CommentEvent) (string, error) {
+func (repo *Repo) LikeComment(event CommentEvent) (string, error) {
 	_, err := repo.InsertCommentEvent(event)
 	if err != nil {
 		return "failed", err
@@ -216,7 +216,7 @@ func (repo *repo) LikeComment(event CommentEvent) (string, error) {
 	return "success", nil
 }
 
-func (repo *repo) UnlikeComment(event CommentEvent) (string, error) {
+func (repo *Repo) UnlikeComment(event CommentEvent) (string, error) {
 	_, err := repo.InsertCommentEvent(event)
 	if err != nil {
 		return "failed", err

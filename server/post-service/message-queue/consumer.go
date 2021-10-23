@@ -1,9 +1,11 @@
 package message_queue
 
 import (
+	"encoding/json"
 	"github.com/streadway/amqp"
 	"log"
 	"posts-service/database"
+	"posts-service/graph/model"
 )
 
 const QueryQueue = "post-service-query"
@@ -11,30 +13,27 @@ const CommandQueue = "post-service-command"
 const EventQueue = "post-service-event"
 
 type Consumer interface {
-	InitConsumer()
+	InitConsumer(ch *amqp.Channel)
 }
 
-func NewConsumer(repo database.Repository) (Consumer, error) {
-	return &ChannelConfig{
-		Repo: repo,
+type ConsumerConfig struct {
+	Repo		database.Repository
+	Responses	map[string]chan []*model.Comment
+}
+
+func NewConsumer(repo database.Repository, responses map[string]chan []*model.Comment) (Consumer, error) {
+	return &ConsumerConfig{
+		Repo: 		repo,
+		Responses: 	responses,
 	}, nil
 }
 
-func (channel *ChannelConfig) InitConsumer() {
-	// conn
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
-
+func (consumer *ConsumerConfig) InitConsumer(ch *amqp.Channel) {
 	initQueue(QueryQueue, QueryExchange, ch)
 	initQueue(CommandQueue, CommandExchange, ch)
 	initQueue(EventQueue, EventExchange, ch)
 
-	queries, err := ch.Consume(
+	queries, _ := ch.Consume(
 		QueryQueue,
 		"",
 		true,
@@ -44,7 +43,7 @@ func (channel *ChannelConfig) InitConsumer() {
 		nil,
 	)
 
-	commands, err := ch.Consume(
+	commands, _ := ch.Consume(
 		CommandQueue,
 		"",
 		true,
@@ -54,7 +53,7 @@ func (channel *ChannelConfig) InitConsumer() {
 		nil,
 	)
 
-	events, err := ch.Consume(
+	events, _ := ch.Consume(
 		EventQueue,
 		"",
 		true,
@@ -69,6 +68,15 @@ func (channel *ChannelConfig) InitConsumer() {
 	go func() {
 		for data := range queries {
 			log.Printf("Received a query message with messageID %s : %s", data.MessageId, data.Body)
+			if data.MessageId == "Comment-Service" {
+				var comments []*model.Comment
+				err := json.Unmarshal(data.Body, &comments)
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				consumer.Responses[data.CorrelationId] <- comments
+			}
 		}
 	}()
 

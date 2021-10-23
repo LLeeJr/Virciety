@@ -5,6 +5,8 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
+	"github.com/google/uuid"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
 )
@@ -25,6 +27,27 @@ func (r *queryResolver) GetData(ctx context.Context, fileID string) (string, err
 	}
 
 	return data, nil
+}
+
+func (r *queryResolver) GetPostComments(ctx context.Context, id string) ([]*model.Comment, error) {
+	requestID := uuid.NewString()
+
+	go func() {
+		<-ctx.Done()
+		r.mu.Lock()
+		delete(r.responses, requestID)
+		r.mu.Unlock()
+	}()
+
+	r.mu.Lock()
+	r.responses[requestID] = make(chan []*model.Comment, 1)
+	r.mu.Unlock()
+
+	r.producerQueue.AddMessageToQuery(id, requestID)
+
+	comments := <-r.responses[requestID]
+
+	return comments, nil
 }
 
 // Query returns generated.QueryResolver implementation.

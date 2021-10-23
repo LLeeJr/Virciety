@@ -8,12 +8,14 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
+	"github.com/streadway/amqp"
 	"log"
 	"net/http"
 	_ "net/http"
 	"os"
 	"posts-service/database"
 	"posts-service/graph/generated"
+	"posts-service/graph/model"
 	"posts-service/graph/resolvers"
 	messagequeue "posts-service/message-queue"
 	"time"
@@ -28,16 +30,27 @@ func main() {
 	}
 
 	repo, _ := database.NewRepo()
+	responses := map[string]chan []*model.Comment{}
+
+	// rabbitmq connection
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	messagequeue.FailOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	messagequeue.FailOnError(err, "Failed to open a channel")
+	defer ch.Close()
 
 	producerQueue, _ := messagequeue.NewPublisher()
-	go producerQueue.InitPublisher()
+	go producerQueue.InitPublisher(ch)
 
-	consumerQueue, _ := messagequeue.NewConsumer(repo)
-	go consumerQueue.InitConsumer()
+	consumerQueue, _ := messagequeue.NewConsumer(repo, responses)
+	go consumerQueue.InitConsumer(ch)
 
+    // graphql init
 	// srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
 
-	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
+	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue, responses)}))
 
 	srv.AddTransport(transport.POST{})
 	srv.AddTransport(transport.Websocket{

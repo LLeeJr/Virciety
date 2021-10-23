@@ -77,8 +77,9 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetData  func(childComplexity int, fileID string) int
-		GetPosts func(childComplexity int, id string, fetchLimit int) int
+		GetData         func(childComplexity int, fileID string) int
+		GetPostComments func(childComplexity int, id string) int
+		GetPosts        func(childComplexity int, id string, fetchLimit int) int
 	}
 
 	Subscription struct {
@@ -96,6 +97,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	GetPosts(ctx context.Context, id string, fetchLimit int) ([]*model.Post, error)
 	GetData(ctx context.Context, fileID string) (string, error)
+	GetPostComments(ctx context.Context, id string) ([]*model.Comment, error)
 }
 type SubscriptionResolver interface {
 	NewPostCreated(ctx context.Context) (<-chan *model.Post, error)
@@ -286,6 +288,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetData(childComplexity, args["fileID"].(string)), true
 
+	case "Query.getPostComments":
+		if e.complexity.Query.GetPostComments == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getPostComments_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetPostComments(childComplexity, args["id"].(string)), true
+
 	case "Query.getPosts":
 		if e.complexity.Query.GetPosts == nil {
 			break
@@ -450,6 +464,7 @@ type Comment {
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
     getPosts(id: String!, fetchLimit: Int!): [Post!]!
     getData(fileID: String!): String!
+    getPostComments(id: String!): [Comment!]!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/subscription.graphql", Input: `type Subscription {
     newPostCreated: Post!
@@ -563,6 +578,21 @@ func (ec *executionContext) field_Query_getData_args(ctx context.Context, rawArg
 		}
 	}
 	args["fileID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getPostComments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -1410,6 +1440,48 @@ func (ec *executionContext) _Query_getData(ctx context.Context, field graphql.Co
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getPostComments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getPostComments_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetPostComments(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Comment)
+	fc.Result = res
+	return ec.marshalNComment2ᚕᚖpostsᚑserviceᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3049,6 +3121,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "getPostComments":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getPostComments(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -3351,6 +3437,43 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 
 func (ec *executionContext) marshalNComment2postsᚑserviceᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v model.Comment) graphql.Marshaler {
 	return ec._Comment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNComment2ᚕᚖpostsᚑserviceᚋgraphᚋmodelᚐCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Comment) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNComment2ᚖpostsᚑserviceᚋgraphᚋmodelᚐComment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) marshalNComment2ᚖpostsᚑserviceᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v *model.Comment) graphql.Marshaler {

@@ -47,10 +47,12 @@ export class MediaComponent implements OnInit {
   }
 
   editPost(post: Post) {
+    post.editMode = false;
     this.gqlService.editPost(post);
   }
 
   removePost(post: Post) {
+    post.editMode = false;
     this.gqlService.removePost(post);
   }
 
@@ -60,6 +62,9 @@ export class MediaComponent implements OnInit {
     });
   }
 
+  showComments(post: Post) {
+    this.gqlService.getPostComments(post);
+  }
 }
 
 @Component({

@@ -11,19 +11,9 @@ type RabbitMsg struct {
 	QueueName string             `json:"queueName"`
 	PostEvent database.PostEvent `json:"postEvent"`
 	Comment   model.Comment      `json:"comment"`
-}
-
-type ChannelConfig struct {
-	QueryChan   chan RabbitMsg
-	CommandChan chan RabbitMsg
-	EventChan   chan RabbitMsg
-	Repo        database.Repository
-}
-
-type Comment struct {
-	ID          string   `json:"id"`
-	Description string   `json:"description"`
-	LikedBy     []string `json:"likedBy"`
+	PostID    string             `json:"postID"`
+	CorrID    string             `json:"corrID"`
+	ReplyTo   string			 `json:"replyTo"`
 }
 
 func initExchange(queueName string, ch *amqp.Channel) {
@@ -36,10 +26,10 @@ func initExchange(queueName string, ch *amqp.Channel) {
 		false,
 		nil,
 	)
-	failOnError(err, "Failed to declare an exchange")
+	FailOnError(err, "Failed to declare an exchange")
 }
 
-func failOnError(err error, msg string) {
+func FailOnError(err error, msg string) {
 	if err != nil {
 		log.Fatalf("%s: %s", msg, err)
 	}
@@ -53,7 +43,7 @@ func initQueue(queueName string, exchangeName string, ch *amqp.Channel) {
 		false,
 		false,
 		nil)
-	failOnError(err, "Failed to declare a queue")
+	FailOnError(err, "Failed to declare a queue")
 
 	err = ch.QueueBind(
 		q.Name,
@@ -61,5 +51,5 @@ func initQueue(queueName string, exchangeName string, ch *amqp.Channel) {
 		exchangeName,
 		false,
 		nil)
-	failOnError(err, "Failed to bind a queue")
+	FailOnError(err, "Failed to bind a queue")
 }

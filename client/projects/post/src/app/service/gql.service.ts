@@ -11,6 +11,7 @@ import {
   CREATE_POST,
   EDIT_POST,
   GET_DATA,
+  GET_POST_COMMENTS,
   GET_POSTS,
   LIKE_POST,
   NEW_POST_CREATED,
@@ -162,6 +163,20 @@ export class GQLService {
     }, (error: any) => {
       console.error('there was an error sending the getData-query', error);
     });
+  }
+
+  getPostComments(post: Post) {
+    this.apollo.watchQuery({
+      query: GET_POST_COMMENTS,
+      variables: {
+        id: post.id
+      },
+    }).valueChanges.subscribe(({data}: any) => {
+      console.log('GetPostComments-data: ', data);
+      post.commentMode = true;
+    }, (error: any) => {
+      console.error('there was an error sending the getPostComments-query', error);
+    })
   }
 
   // when a post is created before posts are fetched from server, smth doesn't work as it should

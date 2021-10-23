@@ -28,7 +28,7 @@ func initExchange(queueName string, ch *amqp.Channel) {
 		false,
 		nil,
 	)
-	failOnError(err, "Failed to declare an exchange")
+	FailOnError(err, "Failed to declare an exchange")
 }
 
 func initQueue(queueName string, exchangeName string, ch *amqp.Channel) {
@@ -39,7 +39,7 @@ func initQueue(queueName string, exchangeName string, ch *amqp.Channel) {
 		false,
 		false,
 		nil)
-	failOnError(err, "Failed to declare a queue")
+	FailOnError(err, "Failed to declare a queue")
 
 	err = ch.QueueBind(
 		q.Name,
@@ -47,10 +47,10 @@ func initQueue(queueName string, exchangeName string, ch *amqp.Channel) {
 		exchangeName,
 		false,
 		nil)
-	failOnError(err, "Failed to bind a queue")
+	FailOnError(err, "Failed to bind a queue")
 }
 
-func failOnError(err error, msg string) {
+func FailOnError(err error, msg string) {
 	if err != nil {
 		log.Fatalf("%s: %s", msg, err)
 	}

@@ -30,7 +30,7 @@
     <mat-icon>favorite</mat-icon>
     Like
   </button>
-  <button mat-button (click)="post.commentMode = true">
+  <button mat-button (click)="showComments(post)">
     <mat-icon>add_comment</mat-icon>
     Comment
   </button>
@@ -42,9 +42,9 @@
 </ng-template>
 
 <ng-template #edit_buttons_tp>
-  <button mat-button (click)="post.editMode = false; editPost(post)">Save</button>
+  <button mat-button (click)="editPost(post)">Save</button>
   <button mat-button (click)="post.editMode = false">Cancel</button>
-  <button mat-button color="warn" (click)="post.editMode = false; removePost(post)">Delete</button>
+  <button mat-button color="warn" (click)="removePost(post)">Delete</button>
 </ng-template>
 
 <ng-template #loading_tp>

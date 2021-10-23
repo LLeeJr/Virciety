@@ -25,7 +25,7 @@ type Repository interface {
 	GetData(fileID string) (string, error)
 }
 
-type repo struct {
+type Repo struct {
 	postCollection   *mongo.Collection
 	fileCollection   *mongo.Collection
 	chunksCollection *mongo.Collection
@@ -44,7 +44,7 @@ func NewRepo() (Repository, error) {
 		return nil, err
 	}
 
-	return &repo{
+	return &Repo{
 		postCollection:   db.Collection("post-events"),
 		fileCollection:   bucket.GetFilesCollection(),
 		chunksCollection: bucket.GetChunksCollection(),
@@ -52,7 +52,7 @@ func NewRepo() (Repository, error) {
 	}, nil
 }
 
-func (repo *repo) InsertPostEvent(postEvent PostEvent) (string, error) {
+func (repo *Repo) InsertPostEvent(postEvent PostEvent) (string, error) {
 	inserted, err := repo.postCollection.InsertOne(ctx, postEvent)
 	if err != nil {
 		return "", err
@@ -61,7 +61,7 @@ func (repo *repo) InsertPostEvent(postEvent PostEvent) (string, error) {
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
-func (repo *repo) InsertFile(base64File string) (*model.File, error) {
+func (repo *Repo) InsertFile(base64File string) (*model.File, error) {
 	fileName := uuid.NewString()
 
 	properties := strings.Split(base64File, ";base64,")
@@ -88,7 +88,7 @@ func (repo *repo) InsertFile(base64File string) (*model.File, error) {
 	}, nil
 }
 
-func (repo *repo) CreatePost(postEvent PostEvent, base64File string) (*model.Post, error) {
+func (repo *Repo) CreatePost(postEvent PostEvent, base64File string) (*model.Post, error) {
 	file, err := repo.InsertFile(base64File)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func (repo *repo) CreatePost(postEvent PostEvent, base64File string) (*model.Pos
 	return post, nil
 }
 
-func (repo *repo) GetPosts(id string, fetchLimit int) ([]*model.Post, error) {
+func (repo *Repo) GetPosts(id string, fetchLimit int) ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
 	limit := int64(fetchLimit)
 
@@ -227,7 +227,7 @@ func (repo *repo) GetPosts(id string, fetchLimit int) ([]*model.Post, error) {
 	return currentPosts, nil
 }
 
-func (repo *repo) GetData(fileID string) (string, error) {
+func (repo *Repo) GetData(fileID string) (string, error) {
 	// get file content for post
 	var buf bytes.Buffer
 	_, err := repo.bucket.DownloadToStreamByName(fileID, &buf)
@@ -238,7 +238,7 @@ func (repo *repo) GetData(fileID string) (string, error) {
 	return string(buf.Bytes()), nil
 }
 
-func (repo *repo) RemovePost(postEvent PostEvent) (string, error) {
+func (repo *Repo) RemovePost(postEvent PostEvent) (string, error) {
 	// get fileID for deleting all chunks
 	projection := bson.D{
 		{"_id", 1},
@@ -302,7 +302,7 @@ func (repo *repo) RemovePost(postEvent PostEvent) (string, error) {
 	return "success", nil
 }
 
-func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
+func (repo *Repo) EditPost(postEvent PostEvent) (string, error) {
 	_, err := repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return "failed", err
@@ -311,7 +311,7 @@ func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
 	return "success", nil
 }
 
-func (repo *repo) LikePost(postEvent PostEvent) error {
+func (repo *Repo) LikePost(postEvent PostEvent) error {
 	_, err := repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return err
