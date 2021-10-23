@@ -173,6 +173,15 @@ export class GQLService {
       },
     }).valueChanges.subscribe(({data}: any) => {
       console.log('GetPostComments-data: ', data);
+
+      const commentList: Comment[] = [];
+
+      for (let getPostComment of data.getPostComments) {
+        commentList.push(new Comment(getPostComment));
+      }
+
+      post.comments = commentList;
+
       post.commentMode = true;
     }, (error: any) => {
       console.error('there was an error sending the getPostComments-query', error);

@@ -63,26 +63,11 @@ func (channel *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 	go func() {
 		for data := range queries {
 			log.Printf("Received a query message with messageID %s : %s\n", data.MessageId, data.Body)
-			log.Printf("ReplyTo: %s, CorrelationID: %s", data.ReplyTo, data.CorrelationId)
+			log.Printf("ReplyTo: %s, CorrelationID: %s\n", data.ReplyTo, data.CorrelationId)
 			if data.MessageId == "Post-Service" {
-				commentList := []*model.Comment{
-					{
-						ID:        "test",
-						PostID:    "test",
-						Comment:   "test",
-						CreatedBy: "test",
-						Event:     "test",
-					},
-					{
-						ID:        "test2",
-						PostID:    "test2",
-						Comment:   "test2",
-						CreatedBy: "test2",
-						Event:     "test2",
-					},
-				}
+				comments, err := channel.Repo.GetCommentsByPostId(string(data.Body))
 
-				body, err := json.Marshal(commentList)
+				body, err := json.Marshal(comments)
 
 				err = ch.Publish(
 					data.ReplyTo,

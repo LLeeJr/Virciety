@@ -2,8 +2,12 @@ package database
 
 import (
 	"comment-service/model"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"log"
+	"strings"
 )
 
 type Repository interface {
@@ -124,14 +128,44 @@ func (repo *Repo) GetComments() (map[string][]*model.Comment, error) {
 }
 
 func (repo *Repo) GetCommentsByPostId(postId string) ([]*model.Comment, error) {
-	/*comments, ok := repo.currentComments[postId]
-	if !ok {
-		errMsg := "no comments for post with id " + postId + " found"
-		return nil, errors.New(errMsg)
+	var comments []*model.Comment
+
+	log.Printf("PostId: %s\n", postId)
+
+	postId = strings.Replace(postId, "\"", "", -1)
+
+	// sort comment-events by descending event-time (the newest first) and set fetch limit
+	opts := options.Find()
+	opts.SetSort(bson.D{{"event_time", -1}})
+
+	// get all comment events with event_type = "CreateComment" sorted by event_time
+	cursor, err := repo.commentCollection.Find(ctx, bson.D{
+		{"event_type", "CreateComment"},
+		{"post_id", postId},
+	}, opts)
+	if err != nil {
+		return nil, err
 	}
 
-	return comments, nil*/
-	return nil, nil
+	log.Printf("Cursor: %v\n", cursor)
+
+	for cursor.Next(ctx) {
+		var commentEvent CommentEvent
+		if err = cursor.Decode(&commentEvent); err != nil {
+			return nil, err
+		}
+
+		log.Printf("CommentEvent: %s\n", commentEvent)
+
+		comments = append(comments, &model.Comment{
+			ID:        commentEvent.ID.Hex(),
+			PostID:    commentEvent.PostID,
+			Comment:   commentEvent.Comment,
+			CreatedBy: commentEvent.CreatedBy,
+		})
+	}
+
+	return comments, nil
 }
 
 func (repo *Repo) GetCommentById(commentId string) (*model.Comment, int, string, error) {
