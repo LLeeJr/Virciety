@@ -11,6 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
+	"github.com/streadway/amqp"
 	"log"
 	"net/http"
 	"os"
@@ -30,11 +31,19 @@ func main() {
 		log.Fatal("err", err)
 	}
 
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	queue.FailOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	queue.FailOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
 	publisher, _ := queue.NewPublisher()
-	go publisher.InitPublisher()
+	go publisher.InitPublisher(ch)
 
 	consumer, _ := queue.NewConsumer(repo)
-	go consumer.InitConsumer()
+	go consumer.InitConsumer(ch)
 
 	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
 	//srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
