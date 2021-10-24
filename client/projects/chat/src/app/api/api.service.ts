@@ -98,7 +98,6 @@ export class ApiService {
   }
 
   unsubscribeToChat() {
-    this.webSocketClient.unsubscribeAll();
     this.webSocketClient.close(true);
   }
 
@@ -116,6 +115,7 @@ export class ApiService {
     `;
 
     this.query = this.apollo.watchQuery<any>({
+      fetchPolicy: 'network-only',
       query: query,
       variables: {
         roomId: this.selectedRoom._id,

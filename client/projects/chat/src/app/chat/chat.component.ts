@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import {ApiService} from "../api/api.service";
 import {AuthLibService} from "auth-lib";
 import {Room} from "../data/room";
+import {KeycloakService} from "keycloak-angular";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-chat',
@@ -13,27 +15,25 @@ export class ChatComponent implements OnInit {
   chatrooms: Room[] = [];
 
   constructor(private api: ApiService,
-              private auth: AuthLibService) {
+              private auth: AuthLibService,
+              private keycloak: KeycloakService,
+              private router: Router) {
   }
 
-  ngOnInit(): void {
-    this.auth.getUserName().subscribe(user => {
-      if (user !== '') {
-        this.api.getRoomsByUser(user).subscribe(value => {
+  async ngOnInit(): Promise<void> {
+    await this.keycloak.isLoggedIn().then(loggedIn => {
+      if (loggedIn) {
+        let username = this.keycloak.getUsername();
+        this.api.getRoomsByUser(username).subscribe(value => {
           this.chatrooms = value.data.getRoomsByUser;
         });
       }
     });
-
-    if (this.auth.userName !== '') {
-      this.api.getRoomsByUser(this.auth.userName).subscribe(value => {
-        this.chatrooms = value.data.getRoomsByUser;
-      });
-    }
   }
 
   setChatPartner(room: Room) {
     this.api.chatMembers = room.member;
     this.api.selectedRoom = room;
+    this.router.navigate([`chat/${room.name}`]);
   }
 }
