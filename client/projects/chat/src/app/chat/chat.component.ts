@@ -23,10 +23,14 @@ export class ChatComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.keycloak.isLoggedIn().then(loggedIn => {
       if (loggedIn) {
-        let username = this.keycloak.getUsername();
-        this.api.getRoomsByUser(username).subscribe(value => {
-          this.chatrooms = value.data.getRoomsByUser;
-        });
+        this.keycloak.loadUserProfile().then(() => {
+          let username = this.keycloak.getUsername();
+          this.api.getRoomsByUser(username).subscribe(value => {
+            this.chatrooms = value.data.getRoomsByUser;
+          });
+        })
+      } else {
+        this.keycloak.login();
       }
     });
   }
