@@ -96,6 +96,7 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   showComments(post: Post) {
+    post.commentMode = true;
     this.gqlService.getPostComments(post);
   }
 }

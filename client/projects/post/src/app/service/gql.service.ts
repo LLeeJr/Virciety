@@ -168,6 +168,7 @@ export class GQLService {
   getPostComments(post: Post) {
     this.apollo.watchQuery({
       query: GET_POST_COMMENTS,
+      fetchPolicy: "network-only",
       variables: {
         id: post.id
       },
