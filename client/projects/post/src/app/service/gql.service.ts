@@ -206,6 +206,11 @@ export class GQLService {
 
         const post = new Post(data.createPost);
 
+        if (this.dataService.posts.some(p => p.id === post.id)) {
+          console.log('post already exists');
+          return;
+        }
+
         post.data.content = fileBase64;
         this.dataService.addNewPost(post);
 
@@ -225,9 +230,9 @@ export class GQLService {
           data: { getPosts : newPosts }
         });
       },
-      context: {
+      /*context: {
         useMultipart: true,
-      }
+      }*/
       }).subscribe(({data}: any) => {
       console.log('CreatePostData: ', data);
     }, (error: any) => {
@@ -305,6 +310,11 @@ export class GQLService {
       // console.log('NewPostCreated: ', data);
 
       const post = new Post(data.newPostCreated);
+
+      if (this.dataService.posts.some(p => p.id === post.id)) {
+        console.log('post already exists');
+        return;
+      }
 
       this.dataService.addNewPost(post);
       this.getData(post);

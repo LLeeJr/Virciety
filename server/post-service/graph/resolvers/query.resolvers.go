@@ -5,7 +5,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"github.com/google/uuid"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
