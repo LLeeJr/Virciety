@@ -20,6 +20,7 @@ export class CommentComponent implements OnInit {
 
   addComment() {
     this.newCommentEvent.emit(this.comment);
+    this.comment = "";
   }
 
 }
