@@ -1,35 +1,31 @@
 package database
 
 import (
-	"database/sql"
-	"fmt"
+	"context"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"time"
 
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "localhost"
-	port     = 5436
-	user     = "user"
-	password = "pass"
-	dbname   = "db"
-)
+const url = "mongodb://admin:admin@localhost:27019/"
 
-func GetDBConn() *sql.DB {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+var ctx context.Context
 
-	db, err := sql.Open("postgres", psqlInfo)
+func dbConnect() (*mongo.Client, error) {
+	client, err := mongo.NewClient(options.Client().ApplyURI(url))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	err = db.Ping()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	err = client.Connect(ctx)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	fmt.Println("Successfully connected!")
-	return db
+	return client, nil
 }

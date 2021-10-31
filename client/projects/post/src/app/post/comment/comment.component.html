@@ -1,0 +1,36 @@
+<mat-card-header>
+  <div mat-card-avatar class="example-header-image"></div>
+  <mat-card-title>{{post.username}}</mat-card-title>
+  <mat-card-subtitle>{{post.description}}</mat-card-subtitle>
+</mat-card-header>
+
+<mat-card-content>
+  <mat-list class="comment-list">
+    <mat-list-item *ngFor="let comment of post.comments">
+      <div mat-list-avatar class="example-header-image"></div>
+      <div mat-line> {{comment.comment}} </div>
+      <div mat-line>{{comment.createdBy}}</div>
+    </mat-list-item>
+  </mat-list>
+
+  <mat-list>
+    <mat-list-item>
+      <mat-form-field appearance="fill">
+        <mat-label>New Comment</mat-label>
+        <input matInput [(ngModel)]="comment">
+      </mat-form-field>
+    </mat-list-item>
+  </mat-list>
+
+</mat-card-content>
+
+<mat-card-actions>
+  <button mat-button (click)="addComment()">
+    <mat-icon>add_comment</mat-icon>
+    Post
+  </button>
+  <button mat-button (click)="post.commentMode = false">
+    <mat-icon>arrow_back</mat-icon>
+    Back
+  </button>
+</mat-card-actions>

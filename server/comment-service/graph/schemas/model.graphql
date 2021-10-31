@@ -23,9 +23,9 @@ type MapComments {
     value: [Comment!]!
 }
 
-type Comment {
-    id: String! # timestamp(created)__username__postID
-    post_id: String!
-    description: String!
-    likedBy: [String!]!
-}
+#type Comment {
+#    id: String! # timestamp(created)__username__postID
+#    post_id: String!
+#    description: String!
+#    likedBy: [String!]!
+#}

@@ -1,0 +1,7 @@
+type Mutation {
+    createPost(newPost: CreatePostRequest!): Post!
+    editPost(edit: EditPostRequest!): String!
+    removePost(remove: RemovePostRequest!): String!
+    likePost(like: LikePostRequest!): String!
+    addComment(comment: AddCommentRequest!): Comment!
+}

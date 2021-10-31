@@ -1,0 +1,54 @@
+type File {
+    name: String!
+    content: String!
+    contentType: String!
+}
+
+input CreatePostRequest {
+    username:       String!
+    description:    String!
+    data:           String!
+}
+
+input EditPostRequest {
+    id: String!
+    newDescription: String!
+    likedBy: [String!]!
+    comments: [String!]!
+}
+
+input LikePostRequest {
+    id: String!
+    description: String!
+    newLikedBy: [String!]!
+    comments: [String!]!
+    liked: Boolean!
+}
+
+input RemovePostRequest {
+    id: String!
+    fileID: String!
+}
+
+input AddCommentRequest {
+    postID: String!
+    comment: String!
+    createdBy: String!
+}
+
+type Post {
+    id: String!
+    description: String!
+    data: File!
+    username: String!
+    likedBy: [String!]!
+    comments: [String!]!
+}
+
+type Comment {
+    id: String!
+    postID: String!
+    comment: String!
+    createdBy: String!
+    event: String!
+}

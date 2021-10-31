@@ -8,6 +8,7 @@ import {HttpClientModule} from "@angular/common/http";
 import {initializeKeycloak} from "./init/keycloak-init.factory";
 import {KeycloakAngularModule, KeycloakService} from "keycloak-angular";
 import {DatePipe} from "@angular/common";
+import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import {DatePipe} from "@angular/common";
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
-    KeycloakAngularModule
+    KeycloakAngularModule,
+    BrowserAnimationsModule
   ],
   providers: [
     DatePipe,

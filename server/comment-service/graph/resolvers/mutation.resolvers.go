@@ -4,17 +4,13 @@ package resolvers
 // will be copied through when generating and any unknown code will be moved to the end.
 
 import (
-	"comment-service/database"
 	"comment-service/graph/generated"
 	"comment-service/graph/model"
-	"comment-service/util"
 	"context"
-	"errors"
-	"time"
 )
 
 func (r *mutationResolver) CreateComment(ctx context.Context, newComment model.CreateCommentRequest) (*model.Comment, error) {
-	created := time.Now().Format("2006-01-02 15:04:05")
+	/*created := time.Now().Format("2006-01-02 15:04:05")
 
 	// create new event
 	commentEvent := database.CommentEvent{
@@ -22,9 +18,6 @@ func (r *mutationResolver) CreateComment(ctx context.Context, newComment model.C
 		EventType:   "CreateComment",
 		CommentID:   created + "__" + newComment.Username + "__" + newComment.PostID,
 		PostID:      newComment.PostID,
-		Username:    newComment.Username,
-		Description: newComment.Description,
-		LikedBy:     make([]string, 0),
 	}
 
 	// save event in database
@@ -35,13 +28,13 @@ func (r *mutationResolver) CreateComment(ctx context.Context, newComment model.C
 
 	// put event on queue for notifications
 	// put event on queue for posts
-	r.producerQueue.AddMessageToEvent(commentEvent)
+	r.producerQueue.AddMessageToEvent(commentEvent)*/
 
-	return comment, nil
+	return nil, nil
 }
 
 func (r *mutationResolver) EditComment(ctx context.Context, edit model.EditCommentRequest) (string, error) {
-	// get comment by id
+	/*// get comment by id
 	comment, _, username, err := r.repo.GetCommentById(edit.ID)
 	if err != nil {
 		return "failed", err
@@ -64,13 +57,13 @@ func (r *mutationResolver) EditComment(ctx context.Context, edit model.EditComme
 	ok, err := r.repo.EditComment(commentEvent)
 	if err != nil {
 		return ok, err
-	}
+	}*/
 
-	return ok, nil
+	return "", nil
 }
 
 func (r *mutationResolver) RemoveComment(ctx context.Context, removeID string) (string, error) {
-	// get comment by id
+	/*// get comment by id
 	comment, index, username, err := r.repo.GetCommentById(removeID)
 	if err != nil {
 		return "failed", err
@@ -91,13 +84,13 @@ func (r *mutationResolver) RemoveComment(ctx context.Context, removeID string) (
 	ok, err := r.repo.RemoveComment(commentEvent, index)
 	if err != nil {
 		return ok, err
-	}
+	}*/
 
-	return ok, nil
+	return "", nil
 }
 
 func (r *mutationResolver) LikeComment(ctx context.Context, like model.UnLikeCommentRequest) (string, error) {
-	// get comment by id
+	/*// get comment by id
 	comment, _, username, err := r.repo.GetCommentById(like.ID)
 	if err != nil {
 		return "failed", err
@@ -125,13 +118,13 @@ func (r *mutationResolver) LikeComment(ctx context.Context, like model.UnLikeCom
 	ok, err := r.repo.LikeComment(commentEvent)
 	if err != nil {
 		return ok, err
-	}
+	}*/
 
-	return ok, nil
+	return "", nil
 }
 
 func (r *mutationResolver) UnlikeComment(ctx context.Context, unlike model.UnLikeCommentRequest) (string, error) {
-	// get comment by id
+	/*// get comment by id
 	comment, _, username, err := r.repo.GetCommentById(unlike.ID)
 	if err != nil {
 		return "failed", err
@@ -161,9 +154,9 @@ func (r *mutationResolver) UnlikeComment(ctx context.Context, unlike model.UnLik
 	ok, err := r.repo.UnlikeComment(commentEvent)
 	if err != nil {
 		return ok, err
-	}
+	}*/
 
-	return ok, nil
+	return "", nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

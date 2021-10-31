@@ -1,0 +1,5 @@
+type Query {
+    getPosts(id: String!, fetchLimit: Int!): [Post!]!
+    getData(fileID: String!): String!
+    getPostComments(id: String!): [Comment!]!
+}

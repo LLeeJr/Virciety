@@ -2,9 +2,13 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "strictPropertyInitialization": false,
     "paths": {
       "auth-lib": [
         "projects/auth-lib/src/public-api.ts"
+      ],
+      "data-lib": [
+        "projects/data-lib/src/public-api.ts"
       ]
     },
     "strictPropertyInitialization": false,

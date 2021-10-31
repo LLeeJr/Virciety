@@ -18,6 +18,24 @@ const routes: Routes = [
         remoteName: 'chat',
         exposedModule: './ChatModule',
       }).then(m => m.ChatModule),
+  },
+  {
+    path: 'post',
+    canActivate: [AuthGuard],
+    loadChildren: () =>
+      loadRemoteModule({
+        remoteName: 'post',
+        exposedModule: './PostModule',
+      }).then(m => m.PostModule),
+  },
+  {
+    path: 'post/create_post',
+    canActivate: [AuthGuard],
+    loadChildren: () =>
+      loadRemoteModule({
+        remoteName: 'post',
+        exposedModule: './CreatePostModule',
+      }).then(m => m.CreatePostModule),
   }
 ];
 

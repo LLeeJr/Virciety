@@ -1,0 +1,39 @@
+<h2>Create a new post</h2>
+
+<div *ngIf="fileBase64 && content_type !== ''">
+  <div *ngIf="!(content_type.startsWith('image') || content_type.startsWith('video')); else elseIfBlock">
+    {{alertFunction()}}
+  </div>
+  <ng-template #elseIfBlock>
+    <div style="margin-bottom: 10px">
+      <label>Do you want to upload this?</label>
+    </div>
+    <div *ngIf="content_type.startsWith('video'); else elseBlock">
+      <video width="300px" controls>
+        <source src="{{fileBase64}}">
+      </video>
+    </div>
+    <ng-template #elseBlock>
+      <div>
+        <img src="{{fileBase64}}" alt="Photo you want to upload" width="300px">
+      </div>
+    </ng-template>
+    <input [(ngModel)]="description" placeholder="Write a caption...">
+    <button (click)="createPost()">Create Post</button>
+  </ng-template>
+</div>
+
+<input type="file" class="file-input" (click)="reset()"
+       (change)="onFileSelected($event)" #fileUpload>
+
+<div class="file-upload">
+
+  {{filename || "No file uploaded yet."}}
+
+  <button mat-mini-fab color="accent" class="upload-btn"
+          (click)="fileUpload.click()">
+    <mat-icon>attach_file</mat-icon>
+  </button>
+
+</div>
+
