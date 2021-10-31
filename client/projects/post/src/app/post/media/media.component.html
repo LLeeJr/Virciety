@@ -1,0 +1,66 @@
+<mat-card-header>
+  <div mat-card-avatar class="example-header-image"></div>
+  <mat-card-title>{{post.username}}</mat-card-title>
+</mat-card-header>
+
+<ng-container [ngTemplateOutlet]="post.data.content !== '' ? media_tp : loading_tp"></ng-container>
+
+<mat-card-content>
+  <p *ngIf="post.likedBy.length !== 0">
+    <a (click)="openLikedByDialog(post.likedBy)">{{post.likedBy.length > 1 ? post.likedBy.length + ' likes' : '1 like'}}</a>
+  </p>
+  <div *ngIf="!post.editMode">{{post.description}}</div>
+  <div *ngIf="post.editMode">
+    <mat-form-field appearance="fill">
+      <mat-label>New Description</mat-label>
+      <input matInput placeholder="new description" [(ngModel)]="post.description">
+    </mat-form-field>
+  </div>
+  <p *ngIf="post.comments.length > 0">
+    <a (click)="post.commentMode = true">Show comments...</a>
+  </p>
+</mat-card-content>
+
+<mat-card-actions>
+  <ng-container [ngTemplateOutlet]="post.editMode ? edit_buttons_tp : normal_buttons_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
+</mat-card-actions>
+
+<ng-template #normal_buttons_tp>
+  <button mat-button (click)="triggerEvent('like')">
+    <mat-icon>favorite</mat-icon>
+    Like
+  </button>
+  <button mat-button (click)="triggerEvent('comments')">
+    <mat-icon>add_comment</mat-icon>
+    Comment
+  </button>
+  <!--TODO add this.authService.username as condition-->
+  <button mat-button *ngIf="post.username === 'user3'" (click)="post.editMode = true">
+    <mat-icon>edit</mat-icon>
+    Edit
+  </button>
+</ng-template>
+
+<ng-template #edit_buttons_tp>
+  <button mat-button (click)="triggerEvent('edit')">Save</button>
+  <button mat-button (click)="post.editMode = false">Cancel</button>
+  <button mat-button color="warn" (click)="triggerEvent('remove')">Delete</button>
+</ng-template>
+
+<ng-template #loading_tp>
+  <mat-spinner style="margin:0 auto;"></mat-spinner>
+</ng-template>
+
+<ng-template #media_tp>
+  <ng-container [ngTemplateOutlet]="post.data.contentType.startsWith('image') ? image_tp : video_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
+</ng-template>
+
+<ng-template #image_tp>
+  <img mat-card-image src="{{post.data.content}}" alt="{{post.id}}">
+</ng-template>
+
+<ng-template #video_tp>
+  <video mat-card-image controls>
+    <source src="{{post.data.content}}">
+  </video>
+</ng-template>

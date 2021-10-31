@@ -2,7 +2,9 @@ package resolvers
 
 import (
 	"posts-service/database"
+	"posts-service/graph/model"
 	messagequeue "posts-service/message-queue"
+	"sync"
 )
 
 // This file will not be regenerated automatically.
@@ -12,13 +14,16 @@ import (
 type Resolver struct {
 	repo          database.Repository
 	producerQueue messagequeue.Publisher
-	textChan      chan string
+	observers     map[string]chan *model.Post
+	mu            sync.Mutex
+	responses     map[string]chan []*model.Comment
 }
 
-func NewResolver(repo database.Repository, producerQueue messagequeue.Publisher) *Resolver {
+func NewResolver(repo database.Repository, producerQueue messagequeue.Publisher, responses map[string]chan []*model.Comment) *Resolver {
 	return &Resolver{
 		repo:          repo,
 		producerQueue: producerQueue,
-		textChan:      make(chan string),
+		observers:     map[string]chan *model.Post{},
+		responses: 	   responses,
 	}
 }

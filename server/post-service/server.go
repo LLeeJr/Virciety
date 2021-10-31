@@ -2,17 +2,23 @@ package main
 
 import (
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
+	"github.com/streadway/amqp"
 	"log"
 	"net/http"
 	_ "net/http"
 	"os"
 	"posts-service/database"
 	"posts-service/graph/generated"
+	"posts-service/graph/model"
 	"posts-service/graph/resolvers"
 	messagequeue "posts-service/message-queue"
+	"time"
 )
 
 const defaultPort = "8083"
@@ -23,17 +29,39 @@ func main() {
 		port = defaultPort
 	}
 
-	db := database.GetDBConn()
+	repo, _ := database.NewRepo()
+	responses := map[string]chan []*model.Comment{}
 
-	repo, _ := database.NewRepo(db)
+	// rabbitmq connection
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	messagequeue.FailOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	messagequeue.FailOnError(err, "Failed to open a channel")
+	defer ch.Close()
 
 	producerQueue, _ := messagequeue.NewPublisher()
-	go producerQueue.InitPublisher()
+	go producerQueue.InitPublisher(ch)
 
-	consumerQueue, _ := messagequeue.NewConsumer(repo)
-	go consumerQueue.InitConsumer()
+	consumerQueue, _ := messagequeue.NewConsumer(repo, responses)
+	go consumerQueue.InitConsumer(ch)
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
+    // graphql init
+	// srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
+
+	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue, responses)}))
+
+	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		},
+	})
+	srv.Use(extension.Introspection{})
 
 	r := mux.NewRouter()
 	r.Use(cors.New(cors.Options{

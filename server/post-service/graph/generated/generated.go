@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"posts-service/graph/model"
 	"strconv"
 	"sync"
@@ -37,24 +38,33 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Subscription() SubscriptionResolver
 }
 
 type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Comment struct {
+		Comment   func(childComplexity int) int
+		CreatedBy func(childComplexity int) int
+		Event     func(childComplexity int) int
+		ID        func(childComplexity int) int
+		PostID    func(childComplexity int) int
+	}
+
 	File struct {
 		Content     func(childComplexity int) int
 		ContentType func(childComplexity int) int
-		ID          func(childComplexity int) int
+		Name        func(childComplexity int) int
 	}
 
 	Mutation struct {
+		AddComment func(childComplexity int, comment model.AddCommentRequest) int
 		CreatePost func(childComplexity int, newPost model.CreatePostRequest) int
 		EditPost   func(childComplexity int, edit model.EditPostRequest) int
-		LikePost   func(childComplexity int, like model.UnLikePostRequest) int
-		RemovePost func(childComplexity int, removeID string) int
-		UnlikePost func(childComplexity int, unlike model.UnLikePostRequest) int
+		LikePost   func(childComplexity int, like model.LikePostRequest) int
+		RemovePost func(childComplexity int, remove model.RemovePostRequest) int
 	}
 
 	Post struct {
@@ -63,24 +73,34 @@ type ComplexityRoot struct {
 		Description func(childComplexity int) int
 		ID          func(childComplexity int) int
 		LikedBy     func(childComplexity int) int
+		Username    func(childComplexity int) int
 	}
 
 	Query struct {
-		GetData  func(childComplexity int, id string) int
-		GetPosts func(childComplexity int) int
+		GetData         func(childComplexity int, fileID string) int
+		GetPostComments func(childComplexity int, id string) int
+		GetPosts        func(childComplexity int, id string, fetchLimit int) int
+	}
+
+	Subscription struct {
+		NewPostCreated func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
 	CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error)
 	EditPost(ctx context.Context, edit model.EditPostRequest) (string, error)
-	RemovePost(ctx context.Context, removeID string) (string, error)
-	LikePost(ctx context.Context, like model.UnLikePostRequest) (string, error)
-	UnlikePost(ctx context.Context, unlike model.UnLikePostRequest) (string, error)
+	RemovePost(ctx context.Context, remove model.RemovePostRequest) (string, error)
+	LikePost(ctx context.Context, like model.LikePostRequest) (string, error)
+	AddComment(ctx context.Context, comment model.AddCommentRequest) (*model.Comment, error)
 }
 type QueryResolver interface {
-	GetPosts(ctx context.Context) ([]*model.Post, error)
-	GetData(ctx context.Context, id string) (string, error)
+	GetPosts(ctx context.Context, id string, fetchLimit int) ([]*model.Post, error)
+	GetData(ctx context.Context, fileID string) (string, error)
+	GetPostComments(ctx context.Context, id string) ([]*model.Comment, error)
+}
+type SubscriptionResolver interface {
+	NewPostCreated(ctx context.Context) (<-chan *model.Post, error)
 }
 
 type executableSchema struct {
@@ -98,6 +118,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Comment.comment":
+		if e.complexity.Comment.Comment == nil {
+			break
+		}
+
+		return e.complexity.Comment.Comment(childComplexity), true
+
+	case "Comment.createdBy":
+		if e.complexity.Comment.CreatedBy == nil {
+			break
+		}
+
+		return e.complexity.Comment.CreatedBy(childComplexity), true
+
+	case "Comment.event":
+		if e.complexity.Comment.Event == nil {
+			break
+		}
+
+		return e.complexity.Comment.Event(childComplexity), true
+
+	case "Comment.id":
+		if e.complexity.Comment.ID == nil {
+			break
+		}
+
+		return e.complexity.Comment.ID(childComplexity), true
+
+	case "Comment.postID":
+		if e.complexity.Comment.PostID == nil {
+			break
+		}
+
+		return e.complexity.Comment.PostID(childComplexity), true
+
 	case "File.content":
 		if e.complexity.File.Content == nil {
 			break
@@ -112,12 +167,24 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.File.ContentType(childComplexity), true
 
-	case "File.id":
-		if e.complexity.File.ID == nil {
+	case "File.name":
+		if e.complexity.File.Name == nil {
 			break
 		}
 
-		return e.complexity.File.ID(childComplexity), true
+		return e.complexity.File.Name(childComplexity), true
+
+	case "Mutation.addComment":
+		if e.complexity.Mutation.AddComment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addComment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddComment(childComplexity, args["comment"].(model.AddCommentRequest)), true
 
 	case "Mutation.createPost":
 		if e.complexity.Mutation.CreatePost == nil {
@@ -153,7 +220,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.LikePost(childComplexity, args["like"].(model.UnLikePostRequest)), true
+		return e.complexity.Mutation.LikePost(childComplexity, args["like"].(model.LikePostRequest)), true
 
 	case "Mutation.removePost":
 		if e.complexity.Mutation.RemovePost == nil {
@@ -165,19 +232,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RemovePost(childComplexity, args["removeID"].(string)), true
-
-	case "Mutation.unlikePost":
-		if e.complexity.Mutation.UnlikePost == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_unlikePost_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.UnlikePost(childComplexity, args["unlike"].(model.UnLikePostRequest)), true
+		return e.complexity.Mutation.RemovePost(childComplexity, args["remove"].(model.RemovePostRequest)), true
 
 	case "Post.comments":
 		if e.complexity.Post.Comments == nil {
@@ -214,6 +269,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.LikedBy(childComplexity), true
 
+	case "Post.username":
+		if e.complexity.Post.Username == nil {
+			break
+		}
+
+		return e.complexity.Post.Username(childComplexity), true
+
 	case "Query.getData":
 		if e.complexity.Query.GetData == nil {
 			break
@@ -224,14 +286,38 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetData(childComplexity, args["id"].(string)), true
+		return e.complexity.Query.GetData(childComplexity, args["fileID"].(string)), true
+
+	case "Query.getPostComments":
+		if e.complexity.Query.GetPostComments == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getPostComments_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetPostComments(childComplexity, args["id"].(string)), true
 
 	case "Query.getPosts":
 		if e.complexity.Query.GetPosts == nil {
 			break
 		}
 
-		return e.complexity.Query.GetPosts(childComplexity), true
+		args, err := ec.field_Query_getPosts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetPosts(childComplexity, args["id"].(string), args["fetchLimit"].(int)), true
+
+	case "Subscription.newPostCreated":
+		if e.complexity.Subscription.NewPostCreated == nil {
+			break
+		}
+
+		return e.complexity.Subscription.NewPostCreated(childComplexity), true
 
 	}
 	return 0, false
@@ -271,6 +357,23 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				Data: buf.Bytes(),
 			}
 		}
+	case ast.Subscription:
+		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
+
+		var buf bytes.Buffer
+		return func(ctx context.Context) *graphql.Response {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
 
 	default:
 		return graphql.OneShot(graphql.ErrorResponse(ctx, "unsupported GraphQL operation"))
@@ -298,7 +401,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "graph/schemas/model.graphql", Input: `type File {
-    id: String!
+    name: String!
     content: String!
     contentType: String!
 }
@@ -312,34 +415,59 @@ input CreatePostRequest {
 input EditPostRequest {
     id: String!
     newDescription: String!
+    likedBy: [String!]!
+    comments: [String!]!
 }
 
-input UnLikePostRequest {
+input LikePostRequest {
     id: String!
-    username: String!
+    description: String!
+    newLikedBy: [String!]!
+    comments: [String!]!
+    liked: Boolean!
 }
 
 input RemovePostRequest {
     id: String!
+    fileID: String!
+}
+
+input AddCommentRequest {
+    postID: String!
+    comment: String!
+    createdBy: String!
 }
 
 type Post {
-    id: String! # timestamp(created)__username
+    id: String!
     description: String!
     data: File!
+    username: String!
     likedBy: [String!]!
     comments: [String!]!
+}
+
+type Comment {
+    id: String!
+    postID: String!
+    comment: String!
+    createdBy: String!
+    event: String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation {
     createPost(newPost: CreatePostRequest!): Post!
     editPost(edit: EditPostRequest!): String!
-    removePost(removeID: String!): String!
-    likePost(like: UnLikePostRequest!): String!
-    unlikePost(unlike: UnLikePostRequest!): String!
+    removePost(remove: RemovePostRequest!): String!
+    likePost(like: LikePostRequest!): String!
+    addComment(comment: AddCommentRequest!): Comment!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
-    getPosts: [Post!]!
-    getData(id: String!): String!
+    getPosts(id: String!, fetchLimit: Int!): [Post!]!
+    getData(fileID: String!): String!
+    getPostComments(id: String!): [Comment!]!
+}`, BuiltIn: false},
+	{Name: "graph/schemas/subscription.graphql", Input: `type Subscription {
+    newPostCreated: Post!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -347,6 +475,21 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_addComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.AddCommentRequest
+	if tmp, ok := rawArgs["comment"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
+		arg0, err = ec.unmarshalNAddCommentRequest2postsᚑserviceᚋgraphᚋmodelᚐAddCommentRequest(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["comment"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -381,10 +524,10 @@ func (ec *executionContext) field_Mutation_editPost_args(ctx context.Context, ra
 func (ec *executionContext) field_Mutation_likePost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.UnLikePostRequest
+	var arg0 model.LikePostRequest
 	if tmp, ok := rawArgs["like"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("like"))
-		arg0, err = ec.unmarshalNUnLikePostRequest2postsᚑserviceᚋgraphᚋmodelᚐUnLikePostRequest(ctx, tmp)
+		arg0, err = ec.unmarshalNLikePostRequest2postsᚑserviceᚋgraphᚋmodelᚐLikePostRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -396,30 +539,15 @@ func (ec *executionContext) field_Mutation_likePost_args(ctx context.Context, ra
 func (ec *executionContext) field_Mutation_removePost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["removeID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("removeID"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg0 model.RemovePostRequest
+	if tmp, ok := rawArgs["remove"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remove"))
+		arg0, err = ec.unmarshalNRemovePostRequest2postsᚑserviceᚋgraphᚋmodelᚐRemovePostRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["removeID"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_unlikePost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.UnLikePostRequest
-	if tmp, ok := rawArgs["unlike"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("unlike"))
-		arg0, err = ec.unmarshalNUnLikePostRequest2postsᚑserviceᚋgraphᚋmodelᚐUnLikePostRequest(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["unlike"] = arg0
+	args["remove"] = arg0
 	return args, nil
 }
 
@@ -442,6 +570,21 @@ func (ec *executionContext) field_Query_getData_args(ctx context.Context, rawArg
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
+	if tmp, ok := rawArgs["fileID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fileID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getPostComments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 		arg0, err = ec.unmarshalNString2string(ctx, tmp)
@@ -450,6 +593,30 @@ func (ec *executionContext) field_Query_getData_args(ctx context.Context, rawArg
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getPosts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 int
+	if tmp, ok := rawArgs["fetchLimit"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fetchLimit"))
+		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fetchLimit"] = arg1
 	return args, nil
 }
 
@@ -491,7 +658,182 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _File_id(ctx context.Context, field graphql.CollectedField, obj *model.File) (ret graphql.Marshaler) {
+func (ec *executionContext) _Comment_id(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Comment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Comment_postID(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Comment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PostID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Comment_comment(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Comment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Comment, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Comment_createdBy(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Comment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Comment_event(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Comment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Event, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _File_name(ctx context.Context, field graphql.CollectedField, obj *model.File) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -509,7 +851,7 @@ func (ec *executionContext) _File_id(ctx context.Context, field graphql.Collecte
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -705,7 +1047,7 @@ func (ec *executionContext) _Mutation_removePost(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RemovePost(rctx, args["removeID"].(string))
+		return ec.resolvers.Mutation().RemovePost(rctx, args["remove"].(model.RemovePostRequest))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -747,7 +1089,7 @@ func (ec *executionContext) _Mutation_likePost(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().LikePost(rctx, args["like"].(model.UnLikePostRequest))
+		return ec.resolvers.Mutation().LikePost(rctx, args["like"].(model.LikePostRequest))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -764,7 +1106,7 @@ func (ec *executionContext) _Mutation_likePost(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_unlikePost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_addComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -781,7 +1123,7 @@ func (ec *executionContext) _Mutation_unlikePost(ctx context.Context, field grap
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_unlikePost_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_addComment_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -789,7 +1131,7 @@ func (ec *executionContext) _Mutation_unlikePost(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UnlikePost(rctx, args["unlike"].(model.UnLikePostRequest))
+		return ec.resolvers.Mutation().AddComment(rctx, args["comment"].(model.AddCommentRequest))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -801,9 +1143,9 @@ func (ec *executionContext) _Mutation_unlikePost(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.Comment)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNComment2ᚖpostsᚑserviceᚋgraphᚋmodelᚐComment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -911,6 +1253,41 @@ func (ec *executionContext) _Post_data(ctx context.Context, field graphql.Collec
 	return ec.marshalNFile2ᚖpostsᚑserviceᚋgraphᚋmodelᚐFile(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Post_username(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Post_likedBy(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -997,9 +1374,16 @@ func (ec *executionContext) _Query_getPosts(ctx context.Context, field graphql.C
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getPosts_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetPosts(rctx)
+		return ec.resolvers.Query().GetPosts(rctx, args["id"].(string), args["fetchLimit"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1041,7 +1425,7 @@ func (ec *executionContext) _Query_getData(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetData(rctx, args["id"].(string))
+		return ec.resolvers.Query().GetData(rctx, args["fileID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1056,6 +1440,48 @@ func (ec *executionContext) _Query_getData(ctx context.Context, field graphql.Co
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getPostComments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getPostComments_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetPostComments(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Comment)
+	fc.Result = res
+	return ec.marshalNComment2ᚕᚖpostsᚑserviceᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1127,6 +1553,51 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Subscription_newPostCreated(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().NewPostCreated(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan *model.Post)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPost(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2216,6 +2687,42 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputAddCommentRequest(ctx context.Context, obj interface{}) (model.AddCommentRequest, error) {
+	var it model.AddCommentRequest
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "postID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postID"))
+			it.PostID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "comment":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
+			it.Comment, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "createdBy":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdBy"))
+			it.CreatedBy, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreatePostRequest(ctx context.Context, obj interface{}) (model.CreatePostRequest, error) {
 	var it model.CreatePostRequest
 	var asMap = obj.(map[string]interface{})
@@ -2274,6 +2781,74 @@ func (ec *executionContext) unmarshalInputEditPostRequest(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
+		case "likedBy":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("likedBy"))
+			it.LikedBy, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "comments":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comments"))
+			it.Comments, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLikePostRequest(ctx context.Context, obj interface{}) (model.LikePostRequest, error) {
+	var it model.LikePostRequest
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			it.Description, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "newLikedBy":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newLikedBy"))
+			it.NewLikedBy, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "comments":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comments"))
+			it.Comments, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "liked":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("liked"))
+			it.Liked, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -2294,31 +2869,11 @@ func (ec *executionContext) unmarshalInputRemovePostRequest(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputUnLikePostRequest(ctx context.Context, obj interface{}) (model.UnLikePostRequest, error) {
-	var it model.UnLikePostRequest
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
+		case "fileID":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "username":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileID"))
+			it.FileID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2336,6 +2891,53 @@ func (ec *executionContext) unmarshalInputUnLikePostRequest(ctx context.Context,
 
 // region    **************************** object.gotpl ****************************
 
+var commentImplementors = []string{"Comment"}
+
+func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, obj *model.Comment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, commentImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Comment")
+		case "id":
+			out.Values[i] = ec._Comment_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "postID":
+			out.Values[i] = ec._Comment_postID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "comment":
+			out.Values[i] = ec._Comment_comment(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "createdBy":
+			out.Values[i] = ec._Comment_createdBy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "event":
+			out.Values[i] = ec._Comment_event(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var fileImplementors = []string{"File"}
 
 func (ec *executionContext) _File(ctx context.Context, sel ast.SelectionSet, obj *model.File) graphql.Marshaler {
@@ -2347,8 +2949,8 @@ func (ec *executionContext) _File(ctx context.Context, sel ast.SelectionSet, obj
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("File")
-		case "id":
-			out.Values[i] = ec._File_id(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._File_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2408,8 +3010,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "unlikePost":
-			out.Values[i] = ec._Mutation_unlikePost(ctx, field)
+		case "addComment":
+			out.Values[i] = ec._Mutation_addComment(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2447,6 +3049,11 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "data":
 			out.Values[i] = ec._Post_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "username":
+			out.Values[i] = ec._Post_username(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2514,6 +3121,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
+		case "getPostComments":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getPostComments(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -2527,6 +3148,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 	return out
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "newPostCreated":
+		return ec._Subscription_newPostCreated(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -2774,6 +3415,11 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) unmarshalNAddCommentRequest2postsᚑserviceᚋgraphᚋmodelᚐAddCommentRequest(ctx context.Context, v interface{}) (model.AddCommentRequest, error) {
+	res, err := ec.unmarshalInputAddCommentRequest(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2787,6 +3433,57 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNComment2postsᚑserviceᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v model.Comment) graphql.Marshaler {
+	return ec._Comment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNComment2ᚕᚖpostsᚑserviceᚋgraphᚋmodelᚐCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Comment) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNComment2ᚖpostsᚑserviceᚋgraphᚋmodelᚐComment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
+func (ec *executionContext) marshalNComment2ᚖpostsᚑserviceᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v *model.Comment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Comment(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNCreatePostRequest2postsᚑserviceᚋgraphᚋmodelᚐCreatePostRequest(ctx context.Context, v interface{}) (model.CreatePostRequest, error) {
@@ -2807,6 +3504,26 @@ func (ec *executionContext) marshalNFile2ᚖpostsᚑserviceᚋgraphᚋmodelᚐFi
 		return graphql.Null
 	}
 	return ec._File(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNLikePostRequest2postsᚑserviceᚋgraphᚋmodelᚐLikePostRequest(ctx context.Context, v interface{}) (model.LikePostRequest, error) {
+	res, err := ec.unmarshalInputLikePostRequest(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNPost2postsᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
@@ -2860,6 +3577,11 @@ func (ec *executionContext) marshalNPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPo
 	return ec._Post(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNRemovePostRequest2postsᚑserviceᚋgraphᚋmodelᚐRemovePostRequest(ctx context.Context, v interface{}) (model.RemovePostRequest, error) {
+	res, err := ec.unmarshalInputRemovePostRequest(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2903,11 +3625,6 @@ func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel
 	}
 
 	return ret
-}
-
-func (ec *executionContext) unmarshalNUnLikePostRequest2postsᚑserviceᚋgraphᚋmodelᚐUnLikePostRequest(ctx context.Context, v interface{}) (model.UnLikePostRequest, error) {
-	res, err := ec.unmarshalInputUnLikePostRequest(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

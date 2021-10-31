@@ -5,13 +5,13 @@ package resolvers
 
 import (
 	"context"
-	"errors"
+	"github.com/google/uuid"
 	"posts-service/graph/generated"
 	"posts-service/graph/model"
 )
 
-func (r *queryResolver) GetPosts(ctx context.Context) ([]*model.Post, error) {
-	currentPosts, err := r.repo.GetPosts()
+func (r *queryResolver) GetPosts(ctx context.Context, id string, fetchLimit int) ([]*model.Post, error) {
+	currentPosts, err := r.repo.GetPosts(id, fetchLimit)
 	if err != nil {
 		return nil, err
 	}
@@ -19,16 +19,34 @@ func (r *queryResolver) GetPosts(ctx context.Context) ([]*model.Post, error) {
 	return currentPosts, nil
 }
 
-func (r *queryResolver) GetData(ctx context.Context, id string) (string, error) {
-	currentPosts := r.repo.GetCurrentPosts()
-
-	for _, post := range currentPosts {
-		if post.ID == id {
-			return post.Data.Content, nil
-		}
+func (r *queryResolver) GetData(ctx context.Context, fileID string) (string, error) {
+	data, err := r.repo.GetData(fileID)
+	if err != nil {
+		return "", err
 	}
 
-	return "", errors.New("post with id " + id + " not found")
+	return data, nil
+}
+
+func (r *queryResolver) GetPostComments(ctx context.Context, id string) ([]*model.Comment, error) {
+	requestID := uuid.NewString()
+
+	go func() {
+		<-ctx.Done()
+		r.mu.Lock()
+		delete(r.responses, requestID)
+		r.mu.Unlock()
+	}()
+
+	r.mu.Lock()
+	r.responses[requestID] = make(chan []*model.Comment, 1)
+	r.mu.Unlock()
+
+	r.producerQueue.AddMessageToQuery(id, requestID)
+
+	comments := <-r.responses[requestID]
+
+	return comments, nil
 }
 
 // Query returns generated.QueryResolver implementation.

@@ -1,5 +1,5 @@
 type File {
-    id: String!
+    name: String!
     content: String!
     contentType: String!
 }
@@ -13,21 +13,42 @@ input CreatePostRequest {
 input EditPostRequest {
     id: String!
     newDescription: String!
+    likedBy: [String!]!
+    comments: [String!]!
 }
 
-input UnLikePostRequest {
+input LikePostRequest {
     id: String!
-    username: String!
+    description: String!
+    newLikedBy: [String!]!
+    comments: [String!]!
+    liked: Boolean!
 }
 
 input RemovePostRequest {
     id: String!
+    fileID: String!
+}
+
+input AddCommentRequest {
+    postID: String!
+    comment: String!
+    createdBy: String!
 }
 
 type Post {
-    id: String! # timestamp(created)__username
+    id: String!
     description: String!
     data: File!
+    username: String!
     likedBy: [String!]!
     comments: [String!]!
+}
+
+type Comment {
+    id: String!
+    postID: String!
+    comment: String!
+    createdBy: String!
+    event: String!
 }

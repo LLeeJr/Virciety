@@ -1,26 +1,32 @@
+import {Comment} from "./comment";
+
 export class Post {
   public id: string;
   public data: {
-    id: string;
+    name: string;
     content: string;
     contentType: string;
-    fileUrl: string;
   };
   public description: string;
   public likedBy: string[];
-  public comments: string[];
+  public comments: Comment[];
+  public username: string;
+  public editMode: boolean;
+  public commentMode: boolean;
 
-  constructor(getPost: any) {
+  constructor(data: any) {
     this.data = {
-      id: getPost.data.id,
+      name: data.data.name,
       content: '',
-      contentType: getPost.data.contentType,
-      fileUrl: '',
+      contentType: data.data.contentType,
     };
 
-    this.id = getPost.id;
-    this.likedBy = getPost.likedBy;
-    this.comments = getPost.comments;
-    this.description = getPost.description;
+    this.id = data.id;
+    this.likedBy = data.likedBy;
+    this.comments = data.comments;
+    this.description = data.description;
+    this.username = data.username;
+    this.editMode = false;
+    this.commentMode = false;
   }
 }

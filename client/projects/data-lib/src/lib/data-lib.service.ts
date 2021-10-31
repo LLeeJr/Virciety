@@ -1,33 +1,26 @@
 import { Injectable } from '@angular/core';
-import {Subject} from "rxjs";
+import {Post} from "../../../post/src/app/model/post";
 
 @Injectable({
   providedIn: 'root'
 })
 export class DataLibService {
-
-  private posts: any;
-  private _posts = new Subject<any>();
+  private _posts: Post[] = [];
 
   constructor() { }
 
-  getPosts(): any {
-    return this.posts;
-  }
-
-  getPostSubject(): Subject<any> {
+  get posts(): Post[] {
     return this._posts;
   }
 
-  setPosts(posts: any) {
-    this.posts = posts;
-    this._posts.next(this.posts);
+  removePost(id: string) {
+    this._posts = this._posts.filter(post => post.id !== id);
   }
 
-  addPost(post: any)  {
-    this.posts.reverse();
-    this.posts.push(post);
-    this.posts.reverse();
-    this._posts.next(this.posts);
+  addNewPost(newPost: Post): boolean {
+    this._posts.reverse();
+    this._posts.push(newPost);
+    this._posts.reverse();
+    return true;
   }
 }

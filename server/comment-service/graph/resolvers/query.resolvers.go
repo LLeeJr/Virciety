@@ -6,31 +6,30 @@ package resolvers
 import (
 	"comment-service/graph/generated"
 	"comment-service/graph/model"
-	"comment-service/graph/util"
 	"context"
 )
 
 func (r *queryResolver) GetComments(ctx context.Context) ([]*model.MapComments, error) {
-	currentComments, err := r.repo.GetComments()
+	/*currentComments, err := r.repo.GetComments()
 	if err != nil {
 		return nil, err
 	}
-
-	return util.ConvertedIntoMapComments(currentComments), nil
+	*/
+	return nil, nil
 }
 
 func (r *queryResolver) GetCommentsByPostID(ctx context.Context, id string) ([]*model.Comment, error) {
-	_, err := r.repo.GetComments()
-	if err != nil {
-		return nil, err
-	}
+	/*	_, err := r.repo.GetComments()
+		if err != nil {
+			return nil, err
+		}
 
-	comments, err := r.repo.GetCommentsByPostId(id)
-	if err != nil {
-		return nil, err
-	}
-
-	return comments, nil
+		comments, err := r.repo.GetCommentsByPostId(id)
+		if err != nil {
+			return nil, err
+		}
+	*/
+	return nil, nil
 }
 
 // Query returns generated.QueryResolver implementation.

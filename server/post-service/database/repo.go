@@ -1,192 +1,300 @@
 package database
 
 import (
-	"database/sql"
-	"github.com/lib/pq"
-	"log"
+	"bytes"
+	"fmt"
+	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"posts-service/graph/model"
-	"posts-service/util"
+	"reflect"
 	"strings"
-	"time"
 )
 
 type Repository interface {
-	InsertPostEvent(post PostEvent) error
-	CreatePost(postEvent PostEvent) (*model.Post, error)
-	GetPosts() ([]*model.Post, error)
-	GetCurrentPosts() []*model.Post
-	GetPostById(id string) (int, *model.Post)
-	RemovePost(postEvent PostEvent, index int) (string, error)
+	InsertPostEvent(post PostEvent) (string, error)
+	InsertFile(base64File string) (*model.File, error)
+	CreatePost(postEvent PostEvent, base64File string) (*model.Post, error)
+	GetPosts(id string, fetchLimit int) ([]*model.Post, error)
+	RemovePost(postEvent PostEvent) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
-	LikePost(postEvent PostEvent) (string, error)
-	UnlikePost(postEvent PostEvent) (string, error)
-	AddComment(postEvent PostEvent) (string, error)
+	LikePost(postEvent PostEvent) error
+	GetData(fileID string) (string, error)
 }
 
-type repo struct {
-	DB             *sql.DB
-	currentPosts   []*model.Post
-	currentEventId int
+type Repo struct {
+	postCollection   *mongo.Collection
+	fileCollection   *mongo.Collection
+	chunksCollection *mongo.Collection
+	bucket           *gridfs.Bucket
 }
 
-func NewRepo(db *sql.DB) (Repository, error) {
-	return &repo{
-		DB:             db,
-		currentEventId: 0,
-		currentPosts:   make([]*model.Post, 0),
-	}, nil
-}
-
-func (repo *repo) InsertPostEvent(postEvent PostEvent) (err error) {
-	sqlQuery := `INSERT INTO "post-events" ("postId", "eventTime", "eventType", username, description, data, liked, comments)
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8) returning id`
-
-	newTime, _ := time.Parse("2006-01-02 15:04:05", postEvent.EventTime)
-
-	id := 0
-
-	data := postEvent.Data.ID + "." + postEvent.Data.ContentType
-
-	err = repo.DB.QueryRow(sqlQuery, postEvent.PostID, newTime, postEvent.EventType, postEvent.Username, postEvent.Description, data,
-		pq.Array(postEvent.LikedBy), pq.Array(postEvent.Comments)).Scan(&id)
-
-	//TODO update currentPosts when id > repo.currentEventId
-
-	repo.currentEventId = id
-
-	return
-}
-
-func (repo *repo) CreatePost(postEvent PostEvent) (*model.Post, error) {
-	err := repo.InsertPostEvent(postEvent)
+func NewRepo() (Repository, error) {
+	client, err := dbConnect()
 	if err != nil {
 		return nil, err
 	}
 
-	// create file for new post data
-	err = util.SaveFile(postEvent.Data.Content, postEvent.Data.ID)
+	db := client.Database("post-service")
+	bucket, err := gridfs.NewBucket(db)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Repo{
+		postCollection:   db.Collection("post-events"),
+		fileCollection:   bucket.GetFilesCollection(),
+		chunksCollection: bucket.GetChunksCollection(),
+		bucket:           bucket,
+	}, nil
+}
+
+func (repo *Repo) InsertPostEvent(postEvent PostEvent) (string, error) {
+	inserted, err := repo.postCollection.InsertOne(ctx, postEvent)
+	if err != nil {
+		return "", err
+	}
+
+	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
+}
+
+func (repo *Repo) InsertFile(base64File string) (*model.File, error) {
+	fileName := uuid.NewString()
+
+	properties := strings.Split(base64File, ";base64,")
+	contentType := strings.Split(properties[0], ":")
+
+	uploadOpts := options.GridFSUpload().
+		SetMetadata(bson.D{{"contentType", contentType[1]}})
+
+	uploadStream, err := repo.bucket.OpenUploadStream(fileName, uploadOpts)
+	if err != nil {
+		return nil, err
+	}
+	defer uploadStream.Close()
+
+	_, err = uploadStream.Write([]byte(base64File))
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.File{
+		Name:        fileName,
+		Content:     base64File,
+		ContentType: contentType[1],
+	}, nil
+}
+
+func (repo *Repo) CreatePost(postEvent PostEvent, base64File string) (*model.Post, error) {
+	file, err := repo.InsertFile(base64File)
+	if err != nil {
+		return nil, err
+	}
+
+	postEvent.FileID = file.Name
+
+	insertedID, err := repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return nil, err
 	}
 
 	post := &model.Post{
-		ID:          postEvent.PostID,
+		ID:          insertedID,
 		Description: postEvent.Description,
-		Data:        postEvent.Data,
+		Data:        file,
+		Username:    postEvent.Username,
 		LikedBy:     postEvent.LikedBy,
 		Comments:    postEvent.Comments,
 	}
 
-	// add to currentPosts
-	repo.currentPosts = append(repo.currentPosts, post)
-
 	return post, nil
 }
 
-func (repo *repo) GetPosts() ([]*model.Post, error) {
+func (repo *Repo) GetPosts(id string, fetchLimit int) ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
+	limit := int64(fetchLimit)
 
-	// first get all rows with event_type = "CreatePost" and latestEventId
-	sqlQuery := `select "postId", description, data, liked, comments, id from "post-events" where id > $1 and "eventType" = $2 ORDER BY "id" ASC`
+	lastFetchedEventTime := ""
+	if id != "" {
+		projection := bson.D{
+			{"_id", 0},
+			{"event_time", 1},
+		}
 
-	rows, err := repo.DB.Query(sqlQuery, repo.currentEventId, "CreatePost")
+		objID, err := primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return nil, err
+		}
+
+		var result bson.M
+		err = repo.postCollection.FindOne(ctx, bson.D{
+			{"_id", objID},
+			{"event_type", "CreatePost"},
+		}, options.FindOne().SetProjection(projection)).Decode(&result)
+		if err != nil {
+			return nil, err
+		}
+
+		lastFetchedEventTime = fmt.Sprint(result["event_time"])
+	}
+
+	// sort post-events by descending event-time (the newest first) and set fetch limit
+	opts := options.Find()
+	opts.SetSort(bson.D{{"event_time", -1}})
+	opts.Limit = &limit
+
+	// check if it is the first time getting data
+	key := "$lt"
+	if lastFetchedEventTime == "" {
+		key = "$gt"
+	}
+
+	// get all post events with event_type = "CreatePost" sorted by event_time
+	cursor, err := repo.postCollection.Find(ctx, bson.D{
+		{"event_type", "CreatePost"},
+		{"event_time", bson.D{{key, lastFetchedEventTime}}},
+	}, opts)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	oldId := repo.currentEventId
-	id := repo.currentEventId
-
-	for rows.Next() {
-		var post model.Post
-		var fileProperties string // "fileid.contenttype"
-
-		err = rows.Scan(&post.ID, &post.Description, &fileProperties, pq.Array(&post.LikedBy), pq.Array(&post.Comments), &id)
-		if err != nil {
-			repo.currentEventId = oldId
+	for cursor.Next(ctx) {
+		var postEvent PostEvent
+		if err = cursor.Decode(&postEvent); err != nil {
 			return nil, err
 		}
 
-		// id = 0, contenttype = 1
-		idContentType := strings.Split(fileProperties, ".")
-
-		content, err := util.LoadFile(idContentType[0])
-		if err != nil {
-			repo.currentEventId = oldId
+		// get file contentType
+		var file bson.M
+		if err = repo.fileCollection.FindOne(ctx, bson.M{"filename": postEvent.FileID}).Decode(&file); err != nil {
 			return nil, err
 		}
 
-		post.Data = &model.File{
-			ID:          idContentType[0],
-			Content:     content,
-			ContentType: idContentType[1],
+		// convert interface{} to map and get contentType
+		var contentType reflect.Value
+		metaData := file["metadata"]
+		v := reflect.ValueOf(metaData)
+		if v.Kind() == reflect.Map {
+			for _, key := range v.MapKeys() {
+				contentType = v.MapIndex(key)
+			}
 		}
 
-		currentPosts = append(currentPosts, &post)
+		// add new post to output for getPosts
+		currentPosts = append(currentPosts, &model.Post{
+			ID:          postEvent.ID.Hex(),
+			Description: postEvent.Description,
+			Data: &model.File{
+				Name:        postEvent.FileID,
+				ContentType: fmt.Sprint(contentType.Interface()),
+			},
+			Username: postEvent.Username,
+			LikedBy:  postEvent.LikedBy,
+			Comments: postEvent.Comments,
+		})
 	}
 
-	// when value of id hasn't changed, then list is already recent
-	if id == repo.currentEventId {
-		log.Printf("Post list is recent")
-		return repo.currentPosts, nil
-	}
-
-	repo.currentEventId = id
-
-	// then search for newest edit event (includes EditPost, LikePost, UnlikePost)
-	// and add all data to posts
+	max := int64(1)
 	for _, post := range currentPosts {
-		sqlQuery = `select liked, description from "post-events" where id = (select max(id) from "post-events" where "postId" = $1 and ("eventType" = $2 or "eventType" = $3 or "eventType" = $4))`
-
-		row := repo.DB.QueryRow(sqlQuery, post.ID, "EditPost", "LikePost", "UnlikePost")
-
-		switch err = row.Scan(pq.Array(&post.LikedBy), &post.Description); err {
-		case sql.ErrNoRows:
-			// nothing happens because it is not really an error
-			// since a post doesn't have to be edited
-		case nil:
-			log.Printf("Edited data added to " + post.ID)
-		default:
-			repo.currentEventId = oldId
+		// Sort event_time and get one element which will be the most recent edited post in relation to liked, unliked and description
+		opts.Limit = &max
+		cursor, err = repo.postCollection.Find(ctx, bson.D{
+			{"id", post.ID},
+			{"event_type", bson.D{
+				{"$in", bson.A{"EditPost", "LikePost", "UnlikePost"}},
+			}},
+		}, opts)
+		if err != nil {
 			return nil, err
 		}
-	}
 
-	// Update runtime data
-	repo.currentPosts = append(repo.currentPosts, currentPosts...)
+		for cursor.Next(ctx) {
+			var postEvent PostEvent
+			if err = cursor.Decode(&postEvent); err != nil {
+				return nil, err
+			}
 
-	return repo.currentPosts, nil
-}
-
-func (repo *repo) GetCurrentPosts() []*model.Post {
-	return repo.currentPosts
-}
-
-func (repo *repo) GetPostById(id string) (int, *model.Post) {
-	for i, post := range repo.currentPosts {
-		if post.ID == id {
-			return i, post
+			// Add editable data
+			post.LikedBy = postEvent.LikedBy
+			post.Description = postEvent.Description
+			post.Comments = postEvent.Comments
 		}
 	}
 
-	return -1, nil
+	return currentPosts, nil
 }
 
-func (repo *repo) RemovePost(postEvent PostEvent, index int) (string, error) {
-	// remove from currentPosts
-	repo.currentPosts = append(repo.currentPosts[:index], repo.currentPosts[index+1:]...)
+func (repo *Repo) GetData(fileID string) (string, error) {
+	// get file content for post
+	var buf bytes.Buffer
+	_, err := repo.bucket.DownloadToStreamByName(fileID, &buf)
+	if err != nil {
+		return "", err
+	}
 
-	// delete all events relating to the id
-	sqlQuery := `delete from "post-events" where "postId" = $1`
+	return string(buf.Bytes()), nil
+}
 
-	_, err := repo.DB.Exec(sqlQuery, postEvent.PostID)
+func (repo *Repo) RemovePost(postEvent PostEvent) (string, error) {
+	// get fileID for deleting all chunks
+	projection := bson.D{
+		{"_id", 1},
+	}
+
+	var result bson.M
+	if err := repo.fileCollection.FindOne(ctx, bson.M{"filename": postEvent.FileID}, options.FindOne().SetProjection(projection)).Decode(&result); err != nil {
+		return "failed", err
+	}
+
+	fileID := result["_id"].(primitive.ObjectID)
+
+	// delete file ref from fileCollection
+	_, err := repo.fileCollection.DeleteOne(ctx, bson.D{
+		{"_id", fileID},
+	})
+	if err != nil {
+		return "failed", err
+	}
+
+	// delete allChunks from chunksCollection
+	_, err = repo.chunksCollection.DeleteMany(ctx, bson.D{
+		{"files_id", fileID},
+	})
+	if err != nil {
+		return "failed", err
+	}
+
+	// convert hex-string into primitive.objectID
+	objID, err := primitive.ObjectIDFromHex(postEvent.PostID)
+	if err != nil {
+		return "failed", err
+	}
+
+	// delete that one CreatePost-Event
+	_, err = repo.postCollection.DeleteOne(ctx, bson.D{
+		{"_id", objID},
+		{"event_type", "CreatePost"},
+	})
+	if err != nil {
+		return "failed", err
+	}
+
+	// delete all other events
+	_, err = repo.postCollection.DeleteMany(ctx, bson.D{
+		{"id", postEvent.PostID},
+		{"event_type", bson.D{
+			{"$in", bson.A{"EditPost", "LikePost", "UnlikePost"}},
+		}},
+	})
 	if err != nil {
 		return "failed", err
 	}
 
 	// new current post events
-	err = repo.InsertPostEvent(postEvent)
+	_, err = repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return "failed", err
 	}
@@ -194,8 +302,8 @@ func (repo *repo) RemovePost(postEvent PostEvent, index int) (string, error) {
 	return "success", nil
 }
 
-func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
-	err := repo.InsertPostEvent(postEvent)
+func (repo *Repo) EditPost(postEvent PostEvent) (string, error) {
+	_, err := repo.InsertPostEvent(postEvent)
 	if err != nil {
 		return "failed", err
 	}
@@ -203,29 +311,11 @@ func (repo *repo) EditPost(postEvent PostEvent) (string, error) {
 	return "success", nil
 }
 
-func (repo *repo) LikePost(postEvent PostEvent) (string, error) {
-	err := repo.InsertPostEvent(postEvent)
+func (repo *Repo) LikePost(postEvent PostEvent) error {
+	_, err := repo.InsertPostEvent(postEvent)
 	if err != nil {
-		return "failed", err
+		return err
 	}
 
-	return "success", nil
-}
-
-func (repo *repo) UnlikePost(postEvent PostEvent) (string, error) {
-	err := repo.InsertPostEvent(postEvent)
-	if err != nil {
-		return "failed", err
-	}
-
-	return "success", nil
-}
-
-func (repo *repo) AddComment(postEvent PostEvent) (string, error) {
-	err := repo.InsertPostEvent(postEvent)
-	if err != nil {
-		return "failure", nil
-	}
-
-	return "success", nil
+	return nil
 }

@@ -1,16 +1,24 @@
-<div *ngFor="let post of posts" style="margin-top: 10px">
-  <div *ngIf="post.data.fileUrl !== ''; else loading">
-    <div *ngIf="post.data.contentType.startsWith('image'); else elseBlock">
-      <img src="{{post.data.fileUrl}}" alt="{{post.id}}" width="300px">
-    </div>
-    <ng-template #elseBlock>
-      <video width="300px" controls>
-        <source src="{{post.data.fileUrl}}">
-      </video>
-    </ng-template>
+<div infiniteScroll
+     [infiniteScrollDistance]="2"
+     [infiniteScrollThrottle]="50"
+     (scrolled)="onScroll()">
+  <div *ngFor="let post of posts | async">
+    <mat-card class="post-card">
+      <div *ngIf="post.commentMode">
+        <app-post-comment (newCommentEvent)="addComment(post, $event)" [post]="post"></app-post-comment>
+      </div>
+      <div *ngIf="!post.commentMode">
+        <app-post-media (newEvent)="triggerEvent(post, $event)" [post]="post"></app-post-media>
+      </div>
+    </mat-card>
   </div>
-  <ng-template #loading>
-    Loading...
-  </ng-template>
-  <p>{{ post.description }} -- {{ post.id }}</p>
+
+  <div *ngIf="oldestPostReached; else loading_tp">
+    <h3>You are up-to-date!</h3>
+  </div>
 </div>
+
+<ng-template #loading_tp>
+  <mat-spinner></mat-spinner>
+</ng-template>
+

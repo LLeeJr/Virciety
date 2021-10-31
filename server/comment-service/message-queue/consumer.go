@@ -2,16 +2,19 @@ package message_queue
 
 import (
 	"comment-service/database"
+	"comment-service/model"
+	"encoding/json"
 	"github.com/streadway/amqp"
 	"log"
+	"time"
 )
 
-const QueryQueue = "post-service-query"
-const CommandQueue = "post-service-command"
-const EventQueue = "post-service-event"
+const QueryQueue = "comment-service-query"
+const CommandQueue = "comment-service-command"
+const EventQueue = "comment-service-event"
 
 type Consumer interface {
-	InitConsumer()
+	InitConsumer(ch *amqp.Channel)
 }
 
 func NewConsumer(repo database.Repository) (Consumer, error) {
@@ -20,21 +23,12 @@ func NewConsumer(repo database.Repository) (Consumer, error) {
 	}, nil
 }
 
-func (channel *ChannelConfig) InitConsumer() {
-	// conn
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
-
+func (channel *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 	initQueue(QueryQueue, QueryExchange, ch)
 	initQueue(CommandQueue, CommandExchange, ch)
 	initQueue(EventQueue, EventExchange, ch)
 
-	queries, err := ch.Consume(
+	queries, _ := ch.Consume(
 		QueryQueue,
 		"",
 		true,
@@ -44,7 +38,7 @@ func (channel *ChannelConfig) InitConsumer() {
 		nil,
 	)
 
-	commands, err := ch.Consume(
+	commands, _ := ch.Consume(
 		CommandQueue,
 		"",
 		true,
@@ -54,7 +48,7 @@ func (channel *ChannelConfig) InitConsumer() {
 		nil,
 	)
 
-	events, err := ch.Consume(
+	events, _ := ch.Consume(
 		EventQueue,
 		"",
 		true,
@@ -68,19 +62,74 @@ func (channel *ChannelConfig) InitConsumer() {
 
 	go func() {
 		for data := range queries {
-			log.Printf("Received a message with messageID %s : %s", data.MessageId, data.Body)
+			log.Printf("Received a query message with messageID %s : %s\n", data.MessageId, data.Body)
+			log.Printf("ReplyTo: %s, CorrelationID: %s\n", data.ReplyTo, data.CorrelationId)
+			if data.MessageId == "Post-Service" {
+				comments, err := channel.Repo.GetCommentsByPostId(string(data.Body))
+
+				body, err := json.Marshal(comments)
+
+				err = ch.Publish(
+					data.ReplyTo,
+					"",
+					false,
+					false,
+					amqp.Publishing{
+						ContentType: 	"text/plain",
+						CorrelationId: 	data.CorrelationId,
+						MessageId: 		"Comment-Service",
+						Body: 			body,
+					})
+				FailOnError(err, "Failed to publish a message")
+			}
 		}
 	}()
 
 	go func() {
 		for data := range commands {
-			log.Printf("Received a message with messageID %s : %s", data.MessageId, data.Body)
+			log.Printf("Received a command message with messageID %s : %s", data.MessageId, data.Body)
+			if data.MessageId == "Post-Service" {
+				var comment model.Comment
+				err := json.Unmarshal(data.Body, &comment)
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				log.Printf("Comment: %v", comment)
+
+				var commentEvent database.CommentEvent
+				if comment.Event == "CreateComment" {
+					commentEvent = database.CommentEvent{
+						EventTime: time.Now().Format("2006-01-02 15:04:05"),
+						EventType: comment.Event,
+						PostID:    comment.PostID,
+						Comment:   comment.Comment,
+						CreatedBy: comment.CreatedBy,
+					}
+				} else {
+					commentEvent = database.CommentEvent{
+						EventTime: time.Now().Format("2006-01-02 15:04:05"),
+						EventType: comment.Event,
+						CommentID: comment.ID,
+						PostID:    comment.PostID,
+						Comment:   comment.Comment,
+						CreatedBy: comment.CreatedBy,
+					}
+				}
+
+				commentDB, err := channel.Repo.CreateComment(commentEvent)
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				log.Printf("CommentDB: %v", commentDB)
+			}
 		}
 	}()
 
 	go func() {
 		for data := range events {
-			log.Printf("Received a message with messageID %s : %s", data.MessageId, data.Body)
+			log.Printf("Received a event message with messageID %s : %s", data.MessageId, data.Body)
 		}
 	}()
 

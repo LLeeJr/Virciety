@@ -1,7 +1,6 @@
 import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {GQLService} from "../service/gql.service";
 import {AuthLibService} from "auth-lib";
-import {DataLibService} from "data-lib";
 
 @Component({
   selector: 'app-create-post',
@@ -10,26 +9,26 @@ import {DataLibService} from "data-lib";
 })
 export class CreatePostComponent implements OnInit {
   fileBase64: any;
-  file: any;
-  fileBackend: any;
   description: string = '';
   content_type: string = '';
+  filename: string | undefined;
 
   constructor(private gqlService: GQLService,
               private authService: AuthLibService,
-              private dataService: DataLibService,
               private cd: ChangeDetectorRef) {
   }
 
   ngOnInit(): void { }
 
   onFileSelected(event: any) {
-    this.fileBackend = null;
-    this.file = event.target.files[0];
+    // get selected file
+    const file = event.target.files[0] as File;
+    this.filename = file.name;
 
-    if (this.file) {
+    // get file data as base64 string
+    if (file) {
       const reader = new FileReader();
-      reader.readAsDataURL(this.file);
+      reader.readAsDataURL(file);
 
       reader.onload = () => {
         if (reader.result) {
@@ -46,7 +45,12 @@ export class CreatePostComponent implements OnInit {
 
   createPost() {
     if (this.fileBase64) {
-      this.gqlService.createPost(this.fileBase64, this.description, this.authService.userName);
+      // TODO uncomment
+      this.gqlService.createPost(this.content_type, this.fileBase64, this.description/*, this.authService.userName*/).then(() => {
+        this.reset();
+        // TODO alert and redirect to posts
+        console.log("File upload complete");
+      });
     }
   }
 
@@ -54,5 +58,12 @@ export class CreatePostComponent implements OnInit {
     alert(`Content-Type ${this.content_type} is not supported`);
     this.content_type = '';
     this.cd.detectChanges();
+  }
+
+  reset() {
+    this.fileBase64 = null;
+    this.description = '';
+    this.content_type = '';
+    this.filename = undefined;
   }
 }

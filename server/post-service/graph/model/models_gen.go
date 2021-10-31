@@ -2,6 +2,20 @@
 
 package model
 
+type AddCommentRequest struct {
+	PostID    string `json:"postID"`
+	Comment   string `json:"comment"`
+	CreatedBy string `json:"createdBy"`
+}
+
+type Comment struct {
+	ID        string `json:"id"`
+	PostID    string `json:"postID"`
+	Comment   string `json:"comment"`
+	CreatedBy string `json:"createdBy"`
+	Event     string `json:"event"`
+}
+
 type CreatePostRequest struct {
 	Username    string `json:"username"`
 	Description string `json:"description"`
@@ -9,29 +23,36 @@ type CreatePostRequest struct {
 }
 
 type EditPostRequest struct {
-	ID             string `json:"id"`
-	NewDescription string `json:"newDescription"`
+	ID             string   `json:"id"`
+	NewDescription string   `json:"newDescription"`
+	LikedBy        []string `json:"likedBy"`
+	Comments       []string `json:"comments"`
 }
 
 type File struct {
-	ID          string `json:"id"`
+	Name        string `json:"name"`
 	Content     string `json:"content"`
 	ContentType string `json:"contentType"`
+}
+
+type LikePostRequest struct {
+	ID          string   `json:"id"`
+	Description string   `json:"description"`
+	NewLikedBy  []string `json:"newLikedBy"`
+	Comments    []string `json:"comments"`
+	Liked       bool     `json:"liked"`
 }
 
 type Post struct {
 	ID          string   `json:"id"`
 	Description string   `json:"description"`
 	Data        *File    `json:"data"`
+	Username    string   `json:"username"`
 	LikedBy     []string `json:"likedBy"`
 	Comments    []string `json:"comments"`
 }
 
 type RemovePostRequest struct {
-	ID string `json:"id"`
-}
-
-type UnLikePostRequest struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
+	ID     string `json:"id"`
+	FileID string `json:"fileID"`
 }
