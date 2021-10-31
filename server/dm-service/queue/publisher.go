@@ -12,7 +12,7 @@ const CommandExchange = "command-exchange"
 const EventExchange = "event-exchange"
 
 type Publisher interface {
-	InitPublisher()
+	InitPublisher(ch *amqp.Channel)
 	AddMessageToQuery()
 	AddMessageToCommand(messageId string)
 	AddMessageToEvent(dmEvent database.DmEvent, messageId string)
@@ -26,14 +26,7 @@ func NewPublisher() (Publisher, error) {
 	}, nil
 }
 
-func (c *ChannelConfig) InitPublisher() {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
+func (c *ChannelConfig) InitPublisher(ch *amqp.Channel) {
 
 	initExchange(QueryExchange, ch)
 	initExchange(CommandExchange, ch)
@@ -85,7 +78,7 @@ func (c *ChannelConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 			Body:        body,
 			MessageId:   msg.MessageId,
 		})
-	failOnError(err, "Failed to publish a message")
+	FailOnError(err, "Failed to publish a message")
 
 	log.Printf(" [*] published msg on %s: %v", msg.QueueName, msg.DmEvent)
 }

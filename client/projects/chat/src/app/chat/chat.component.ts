@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import {ApiService} from "../api/api.service";
 import {AuthLibService} from "auth-lib";
+import {Room} from "../data/room";
+import {KeycloakService} from "keycloak-angular";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-chat',
@@ -9,30 +12,32 @@ import {AuthLibService} from "auth-lib";
 })
 export class ChatComponent implements OnInit {
 
-  openChats: {
-    __typename: string,
-    preview: string,
-    withUser: string,
-  }[] = [];
+  chatrooms: Room[] = [];
 
   constructor(private api: ApiService,
-              private auth: AuthLibService) {
+              private auth: AuthLibService,
+              private keycloak: KeycloakService,
+              private router: Router) {
   }
 
-  ngOnInit(): void {
-    this.auth.getUserName().subscribe(user => {
-      if (user !== '') {
-        this.api.getOpenChats(user).subscribe(value => {
-          this.openChats = value.data.getOpenChats;
-        });
+  async ngOnInit(): Promise<void> {
+    await this.keycloak.isLoggedIn().then(loggedIn => {
+      if (loggedIn) {
+        this.keycloak.loadUserProfile().then(() => {
+          let username = this.keycloak.getUsername();
+          this.api.getRoomsByUser(username).subscribe(value => {
+            this.chatrooms = value.data.getRoomsByUser;
+          });
+        })
+      } else {
+        this.keycloak.login();
       }
     });
-
-    if (this.auth.userName !== '') {
-      this.api.getOpenChats(this.auth.userName).subscribe(value => {
-        this.openChats = value.data.getOpenChats;
-      });
-    }
   }
 
+  setChatPartner(room: Room) {
+    this.api.chatMembers = room.member;
+    this.api.selectedRoom = room;
+    this.router.navigate([`chat/${room.name}`]);
+  }
 }

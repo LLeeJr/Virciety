@@ -1,0 +1,16 @@
+.message-card {
+  display: inline-block;
+  margin-bottom: 1em;
+}
+
+.friend-message-card {
+  background: blueviolet;
+}
+
+.chat {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  overflow: auto;
+}

@@ -2,168 +2,207 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"dm-service/graph/model"
-	"errors"
-	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
-
-type DmEvent struct {
-	EventTime string `json:"eventTime"`
-	EventType string `json:"eventType"`
-	DmID string `json:"id"`
-	From string `json:"from"`
-	To string `json:"to"`
-	Time string `json:"time"`
-	Msg string `json:"msg"`
-}
 
 type UniqueUser struct {
 	UserName string `json:"userName"`
 }
 
 type Repository interface {
+	GetRoom(ctx context.Context, name string) (*model.Chatroom, error)
+	GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error)
 	CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error)
-	GetDms(ctx context.Context) ([]*model.Dm, error)
-	GetChat(ctx context.Context, user1 string, user2 string) ([]*model.Dm, error)
-	GetOpenChats(ctx context.Context, userName string) ([]*model.Chat, error)
+	CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.Chatroom, error)
+	UpdateRoom(ctx context.Context, room *model.Chatroom) (string, error)
+	InsertDmEvent(ctx context.Context, dmEvent DmEvent) (string, error)
+	InsertRoomEvent(ctx context.Context, roomEvent ChatroomEvent) (string, error)
+	GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, error)
 }
 
 type repo struct {
-	DB          *sql.DB
-	CurrentDmId string
-	CurrentDms  []*model.Dm
+	dmCollection   *mongo.Collection
+	roomCollection *mongo.Collection
+	bucket         *gridfs.Bucket
 }
 
-func (r *repo) GetOpenChats(ctx context.Context, userName string) ([]*model.Chat, error) {
-
-	query := `SELECT DISTINCT dms."toUser" FROM dms WHERE dms."fromUser" = $1`
-
-	uniqueUsers := make([]UniqueUser, 0)
-	rows, _ := r.DB.QueryContext(ctx, query, userName)
-	for rows.Next() {
-		var uniqueUser UniqueUser
-		err := rows.Scan(&uniqueUser.UserName)
-		if err != nil {
-			continue
-		}
-		uniqueUsers = append(uniqueUsers, uniqueUser)
+func (r repo) GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, error) {
+	var result []*DmEvent
+	cursor, err := r.dmCollection.Find(
+		ctx,
+		bson.D{
+			{"chatroomid", id},
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(ctx, &result)
+	if err != nil {
+		return nil, err
+	}
+	dms := make([]*model.Dm, 0)
+	for _, event := range result {
+		dms = append(dms, &model.Dm{
+			ChatroomID: id,
+			CreatedAt:  event.CreatedAt,
+			CreatedBy:  event.CreatedBy,
+			Msg:        event.Msg,
+		})
 	}
 
-	chats := make([]*model.Chat, 0)
-	for _, user := range uniqueUsers {
-		previewQuery := `SELECT dms."toUser", dms.msg FROM dms WHERE dms."fromUser"=$1 AND dms."toUser"=$2
-                         AND dms."atTime" = (SELECT MAX(dms."atTime") FROM dms WHERE dms."fromUser"=$1 AND dms."toUser"=$2);`
-
-		previewRows, _ := r.DB.QueryContext(ctx, previewQuery, userName, user.UserName)
-		for previewRows.Next() {
-			var chat model.Chat
-			err := previewRows.Scan(&chat.WithUser, &chat.Preview)
-			if err != nil {
-				continue
-			}
-			chats = append(chats, &chat)
-		}
-	}
-
-	if len(chats) == 0 {
-		return nil, errors.New("no opened chats available")
-	}
-
-	return chats, nil
+	return dms, err
 }
 
-func NewRepo(db *sql.DB) (Repository, error) {
+func (r repo) UpdateRoom(ctx context.Context, room *model.Chatroom) (string, error) {
+	objID, err := primitive.ObjectIDFromHex(room.ID)
+	if err != nil {
+		return "", err
+	}
+
+	query := bson.M{
+		"_id": objID,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"member": room.Member,
+		},
+	}
+
+	_, err = r.roomCollection.UpdateOne(ctx,
+		query,
+		update,
+	)
+	if err != nil {
+		return "", err
+	}
+	return "success", nil
+}
+
+func (r repo) CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.Chatroom, error) {
+	insertedId, err := r.InsertRoomEvent(ctx, roomEvent)
+	if err != nil {
+		return nil, err
+	}
+
+	room := &model.Chatroom{
+		ID:       insertedId,
+		Member:   roomEvent.Member,
+		Name:     roomEvent.Name,
+	}
+
+	return room, nil
+}
+
+func (r repo) InsertRoomEvent(ctx context.Context, room ChatroomEvent) (string, error) {
+	inserted, err := r.roomCollection.InsertOne(ctx, room)
+	if err != nil {
+		return "", err
+	}
+
+	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
+}
+
+func (r repo) InsertDmEvent(ctx context.Context, dmEvent DmEvent) (string, error) {
+	inserted, err := r.dmCollection.InsertOne(ctx, dmEvent)
+	if err != nil {
+		return "", err
+	}
+
+	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
+}
+
+type Chatroom struct {
+	ID        primitive.ObjectID `bson:"_id"`
+	Member    []string           `bson:"member"`
+	Name      string             `bson:"name"`
+	EventType string             `bson:"eventtype"`
+}
+
+func (r repo) GetRoom(ctx context.Context, name string) (*model.Chatroom, error) {
+
+	var result *Chatroom
+	if err := r.roomCollection.FindOne(ctx, bson.D{
+		{"name", name},
+	}).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	room := &model.Chatroom{
+		ID:     result.ID.Hex(),
+		Member: result.Member,
+		Name:   result.Name,
+	}
+
+	return room, nil
+}
+
+func (r repo) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error) {
+
+	var result []*Chatroom
+	cursor, err := r.roomCollection.Find(
+		ctx,
+		bson.D{
+			{"member", userName},
+	})
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(ctx, &result)
+	if err != nil {
+		return nil, err
+	}
+	rooms := make([]*model.Chatroom, 0)
+	for _, chatroom := range result {
+		rooms = append(rooms, &model.Chatroom{
+			ID:     chatroom.ID.Hex(),
+			Member: chatroom.Member,
+			Name:   chatroom.Name,
+		})
+	}
+
+	return rooms, err
+}
+
+func (r repo) CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error) {
+	insertedId, err := r.InsertDmEvent(ctx, dmEvent)
+	if err != nil {
+		return nil, err
+	}
+
+	dm := &model.Dm{
+		ChatroomID: dmEvent.ChatroomId,
+		CreatedAt:  dmEvent.CreatedAt,
+		CreatedBy:  dmEvent.CreatedBy,
+		ID:         insertedId,
+		Msg:        dmEvent.Msg,
+	}
+
+	return dm, err
+}
+
+func NewRepo() (Repository, error) {
+	client, err := Connect()
+	if err != nil {
+		return nil, err
+	}
+
+	db := client.Database("dm-service")
+	bucket, err := gridfs.NewBucket(db)
+	if err != nil {
+		return nil, err
+	}
+
 	return &repo{
-		DB:          db,
-		CurrentDmId: "",
-		CurrentDms:  make([]*model.Dm, 0),
+		dmCollection: db.Collection("dm-events"),
+		roomCollection: db.Collection("room-events"),
+		bucket: bucket,
 	}, nil
 }
 
-func (r *repo) InsertDmEvent(ctx context.Context, dmEvent DmEvent) (err error) {
-	query := `INSERT INTO dms ("eventTime", "eventType", id, "fromUser", "toUser", "atTime", msg)
-              VALUES ($1, $2, $3, $4, $5, $6, $7) returning id`
 
-	id := ""
-
-	row := r.DB.QueryRowContext(ctx, query, dmEvent.EventTime, dmEvent.EventType,
-		dmEvent.DmID, dmEvent.From, dmEvent.To, dmEvent.Time, dmEvent.Msg)
-
-	err = row.Scan(&id)
-
-	r.CurrentDmId = id
-
-	return
-}
-
-func (r *repo) CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error) {
-	_ = r.InsertDmEvent(ctx, dmEvent)
-
-	id := fmt.Sprintf("%s__%s__%s", dmEvent.From, dmEvent.Time, dmEvent.To)
-	dm := &model.Dm{
-		ID:  id,
-		Msg: dmEvent.Msg,
-	}
-
-	r.CurrentDms = append(r.CurrentDms, dm)
-
-	return dm, nil
-}
-
-func (r *repo) GetChat(ctx context.Context, user1 string, user2 string) ([]*model.Dm, error) {
-	dms := make([]*model.Dm, 0)
-
-	query := `SELECT * FROM dms WHERE dms."fromUser" = $1 AND "toUser" = $2
-              OR dms."fromUser" = $2 AND "toUser" = $1`
-
-	rows, _ := r.DB.QueryContext(ctx, query, user1, user2)
-	for rows.Next() {
-		var dmEvent DmEvent
-		err := rows.Scan(&dmEvent.EventTime, &dmEvent.EventType, &dmEvent.DmID,
-			&dmEvent.From, &dmEvent.To, &dmEvent.Time, &dmEvent.Msg)
-		if err != nil {
-			continue
-		}
-		dm := &model.Dm{
-			ID:  dmEvent.DmID,
-			Msg: dmEvent.Msg,
-		}
-		dms = append(dms, dm)
-	}
-
-	if len(dms) == 0 {
-		return nil, errors.New("no chat history available")
-	}
-
-	return dms, nil
-
-}
-
-func (r *repo) GetDms(ctx context.Context) ([]*model.Dm, error) {
-	dms := make([]*model.Dm, 0)
-
-	query := `SELECT * FROM dms`
-
-	rows, _ := r.DB.QueryContext(ctx, query)
-	for rows.Next() {
-		var dmEvent DmEvent
-		err := rows.Scan(&dmEvent.EventTime, &dmEvent.EventType, &dmEvent.DmID,
-			&dmEvent.From, &dmEvent.To, &dmEvent.Time, &dmEvent.Msg)
-		if err != nil {
-			continue
-		}
-		fmt.Println(dmEvent)
-		dm := &model.Dm{
-			ID:  dmEvent.DmID,
-			Msg: dmEvent.Msg,
-		}
-		dms = append(dms, dm)
-	}
-
-	if len(dms) == 0 {
-		return nil, errors.New("no chat history available")
-	}
-
-	return dms, nil
-}

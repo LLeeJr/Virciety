@@ -1,10 +1,9 @@
-<h3>Chat with {{user2}}</h3>
+<h3>Chatroom: {{this.api.selectedRoom.name}}</h3>
 <div class="chat">
-  <div class="chat-view" *ngIf="messages.length > 0">
-    <div *ngFor="let message of messages">
-      {{message.msg}}
-      <small>{{getDate(message)}}</small>
-    </div>
+  <div *ngFor="let message of messages" class="message-container">
+    <ng-container [ngTemplateOutlet]="message.createdBy === this.username ? userMessage : friendMessage"
+                  [ngTemplateOutletContext]="{message: message}">
+    </ng-container>
   </div>
   <div class="chat-input" style="bottom: 0">
     <input
@@ -19,3 +18,20 @@
   </div>
 </div>
 
+<ng-template #userMessage let-message='message' class="message-card">
+  <div class="message-card">
+    <mat-card class="user-message-card">
+      {{message.msg}}
+      <small>{{message.createdBy}}, {{message.createdAt}}</small>
+    </mat-card>
+  </div>
+</ng-template>
+
+<ng-template #friendMessage let-message='message'>
+  <div class="message-card">
+    <mat-card class="friend-message-card">
+      {{message.msg}}
+      <small>{{message.createdBy}}, {{message.createdAt}}</small>
+    </mat-card>
+  </div>
+</ng-template>

@@ -2,22 +2,25 @@
 
 package model
 
+import (
+	"time"
+)
+
 type Chat struct {
 	WithUser string `json:"withUser"`
 	Preview  string `json:"preview"`
 }
 
-type CreateDmRequest struct {
-	ID  string `json:"id"`
-	Msg string `json:"msg"`
+type Chatroom struct {
+	ID     string   `json:"_id"`
+	Member []string `json:"member"`
+	Name   string   `json:"name"`
 }
 
 type Dm struct {
-	ID  string `json:"id"`
-	Msg string `json:"msg"`
-}
-
-type GetChatRequest struct {
-	User1 string `json:"user1"`
-	User2 string `json:"user2"`
+	ChatroomID string    `json:"chatroomId"`
+	CreatedAt  time.Time `json:"createdAt"`
+	CreatedBy  string    `json:"createdBy"`
+	ID         string    `json:"id"`
+	Msg        string    `json:"msg"`
 }

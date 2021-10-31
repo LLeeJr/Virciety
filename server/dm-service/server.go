@@ -5,15 +5,17 @@ import (
 	"dm-service/graph"
 	"dm-service/graph/generated"
 	"dm-service/queue"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
+	"github.com/rs/cors"
+	"github.com/streadway/amqp"
 	"log"
 	"net/http"
 	"os"
-
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/gorilla/mux"
-	_ "github.com/lib/pq"
-	"github.com/rs/cors"
+	"time"
 )
 
 const defaultPort = "8081"
@@ -24,19 +26,37 @@ func main() {
 		port = defaultPort
 	}
 
-	db := database.Connect()
-	repo, err := database.NewRepo(db)
+	repo, err := database.NewRepo()
 	if err != nil {
 		log.Fatal("err", err)
 	}
 
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	queue.FailOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	queue.FailOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
 	publisher, _ := queue.NewPublisher()
-	go publisher.InitPublisher()
+	go publisher.InitPublisher(ch)
 
 	consumer, _ := queue.NewConsumer(repo)
-	go consumer.InitConsumer()
+	go consumer.InitConsumer(ch)
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
+	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
+	//srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: graph.NewResolver(repo, publisher)}))
+
+	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.Websocket{
+		Upgrader:              websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+		},
+		KeepAlivePingInterval: 10 * time.Second,
+	})
 
 	r := mux.NewRouter()
 	r.Use(cors.New(cors.Options{

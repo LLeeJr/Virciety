@@ -8,20 +8,81 @@ import (
 	"dm-service/database"
 	"dm-service/graph/generated"
 	"dm-service/graph/model"
-	"strings"
+	"dm-service/util"
+	"errors"
+	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
-func (r *mutationResolver) CreateDm(ctx context.Context, input *model.CreateDmRequest) (*model.Dm, error) {
-	data := strings.Split(input.ID, "__")
+func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName string, roomName string) (*model.Dm, error) {
+	r.mu.Lock()
+	room := r.Rooms[roomName]
+
+	// if room does not exist yet, create a new one
+	if room == nil {
+		chatroom, err := r.repo.GetRoom(ctx, roomName)
+		if err != nil {
+			return nil, err
+		}
+
+		if chatroom != nil {
+			room = &Chatroom{
+				Name:   chatroom.Name,
+				Member: chatroom.Member,
+				Id:     chatroom.ID,
+				Observers: map[string]struct {
+					Username string
+					Message  chan *model.Dm
+				}{},
+			}
+		} else {
+			// room exists neither in db nor in server cache
+			room = &Chatroom{
+				Name:   roomName,
+				Member: []string{userName},
+				Observers: map[string]struct {
+					Username string
+					Message  chan *model.Dm
+				}{},
+			}
+			roomEvent := database.ChatroomEvent{
+				EventType: "CreateRoom",
+				Member:    room.Member,
+				Name:      room.Name,
+			}
+
+			createdRoom, err := r.repo.CreateRoom(ctx, roomEvent)
+			if err != nil {
+				return nil, err
+			}
+			// update repos room map since the current room now has an id
+			room.Id = createdRoom.ID
+		}
+		r.Rooms[roomName] = room
+	}
+
+	// if the user is no member of the chatroom yet, add the user as member
+	if !util.Contains(room.Member, userName) {
+		room.Member = append(room.Member, userName)
+		_, err := r.repo.UpdateRoom(ctx, &model.Chatroom{
+			ID:     room.Id,
+			Member: room.Member,
+			Name:   room.Name,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	r.mu.Unlock()
+
 	dmEvent := database.DmEvent{
-		EventTime: time.Now().Format("2006-01-02 15:04:05"),
-		EventType: "CreateDm",
-		DmID:      input.ID,
-		From:      data[0],
-		To:        data[2],
-		Time:      data[1],
-		Msg:       input.Msg,
+		ChatroomId: room.Id,
+		CreatedAt:  time.Now(),
+		CreatedBy:  userName,
+		EventType:  "CreateDm",
+		Msg:        msg,
 	}
 
 	// push event to db
@@ -30,34 +91,127 @@ func (r *mutationResolver) CreateDm(ctx context.Context, input *model.CreateDmRe
 		return nil, err
 	}
 
+	// write new dm to observers of the respective chatroom
+	room.Messages = append(room.Messages, dm)
+	r.mu.Lock()
+	for _, observer := range room.Observers {
+		observer.Message <- dm
+	}
+	r.mu.Unlock()
+
 	// post message on queue
 	r.publisher.AddMessageToEvent(dmEvent, "Dm-Service")
 	r.publisher.AddMessageToCommand("Dm-Service")
-	//msg := fmt.Sprintf("created new DM: %s <-> %s", dmEvent.From, dmEvent.To)
 	//r.publisher.AddMessageToQuery()
 
 	return dm, nil
 }
 
-func (r *queryResolver) GetDms(ctx context.Context) ([]*model.Dm, error) {
-	dms, err := r.repo.GetDms(ctx)
+func (r *queryResolver) GetRoom(ctx context.Context, name string) (*model.Chatroom, error) {
+	r.mu.Lock()
+	room := r.Rooms[name]
+
+	// if room does not exist in cache look for the room in db
+	if r.Rooms[name] == nil {
+		chatroom, err := r.repo.GetRoom(ctx, name)
+		if err != nil {
+			return nil, err
+		}
+
+		if chatroom != nil {
+			// room exists in db
+			room = &Chatroom{
+				Id:     chatroom.ID,
+				Name:   chatroom.Name,
+				Member: chatroom.Member,
+				Observers: map[string]struct {
+					Username string
+					Message  chan *model.Dm
+				}{},
+			}
+			r.Rooms[name] = room
+		} else {
+			errorMsg := fmt.Sprint("no existing room with given name: ", name)
+			return nil, errors.New(errorMsg)
+		}
+	}
+	r.mu.Unlock()
+
+	return &model.Chatroom{
+		ID:     room.Id,
+		Name:   room.Name,
+		Member: room.Member,
+	}, nil
+}
+
+func (r *queryResolver) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error) {
+	rooms, err := r.repo.GetRoomsByUser(ctx, userName)
+	if err != nil {
+		return nil, err
+	}
+	r.mu.Lock()
+	ids := make([]string, 0)
+	for _, chatroom := range r.Rooms {
+		ids = append(ids, chatroom.Id)
+	}
+	for _, room := range rooms {
+		if !util.Contains(ids, room.ID) {
+			r.Rooms[room.Name] = &Chatroom{
+				Id:     room.ID,
+				Name:   room.Name,
+				Member: room.Member,
+				Observers: map[string]struct {
+					Username string
+					Message  chan *model.Dm
+				}{},
+			}
+		}
+	}
+	r.mu.Unlock()
+	return rooms, nil
+}
+
+func (r *queryResolver) GetMessagesFromRoom(ctx context.Context, roomID string) ([]*model.Dm, error) {
+	dms, err := r.repo.GetMessagesFromRoom(ctx, roomID)
 	if err != nil {
 		return nil, err
 	}
 	return dms, nil
 }
 
-func (r *queryResolver) GetChat(ctx context.Context, input model.GetChatRequest) ([]*model.Dm, error) {
-	return r.repo.GetChat(ctx, input.User1, input.User2)
-}
-
-func (r *queryResolver) GetOpenChats(ctx context.Context, userName string) ([]*model.Chat, error) {
-
-	chats, err := r.repo.GetOpenChats(ctx, userName)
-	if err != nil {
-		return nil, err
+func (r *subscriptionResolver) DmAdded(ctx context.Context, roomName string) (<-chan *model.Dm, error) {
+	r.mu.Lock()
+	room := r.Rooms[roomName]
+	if room == nil {
+		room = &Chatroom{
+			Name: roomName,
+			Observers: map[string]struct {
+				Username string
+				Message  chan *model.Dm
+			}{},
+		}
+		r.Rooms[roomName] = room
 	}
-	return chats, nil
+	r.mu.Unlock()
+
+	id := uuid.NewString()
+	events := make(chan *model.Dm, 1)
+
+	go func() {
+		<-ctx.Done()
+		r.mu.Lock()
+		delete(room.Observers, id)
+		r.mu.Unlock()
+	}()
+
+	r.mu.Lock()
+	room.Observers[id] = struct {
+		Username string
+		Message  chan *model.Dm
+	}{Username: getUsername(ctx), Message: events}
+	r.mu.Unlock()
+
+	return events, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
@@ -66,5 +220,20 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Subscription returns generated.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }
+
+type Chatroom struct {
+	Id        string
+	Name      string
+	Messages  []*model.Dm
+	Member    []string
+	Observers map[string]struct {
+		Username string
+		Message  chan *model.Dm
+	}
+}

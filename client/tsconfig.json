@@ -11,6 +11,7 @@
         "projects/data-lib/src/public-api.ts"
       ]
     },
+    "strictPropertyInitialization": false,
     "baseUrl": "./",
     "outDir": "./dist/out-tsc",
     "forceConsistentCasingInFileNames": true,
