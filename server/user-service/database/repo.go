@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"time"
 	"user-service/graph/model"
 )
 
@@ -14,11 +15,41 @@ type Repository interface {
 	CreateUser(ctx context.Context, userEvent UserEvent) (*model.User, error)
 	InsertUserEvent(ctx context.Context, userEvent UserEvent) (string, error)
 	GetUserByID(ctx context.Context, id *string) (*model.User, error)
+	GetUserByName(ctx context.Context, name *string) (*model.User, error)
 }
 
 type repo struct {
 	userCollection *mongo.Collection
 	bucket *gridfs.Bucket
+}
+
+func (r repo) GetUserByName(ctx context.Context, name *string) (*model.User, error) {
+	type UserByName struct {
+		EventType string             `bson:"eventtype"`
+		EventTime time.Time          `bson:"eventtime"`
+		FirstName string             `bson:"firstname"`
+		Follows   []string           `bson:"follows"`
+		ID        primitive.ObjectID `bson:"_id"`
+		LastName  string             `bson:"lastname"`
+		Username  string             `bson:"username"`
+	}
+
+	var result *UserByName
+	if err := r.userCollection.FindOne(ctx, bson.D{
+		{"username", name},
+	}).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	user := &model.User{
+		ID:        result.ID.Hex(),
+		Username:  result.Username,
+		FirstName: result.FirstName,
+		LastName:  result.LastName,
+		Follows:   result.Follows,
+	}
+
+	return user, nil
 }
 
 func (r repo) GetUserByID(ctx context.Context, id *string) (*model.User, error) {

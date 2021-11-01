@@ -46,11 +46,17 @@ func (r *queryResolver) GetUserByID(ctx context.Context, id *string) (*model.Use
 		return nil, err
 	}
 
-	return user, err
+	return user, nil
 }
 
 func (r *queryResolver) GetUserByName(ctx context.Context, name *string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	user, err := r.repo.GetUserByName(ctx, name)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 func (r *queryResolver) GetFollows(ctx context.Context) ([]string, error) {
