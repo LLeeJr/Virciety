@@ -13,11 +13,36 @@ import (
 type Repository interface {
 	CreateUser(ctx context.Context, userEvent UserEvent) (*model.User, error)
 	InsertUserEvent(ctx context.Context, userEvent UserEvent) (string, error)
+	GetUserByID(ctx context.Context, id *string) (*model.User, error)
 }
 
 type repo struct {
 	userCollection *mongo.Collection
 	bucket *gridfs.Bucket
+}
+
+func (r repo) GetUserByID(ctx context.Context, id *string) (*model.User, error) {
+
+	var result *UserEvent
+	convertedId, err := primitive.ObjectIDFromHex(*id)
+	if err != nil {
+		return nil, err
+	}
+	if err := r.userCollection.FindOne(ctx, bson.D{
+		{"_id", convertedId},
+	}).Decode(&result); err != nil {
+		return nil, err
+	}
+
+	user := &model.User{
+		ID:        *id,
+		Username:  result.Username,
+		FirstName: result.FirstName,
+		LastName:  result.LastName,
+		Follows:   result.Follows,
+	}
+
+	return user, nil
 }
 
 func (r repo) CreateUser(ctx context.Context, userEvent UserEvent) (*model.User, error) {

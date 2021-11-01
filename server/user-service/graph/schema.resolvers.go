@@ -40,7 +40,13 @@ func (r *mutationResolver) AddFollow(ctx context.Context, id *string, toAdd *str
 }
 
 func (r *queryResolver) GetUserByID(ctx context.Context, id *string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	user, err := r.repo.GetUserByID(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, err
 }
 
 func (r *queryResolver) GetUserByName(ctx context.Context, name *string) (*model.User, error) {
