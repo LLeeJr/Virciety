@@ -65,7 +65,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	CreateUser(ctx context.Context, input model.UserData) (*model.User, error)
-	AddFollow(ctx context.Context, id *string, toAdd *string) (*model.User, error)
+	AddFollow(ctx context.Context, id *string, toAdd *string) (string, error)
 }
 type QueryResolver interface {
 	GetUserByID(ctx context.Context, id *string) (*model.User, error)
@@ -268,7 +268,7 @@ input UserData {
 
 type Mutation {
   createUser(input: UserData!): User!
-  addFollow(id: ID, toAdd: String): User!
+  addFollow(id: ID, toAdd: String): String!
 }
 `, BuiltIn: false},
 }
@@ -479,9 +479,9 @@ func (ec *executionContext) _Mutation_addFollow(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNUser2ᚖuserᚑserviceᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getUserByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {

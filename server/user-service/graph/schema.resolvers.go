@@ -35,8 +35,14 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserData)
 	return user, nil
 }
 
-func (r *mutationResolver) AddFollow(ctx context.Context, id *string, toAdd *string) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) AddFollow(ctx context.Context, id *string, toAdd *string) (string, error) {
+	msg, err := r.repo.AddFollow(ctx, id, toAdd)
+
+	if err != nil {
+		return msg, err
+	}
+
+	return msg, nil
 }
 
 func (r *queryResolver) GetUserByID(ctx context.Context, id *string) (*model.User, error) {

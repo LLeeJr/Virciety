@@ -16,11 +16,44 @@ type Repository interface {
 	InsertUserEvent(ctx context.Context, userEvent UserEvent) (string, error)
 	GetUserByID(ctx context.Context, id *string) (*model.User, error)
 	GetUserByName(ctx context.Context, name *string) (*model.User, error)
+	AddFollow(ctx context.Context, id *string, add *string) (string, error)
 }
 
 type repo struct {
 	userCollection *mongo.Collection
 	bucket *gridfs.Bucket
+}
+
+func (r repo) AddFollow(ctx context.Context, id *string, add *string) (string, error) {
+
+	objectID, err := primitive.ObjectIDFromHex(*id)
+	if err != nil {
+		return "error during update following list", err
+	}
+
+	query := bson.M{
+		"_id": objectID,
+	}
+
+	update := bson.M{
+		"$addToSet": bson.M{
+			"follows": add,
+		},
+	}
+
+	updated, err := r.userCollection.UpdateOne(ctx,
+		query,
+		update,
+	)
+	if err != nil {
+		return "error during update following list", err
+	}
+
+	if updated.ModifiedCount == 0 {
+		return "could not update following list due to user already existing", nil
+	}
+
+	return "update following list successfully", nil
 }
 
 func (r repo) GetUserByName(ctx context.Context, name *string) (*model.User, error) {
