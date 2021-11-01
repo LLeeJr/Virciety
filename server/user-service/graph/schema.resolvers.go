@@ -6,12 +6,33 @@ package graph
 import (
 	"context"
 	"fmt"
+	"time"
+	"user-service/database"
 	"user-service/graph/generated"
 	"user-service/graph/model"
 )
 
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserData) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	userEvent := database.UserEvent{
+		EventType: "CreateUser",
+		EventTime: time.Now(),
+		Username:  input.Username,
+		FirstName: input.FirstName,
+		LastName:  input.LastName,
+		Follows:   make([]string, 0),
+	}
+
+	user, err := r.repo.CreateUser(ctx, userEvent)
+
+	if err != nil {
+		return nil, err
+	}
+
+	r.publisher.AddMessageToEvent(userEvent, "User-Service")
+	r.publisher.AddMessageToCommand("User-Service")
+	//r.publisher.AddMessageToQuery()
+
+	return user, nil
 }
 
 func (r *mutationResolver) AddFollow(ctx context.Context, id *string, toAdd *string) (*model.User, error) {
