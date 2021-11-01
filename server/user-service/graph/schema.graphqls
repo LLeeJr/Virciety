@@ -24,4 +24,5 @@ input UserData {
 type Mutation {
   createUser(input: UserData!): User!
   addFollow(id: ID, toAdd: String): String!
+  removeFollow(id: ID, toRemove: String): String!
 }

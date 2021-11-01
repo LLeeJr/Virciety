@@ -44,6 +44,16 @@ func (r *mutationResolver) AddFollow(ctx context.Context, id *string, toAdd *str
 	return msg, nil
 }
 
+func (r *mutationResolver) RemoveFollow(ctx context.Context, id *string, toRemove *string) (string, error) {
+	msg, err := r.repo.RemoveFollow(ctx, id, toRemove)
+
+	if err != nil {
+		return msg, err
+	}
+
+	return msg, nil
+}
+
 func (r *queryResolver) GetUserByID(ctx context.Context, id *string) (*model.User, error) {
 	user, err := r.repo.GetUserByID(ctx, id)
 
