@@ -49,7 +49,6 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetFollows    func(childComplexity int) int
 		GetUserByID   func(childComplexity int, id *string) int
 		GetUserByName func(childComplexity int, name *string) int
 	}
@@ -70,7 +69,6 @@ type MutationResolver interface {
 type QueryResolver interface {
 	GetUserByID(ctx context.Context, id *string) (*model.User, error)
 	GetUserByName(ctx context.Context, name *string) (*model.User, error)
-	GetFollows(ctx context.Context) ([]string, error)
 }
 
 type executableSchema struct {
@@ -111,13 +109,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(model.UserData)), true
-
-	case "Query.getFollows":
-		if e.complexity.Query.GetFollows == nil {
-			break
-		}
-
-		return e.complexity.Query.GetFollows(childComplexity), true
 
 	case "Query.getUserByID":
 		if e.complexity.Query.GetUserByID == nil {
@@ -257,7 +248,6 @@ type User {
 type Query {
   getUserByID(id: ID): User!
   getUserByName(name: String): User!
-  getFollows: [String!]
 }
 
 input UserData {
@@ -566,38 +556,6 @@ func (ec *executionContext) _Query_getUserByName(ctx context.Context, field grap
 	res := resTmp.(*model.User)
 	fc.Result = res
 	return ec.marshalNUser2ᚖuserᚑserviceᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_getFollows(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetFollows(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2089,17 +2047,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
-				return res
-			})
-		case "getFollows":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_getFollows(ctx, field)
 				return res
 			})
 		case "__type":

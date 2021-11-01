@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"time"
 	"user-service/database"
 	"user-service/graph/generated"
@@ -63,10 +62,6 @@ func (r *queryResolver) GetUserByName(ctx context.Context, name *string) (*model
 	}
 
 	return user, nil
-}
-
-func (r *queryResolver) GetFollows(ctx context.Context) ([]string, error) {
-	panic(fmt.Errorf("not implemented"))
 }
 
 // Mutation returns generated.MutationResolver implementation.
