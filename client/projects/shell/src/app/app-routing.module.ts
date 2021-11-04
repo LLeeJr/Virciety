@@ -36,7 +36,15 @@ const routes: Routes = [
         remoteName: 'post',
         exposedModule: './CreatePostModule',
       }).then(m => m.CreatePostModule),
-  }
+  },
+  {
+    path: 'user',
+    loadChildren: () =>
+      loadRemoteModule({
+        remoteName: 'user',
+        exposedModule: './UserModule',
+      }).then(m => m.UserModule),
+  },
 ];
 
 @NgModule({
