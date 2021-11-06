@@ -23,7 +23,7 @@
   </ng-template>
 </div>
 
-<input type="file" class="file-input" (click)="reset()"
+<input type="file" class="file-input" (click)="reset()" [accept]="'image/*'"
        (change)="onFileSelected($event)" #fileUpload>
 
 <div class="file-upload">

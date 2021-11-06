@@ -9,18 +9,22 @@ import {initializeKeycloak} from "./init/keycloak-init.factory";
 import {KeycloakAngularModule, KeycloakService} from "keycloak-angular";
 import {DatePipe} from "@angular/common";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import { MfeProxyComponent } from './mfe/mfe-proxy.component';
+import {MaterialModule} from "./material.module";
 
 @NgModule({
   declarations: [
     AppComponent,
-    HomeComponent
+    HomeComponent,
+    MfeProxyComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HttpClientModule,
     KeycloakAngularModule,
-    BrowserAnimationsModule
+    BrowserAnimationsModule,
+    MaterialModule
   ],
   providers: [
     DatePipe,

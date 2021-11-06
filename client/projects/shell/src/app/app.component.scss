@@ -1,0 +1,21 @@
+.spacer {
+  flex: 1 1 auto;
+}
+.title {
+  cursor: pointer;
+}
+
+.mat-drawer-content {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+}
+
+.mat-drawer {
+  padding: 20px;
+}
+
+.mat-drawer-container {
+  border: 1px solid rgba(0, 0, 0, 0.5);
+}

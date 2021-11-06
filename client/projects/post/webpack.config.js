@@ -29,10 +29,10 @@ module.exports = {
 
         // For remotes (please adjust)
         name: "post",
-        filename: "postremoteEntry.js",
+        filename: "remoteEntry.js",
         exposes: {
           './PostModule': './projects/post/src/app/post/post.module.ts',
-          './CreatePostModule': './projects/post/src/app/create-post/create-post.module.ts'
+          './CreatePostComponent': './projects/post/src/app/create-post/create-post.component.ts'
         },
 
         // For hosts (please adjust)
