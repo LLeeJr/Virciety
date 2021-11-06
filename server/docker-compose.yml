@@ -1,8 +1,79 @@
 version: "3.2"
 services:
+  post-service:
+    container_name: 'post-service'
+    image: 'post-service'
+    restart: on-failure
+    build: post-service/
+    ports:
+      - "8083:8083"
+    env_file:
+      - post-service/config.env
+    volumes:
+      - .:/app/post-service
+    depends_on:
+      - rabbitmq
+      - post-db
+    links:
+      - rabbitmq
+      - post-db
+    #command: ["sh", "./wait-for-it.sh", "rabbitmq:5672", "--", "./out"]
+    networks:
+      main:
+      post:
+
+  post-db:
+    container_name: 'post-db'
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb_post:/data/db
+    command: mongod
+    networks:
+      post:
+
+  comment-service:
+    container_name: 'comment-service'
+    image: 'comment-service'
+    restart: on-failure
+    build: comment-service/
+    ports:
+      - "8084:8084"
+    env_file:
+      - comment-service/config.env
+    volumes:
+      - .:/app/comment-service
+    depends_on:
+      - rabbitmq
+      - comment-db
+    links:
+      - rabbitmq
+      - comment-db
+    networks:
+      main:
+      comment:
+
+  comment-db:
+    container_name: 'comment-db'
+    image: mongo:latest
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb_comment:/data/db
+    command: mongod
+    networks:
+      comment:
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
-    restart: always
+    #restart: always
     container_name: 'rabbitmq'
     ports:
       - "5672:5672"
@@ -11,8 +82,13 @@ services:
       - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq
       - ~/.docker-conf/rabbitmq/log/:/var/log/rabittmq
     networks:
-      - rabbitmq_go_net
+      main:
+
+volumes:
+  mongodb_post:
+  mongodb_comment:
 
 networks:
-  rabbitmq_go_net:
-    driver: bridge
+  main:
+  post:
+  comment:
