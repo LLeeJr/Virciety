@@ -25,7 +25,7 @@ import {HttpClientModule} from "@angular/common/http";
       provide: APOLLO_NAMED_OPTIONS,
       useFactory(httpLink: HttpLink): NamedOptions {
         return {
-          chat: {
+          user: {
             cache: new InMemoryCache(),
             link: httpLink.create({
               uri: 'http://localhost:8085/query',
