@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {ApiService} from "../api/api.service";
+import {AuthLibService} from "auth-lib";
 
 @Component({
   selector: 'app-user',
@@ -8,7 +9,10 @@ import {ApiService} from "../api/api.service";
 })
 export class UserComponent implements OnInit {
 
-  constructor(private api: ApiService) { }
+  id: string = '';
+
+  constructor(private api: ApiService,
+              private auth: AuthLibService) { }
 
   ngOnInit(): void {
     // this.api.getUserByName("fabeeey").subscribe(value => console.log(value));
@@ -16,6 +20,8 @@ export class UserComponent implements OnInit {
     // this.api.getUserByID("618054cb5eaeb32e41c60530").subscribe(value => console.log(value));
     // this.api.removeFollow("618054cb5eaeb32e41c60530", "bob").subscribe(value => console.log(value));
     // this.api.getUserByID("618054cb5eaeb32e41c60530").subscribe(value => console.log(value));
+    this.auth._activeId.subscribe(value => this.id = value)
+    // this.id = this.auth.activeId;
   }
 
 }

@@ -39,6 +39,7 @@ const routes: Routes = [
   },
   {
     path: 'user',
+    canActivate: [AuthGuard],
     loadChildren: () =>
       loadRemoteModule({
         remoteName: 'user',
