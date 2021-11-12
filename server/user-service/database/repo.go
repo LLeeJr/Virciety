@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,6 +19,7 @@ type Repository interface {
 	GetUserByName(ctx context.Context, name *string) (*model.User, error)
 	AddFollow(ctx context.Context, id *string, add *string) (string, error)
 	RemoveFollow(ctx context.Context, id *string, remove *string) (string, error)
+	FindUsersWithName(ctx context.Context, name *string) ([]*model.User, error)
 }
 
 type repo struct {
@@ -89,16 +91,17 @@ func (r repo) AddFollow(ctx context.Context, id *string, add *string) (string, e
 	return "update following list successfully", nil
 }
 
+type UserByName struct {
+	EventType string             `bson:"eventtype"`
+	EventTime time.Time          `bson:"eventtime"`
+	FirstName string             `bson:"firstname"`
+	Follows   []string           `bson:"follows"`
+	ID        primitive.ObjectID `bson:"_id"`
+	LastName  string             `bson:"lastname"`
+	Username  string             `bson:"username"`
+}
+
 func (r repo) GetUserByName(ctx context.Context, name *string) (*model.User, error) {
-	type UserByName struct {
-		EventType string             `bson:"eventtype"`
-		EventTime time.Time          `bson:"eventtime"`
-		FirstName string             `bson:"firstname"`
-		Follows   []string           `bson:"follows"`
-		ID        primitive.ObjectID `bson:"_id"`
-		LastName  string             `bson:"lastname"`
-		Username  string             `bson:"username"`
-	}
 
 	var result *UserByName
 	if err := r.userCollection.FindOne(ctx, bson.D{
@@ -116,6 +119,41 @@ func (r repo) GetUserByName(ctx context.Context, name *string) (*model.User, err
 	}
 
 	return user, nil
+}
+
+func (r repo) FindUsersWithName(ctx context.Context, name *string) ([]*model.User, error) {
+
+	findOptions := options.Find().SetLimit(10)
+
+	pattern := fmt.Sprint("^", *name)
+	regEx := primitive.Regex{Pattern: pattern, Options: "i"}
+
+	filter := bson.M{"username": bson.M{"$regex": regEx}}
+
+	cursor, err := r.userCollection.Find(ctx, filter, findOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*UserByName
+	users := make([]*model.User, 0)
+	err = cursor.All(ctx, &result)
+	if err != nil {
+		return nil, err
+	}
+	for _, userResult := range result {
+		user := &model.User{
+			ID:        userResult.ID.Hex(),
+			Username:  userResult.Username,
+			FirstName: userResult.FirstName,
+			LastName:  userResult.LastName,
+			Follows:   userResult.Follows,
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
 }
 
 func (r repo) GetUserByID(ctx context.Context, id *string) (*model.User, error) {

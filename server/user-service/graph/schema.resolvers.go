@@ -5,6 +5,8 @@ package graph
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"time"
 	"user-service/database"
 	"user-service/graph/generated"
@@ -72,6 +74,21 @@ func (r *queryResolver) GetUserByName(ctx context.Context, name *string) (*model
 	}
 
 	return user, nil
+}
+
+func (r *queryResolver) FindUsersWithName(ctx context.Context, name *string) ([]*model.User, error) {
+	users, err := r.repo.FindUsersWithName(ctx, name)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(users) == 0 {
+		msg := fmt.Sprint("no users found with given name: ", *name)
+		return nil, errors.New(msg)
+	}
+
+	return users, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

@@ -13,6 +13,7 @@ type User {
 type Query {
   getUserByID(id: ID): User!
   getUserByName(name: String): User!
+  findUsersWithName(name: String): [User!]!
 }
 
 input UserData {
