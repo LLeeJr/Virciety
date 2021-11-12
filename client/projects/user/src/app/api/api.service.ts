@@ -3,7 +3,6 @@ import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
 import {AuthLibService} from "auth-lib";
 import {HttpLink} from "apollo-angular/http";
 import {Observable} from "rxjs";
-import {InMemoryCache} from "@apollo/client/core";
 
 @Injectable({
   providedIn: 'root'
@@ -21,6 +20,28 @@ export class ApiService {
 
   private start() {
     this.apollo = this.apolloProvider.use('user');
+  }
+
+  findUsersWithName(name: string): Observable<any> {
+    const query = gql`
+    query findUsersWithName($name: String!) {
+      findUsersWithName(name: $name)
+      {
+        username,
+        firstName,
+        lastName,
+      }
+    }
+    `;
+
+    this.query = this.apollo.watchQuery<any>({
+      query: query,
+      variables: {
+        name: name,
+      },
+    });
+
+    return this.query.valueChanges;
   }
 
   getUserByName(name: string): Observable<any> {
