@@ -1,2 +1,27 @@
 <p>user works!</p>
 <h1>Current User: {{id}}</h1>
+
+<form>
+  <mat-form-field appearance="fill">
+    <mat-label>Username</mat-label>
+    <input type="text"
+           placeholder="type a username..."
+           aria-label="Username"
+           matInput
+           [formControl]="searchFormControl"
+    >
+  </mat-form-field>
+  <button id="search-button"
+          class="mat-button"
+          type="button"
+          (click)="search(searchFormControl.value)"
+  >Search
+  </button>
+</form>
+<div>
+  <mat-list>
+    <mat-list-item class="user-item" *ngFor="let user of users">
+      {{user.username}}
+    </mat-list-item>
+  </mat-list>
+</div>
