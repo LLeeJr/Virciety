@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {ApiService} from "../api/api.service";
+import {ApiService, User} from "../api/api.service";
 import {AuthLibService} from "auth-lib";
 import {FormControl} from "@angular/forms";
 import {debounceTime, filter} from "rxjs/operators";
@@ -26,12 +26,20 @@ export class UserComponent implements OnInit {
   id: string = '';
   searchFormControl = new FormControl();
   users: UserData[] = [];
+  activeUser: User;
 
   constructor(private api: ApiService,
               private auth: AuthLibService) { }
 
   ngOnInit(): void {
-    this.auth._activeId.subscribe(value => this.id = value);
+    this.auth._activeId.subscribe(id => {
+      this.id = id;
+      this.api.getUserByID(this.id).subscribe(value => {
+        if (value && value.data && value.data.getUserByID) {
+          this.activeUser = value.data.getUserByID;
+        }
+      });
+    });
     this.searchFormControl
       .valueChanges
       .pipe(
@@ -39,7 +47,11 @@ export class UserComponent implements OnInit {
         debounceTime(250),
       )
       .subscribe(username => {
-        this.search(username);
+        if (username.length > 0) {
+          this.search(username);
+        } else {
+          this.users = [];
+        }
       }, () => {
         this.users = [];
       });
@@ -52,6 +64,14 @@ export class UserComponent implements OnInit {
           this.users = value.data.findUsersWithName;
         }
       });
+    }
+  }
+
+  checkFollow(username: string): boolean {
+    if (this.activeUser) {
+      return this.activeUser.follows.includes(username);
+    } else {
+      return false;
     }
   }
 }

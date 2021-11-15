@@ -10,6 +10,7 @@ import {MatOptionModule} from "@angular/material/core";
 import {MatFormFieldModule} from "@angular/material/form-field";
 import {MatInputModule} from "@angular/material/input";
 import {MatListModule} from "@angular/material/list";
+import {MatCardModule} from "@angular/material/card";
 
 
 @NgModule({
@@ -25,7 +26,8 @@ import {MatListModule} from "@angular/material/list";
     MatOptionModule,
     MatFormFieldModule,
     MatInputModule,
-    MatListModule
+    MatListModule,
+    MatCardModule
   ]
 })
 export class UserModule { }

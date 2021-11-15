@@ -4,6 +4,15 @@ import {AuthLibService} from "auth-lib";
 import {HttpLink} from "apollo-angular/http";
 import {Observable} from "rxjs";
 
+export interface User {
+  firstName: string,
+  follows: string[],
+  id: string,
+  lastName: string,
+  username: string,
+  __typename: string,
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -12,10 +21,17 @@ export class ApiService {
   private query: QueryRef<any>;
   private apollo: ApolloBase;
 
+  activeId: string;
+
   constructor(private apolloProvider: Apollo,
               private auth: AuthLibService,
               private httpLink: HttpLink) {
     this.start();
+    this.auth._activeId.subscribe((id: string) => {
+      if (id) {
+        this.activeId = id;
+      }
+    });
   }
 
   private start() {
