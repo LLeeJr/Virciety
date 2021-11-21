@@ -111,7 +111,13 @@ export class ApiService {
   addFollow(id: string, toAdd: string): Observable<any> {
     const mutation = gql`
     mutation addFollow($id: ID!, $toAdd: String!){
-      addFollow(id: $id, toAdd: $toAdd)
+      addFollow(id: $id, toAdd: $toAdd) {
+        id,
+        username,
+        firstName,
+        lastName,
+        follows
+      }
     }
     `;
 
@@ -127,7 +133,13 @@ export class ApiService {
   removeFollow(id: string, toRemove: string): Observable<any> {
     const mutation = gql`
     mutation removeFollow($id: ID!, $toRemove: String!){
-      removeFollow(id: $id, toRemove: $toRemove)
+      removeFollow(id: $id, toRemove: $toRemove) {
+        id,
+        username,
+        firstName,
+        lastName,
+        follows
+      }
     }
     `;
 

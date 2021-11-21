@@ -21,14 +21,14 @@
   <div>
     <mat-list>
       <mat-list-item class="user-item" *ngFor="let user of users">
-        <mat-card class="user-card" style="display: flex">
+        <mat-card class="user-card">
           <div>
             <div>{{user.username}}</div>
             <small>{{user.firstName}} {{user.lastName}}</small>
           </div>
-          <div style="position: relative; float: right" *ngIf="checkFollow(user.username); else follow">
-            <button mat-raised-button>Unfollow</button>
-          </div>
+          <ng-container [ngTemplateOutlet]="checkFollow(user.username) ? unfollow : follow"
+                        [ngTemplateOutletContext]="{user: user}">
+          </ng-container>
         </mat-card>
       </mat-list-item>
     </mat-list>
@@ -36,6 +36,18 @@
 
 </div>
 
-<ng-template #follow>
-  <button mat-raised-button>Follow</button>
+<ng-template #unfollow let-user='user'>
+  <button mat-raised-button
+          (click)="removeFollow(user.username)"
+          class="follow-button">
+    {{followButtonText(user.username)}}
+  </button>
+</ng-template>
+
+<ng-template #follow let-user='user'>
+  <button mat-raised-button
+          (click)="addFollow(user.username)"
+          class="follow-button">
+    {{followButtonText(user.username)}}
+  </button>
 </ng-template>

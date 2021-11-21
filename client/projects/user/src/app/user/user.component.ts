@@ -74,4 +74,31 @@ export class UserComponent implements OnInit {
       return false;
     }
   }
+
+  removeFollow(username: string) {
+    let id = this.activeUser.id;
+    if (id && username) {
+      this.api.removeFollow(id, username).subscribe(value => {
+        if (value && value.data && value.data.removeFollow) {
+          this.activeUser = value.data.removeFollow;
+        }
+      });
+    }
+  }
+
+  addFollow(username: string) {
+    let id = this.activeUser.id;
+    if (id && username) {
+      this.api.addFollow(id, username).subscribe(value => {
+        if (value && value.data && value.data.addFollow) {
+          this.activeUser = value.data.addFollow;
+          console.log(this.activeUser);
+        }
+      });
+    }
+  }
+
+  followButtonText(username: string): string {
+    return this.activeUser.follows.includes(username) ? "Unfollow" : "Follow";
+  }
 }
