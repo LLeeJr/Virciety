@@ -36,24 +36,24 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserData)
 	return user, nil
 }
 
-func (r *mutationResolver) AddFollow(ctx context.Context, id *string, toAdd *string) (string, error) {
-	msg, err := r.repo.AddFollow(ctx, id, toAdd)
+func (r *mutationResolver) AddFollow(ctx context.Context, id *string, toAdd *string) (*model.User, error) {
+	user, err := r.repo.AddFollow(ctx, id, toAdd)
 
 	if err != nil {
-		return msg, err
+		return nil, err
 	}
 
-	return msg, nil
+	return user, nil
 }
 
-func (r *mutationResolver) RemoveFollow(ctx context.Context, id *string, toRemove *string) (string, error) {
-	msg, err := r.repo.RemoveFollow(ctx, id, toRemove)
+func (r *mutationResolver) RemoveFollow(ctx context.Context, id *string, toRemove *string) (*model.User, error) {
+	user, err := r.repo.RemoveFollow(ctx, id, toRemove)
 
 	if err != nil {
-		return msg, err
+		return nil, err
 	}
 
-	return msg, nil
+	return user, nil
 }
 
 func (r *queryResolver) GetUserByID(ctx context.Context, id *string) (*model.User, error) {

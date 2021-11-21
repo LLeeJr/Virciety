@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -17,8 +18,8 @@ type Repository interface {
 	InsertUserEvent(ctx context.Context, userEvent UserEvent) (string, error)
 	GetUserByID(ctx context.Context, id *string) (*model.User, error)
 	GetUserByName(ctx context.Context, name *string) (*model.User, error)
-	AddFollow(ctx context.Context, id *string, add *string) (string, error)
-	RemoveFollow(ctx context.Context, id *string, remove *string) (string, error)
+	AddFollow(ctx context.Context, id *string, add *string) (*model.User, error)
+	RemoveFollow(ctx context.Context, id *string, remove *string) (*model.User, error)
 	FindUsersWithName(ctx context.Context, name *string) ([]*model.User, error)
 }
 
@@ -27,11 +28,11 @@ type repo struct {
 	bucket *gridfs.Bucket
 }
 
-func (r repo) RemoveFollow(ctx context.Context, id *string, remove *string) (string, error) {
+func (r repo) RemoveFollow(ctx context.Context, id *string, remove *string) (*model.User, error) {
 
 	objectID, err := primitive.ObjectIDFromHex(*id)
 	if err != nil {
-		return "error during update following list", err
+		return nil, err
 	}
 
 	query := bson.M{
@@ -49,21 +50,26 @@ func (r repo) RemoveFollow(ctx context.Context, id *string, remove *string) (str
 		update,
 	)
 	if err != nil {
-		return "error during update following list", err
+		return nil, err
 	}
 
 	if updated.ModifiedCount == 0 {
-		return "could not update following list due to user does not exist", nil
+		return nil, errors.New("could not update user")
 	}
 
-	return "update following list successfully", nil
+	user, err := r.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
-func (r repo) AddFollow(ctx context.Context, id *string, add *string) (string, error) {
+func (r repo) AddFollow(ctx context.Context, id *string, add *string) (*model.User, error) {
 
 	objectID, err := primitive.ObjectIDFromHex(*id)
 	if err != nil {
-		return "error during update following list", err
+		return nil, err
 	}
 
 	query := bson.M{
@@ -81,14 +87,19 @@ func (r repo) AddFollow(ctx context.Context, id *string, add *string) (string, e
 		update,
 	)
 	if err != nil {
-		return "error during update following list", err
+		return nil, err
 	}
 
 	if updated.ModifiedCount == 0 {
-		return "could not update following list due to user already existing", nil
+		return nil, errors.New("could not update user")
 	}
 
-	return "update following list successfully", nil
+	user, err := r.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }
 
 type UserByName struct {
