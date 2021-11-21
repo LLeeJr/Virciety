@@ -19,7 +19,7 @@
     </button>
   </form>
   <div>
-    <mat-list>
+    <mat-list *ngIf="!this.notFound; else notFoundPlaceholder">
       <mat-list-item class="user-item" *ngFor="let user of users">
         <mat-card class="user-card">
           <div>
@@ -50,4 +50,8 @@
           class="follow-button">
     {{followButtonText(user.username)}}
   </button>
+</ng-template>
+
+<ng-template #notFoundPlaceholder>
+  <h4>No users found with name: {{searchFormControl.value}}</h4>
 </ng-template>

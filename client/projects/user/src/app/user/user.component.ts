@@ -27,6 +27,7 @@ export class UserComponent implements OnInit {
   searchFormControl = new FormControl();
   users: UserData[] = [];
   activeUser: User;
+  notFound = false;
 
   constructor(private api: ApiService,
               private auth: AuthLibService) { }
@@ -61,8 +62,11 @@ export class UserComponent implements OnInit {
     if (username && username.length > 0) {
       this.api.findUsersWithName(username).subscribe(value => {
         if (value && value.data && value.data.findUsersWithName) {
+          this.notFound = false;
           this.users = value.data.findUsersWithName;
         }
+      }, () => {
+        this.notFound = true;
       });
     }
   }
