@@ -3,6 +3,7 @@
 <a mat-raised-button routerLink='/chat'>Link to Chat</a> &#160;
 <a mat-raised-button routerLink='/post'>Link to Post</a> &#160;
 <a mat-raised-button routerLink='post/create_post'>Create Post</a> &#160;
-<a mat-raised-button routerLink='/user'>Link to User</a>
+<a mat-raised-button routerLink='/user'>Link to User</a> &#160;
+<button mat-raised-button [disabled]="!isLoggedIn" (click)="logout()">Logout</button>
 
 <router-outlet></router-outlet>
