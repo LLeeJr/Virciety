@@ -1,9 +1,9 @@
 package resolvers
 
 import (
-	"posts-service/database"
-	"posts-service/graph/model"
-	messagequeue "posts-service/message-queue"
+	"post-service/database"
+	"post-service/graph/model"
+	messagequeue "post-service/message-queue"
 	"sync"
 )
 
@@ -24,6 +24,6 @@ func NewResolver(repo database.Repository, producerQueue messagequeue.Publisher,
 		repo:          repo,
 		producerQueue: producerQueue,
 		observers:     map[string]chan *model.Post{},
-		responses: 	   responses,
+		responses:     responses,
 	}
 }

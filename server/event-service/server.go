@@ -1,6 +1,10 @@
 package main
 
 import (
+	"event-service/database"
+	"event-service/graph/generated"
+	"event-service/graph/resolvers"
+	messagequeue "event-service/message-queue"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
@@ -13,15 +17,10 @@ import (
 	"net/http"
 	_ "net/http"
 	"os"
-	"post-service/database"
-	"post-service/graph/generated"
-	"post-service/graph/model"
-	"post-service/graph/resolvers"
-	messagequeue "post-service/message-queue"
 	"time"
 )
 
-const defaultPort = "8083"
+const defaultPort = "8086"
 
 func main() {
 	port := os.Getenv("PORT")
@@ -30,7 +29,6 @@ func main() {
 	}
 
 	repo, _ := database.NewRepo()
-	responses := map[string]chan []*model.Comment{}
 
 	// rabbitmq connection
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
@@ -44,13 +42,13 @@ func main() {
 	producerQueue, _ := messagequeue.NewPublisher()
 	go producerQueue.InitPublisher(ch)
 
-	consumerQueue, _ := messagequeue.NewConsumer(repo, responses)
+	consumerQueue, _ := messagequeue.NewConsumer(repo)
 	go consumerQueue.InitConsumer(ch)
 
 	// graphql init
 	// srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
 
-	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue, responses)}))
+	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
 
 	srv.AddTransport(transport.POST{})
 	srv.AddTransport(transport.Websocket{

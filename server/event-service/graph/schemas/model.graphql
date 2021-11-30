@@ -1,0 +1,44 @@
+input CreateEventRequest {
+    host:           String!
+    description:    String!
+    startDate:      String!
+    endDate:        String!
+    location:       String!
+}
+
+input JoinEventRequest {
+    eventID: String!
+    description: String!
+    newMembers: [String!]!
+    startDate: String!
+    endDate: String!
+    location: String!
+}
+
+input LeaveEventRequest {
+    eventID: String!
+    description: String!
+    newMembers: [String!]!
+    startDate: String!
+    endDate: String!
+    location: String!
+}
+
+input EditEventRequest {
+    eventID: String!
+    description: String!
+    members: [String!]!
+    startDate: String!
+    endDate: String!
+    location: String!
+}
+
+type Event {
+    id: String!
+    startDate: String!
+    endDate: String!
+    location: String!
+    description: String!
+    members: [String!]!
+    host: String!
+}

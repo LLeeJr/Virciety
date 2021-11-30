@@ -5,9 +5,10 @@ package resolvers
 
 import (
 	"context"
+	"post-service/graph/generated"
+	"post-service/graph/model"
+
 	"github.com/google/uuid"
-	"posts-service/graph/generated"
-	"posts-service/graph/model"
 )
 
 func (r *queryResolver) GetPosts(ctx context.Context, id string, fetchLimit int) ([]*model.Post, error) {

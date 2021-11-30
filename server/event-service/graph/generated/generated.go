@@ -6,8 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io"
-	"post-service/graph/model"
+	"event-service/graph/model"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -38,69 +37,44 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
-	Subscription() SubscriptionResolver
 }
 
 type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	Comment struct {
-		Comment   func(childComplexity int) int
-		CreatedBy func(childComplexity int) int
-		Event     func(childComplexity int) int
-		ID        func(childComplexity int) int
-		PostID    func(childComplexity int) int
-	}
-
-	File struct {
-		Content     func(childComplexity int) int
-		ContentType func(childComplexity int) int
-		Name        func(childComplexity int) int
+	Event struct {
+		Description func(childComplexity int) int
+		EndDate     func(childComplexity int) int
+		Host        func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Location    func(childComplexity int) int
+		Members     func(childComplexity int) int
+		StartDate   func(childComplexity int) int
 	}
 
 	Mutation struct {
-		AddComment func(childComplexity int, comment model.AddCommentRequest) int
-		CreatePost func(childComplexity int, newPost model.CreatePostRequest) int
-		EditPost   func(childComplexity int, edit model.EditPostRequest) int
-		LikePost   func(childComplexity int, like model.LikePostRequest) int
-		RemovePost func(childComplexity int, remove model.RemovePostRequest) int
-	}
-
-	Post struct {
-		Comments    func(childComplexity int) int
-		Data        func(childComplexity int) int
-		Description func(childComplexity int) int
-		ID          func(childComplexity int) int
-		LikedBy     func(childComplexity int) int
-		Username    func(childComplexity int) int
+		CreateEvent func(childComplexity int, newEvent model.CreateEventRequest) int
+		EditEvent   func(childComplexity int, edit model.EditEventRequest) int
+		JoinEvent   func(childComplexity int, joinEvent model.JoinEventRequest) int
+		LeaveEvent  func(childComplexity int, leaveEvent model.LeaveEventRequest) int
+		RemoveEvent func(childComplexity int, remove string) int
 	}
 
 	Query struct {
-		GetData         func(childComplexity int, fileID string) int
-		GetPostComments func(childComplexity int, id string) int
-		GetPosts        func(childComplexity int, id string, fetchLimit int) int
-	}
-
-	Subscription struct {
-		NewPostCreated func(childComplexity int) int
+		GetEvents func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
-	CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error)
-	EditPost(ctx context.Context, edit model.EditPostRequest) (string, error)
-	RemovePost(ctx context.Context, remove model.RemovePostRequest) (string, error)
-	LikePost(ctx context.Context, like model.LikePostRequest) (string, error)
-	AddComment(ctx context.Context, comment model.AddCommentRequest) (*model.Comment, error)
+	CreateEvent(ctx context.Context, newEvent model.CreateEventRequest) (*model.Event, error)
+	EditEvent(ctx context.Context, edit model.EditEventRequest) (string, error)
+	RemoveEvent(ctx context.Context, remove string) (string, error)
+	JoinEvent(ctx context.Context, joinEvent model.JoinEventRequest) (string, error)
+	LeaveEvent(ctx context.Context, leaveEvent model.LeaveEventRequest) (string, error)
 }
 type QueryResolver interface {
-	GetPosts(ctx context.Context, id string, fetchLimit int) ([]*model.Post, error)
-	GetData(ctx context.Context, fileID string) (string, error)
-	GetPostComments(ctx context.Context, id string) ([]*model.Comment, error)
-}
-type SubscriptionResolver interface {
-	NewPostCreated(ctx context.Context) (<-chan *model.Post, error)
+	GetEvents(ctx context.Context) ([]*model.Event, error)
 }
 
 type executableSchema struct {
@@ -118,206 +92,121 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Comment.comment":
-		if e.complexity.Comment.Comment == nil {
+	case "Event.description":
+		if e.complexity.Event.Description == nil {
 			break
 		}
 
-		return e.complexity.Comment.Comment(childComplexity), true
+		return e.complexity.Event.Description(childComplexity), true
 
-	case "Comment.createdBy":
-		if e.complexity.Comment.CreatedBy == nil {
+	case "Event.endDate":
+		if e.complexity.Event.EndDate == nil {
 			break
 		}
 
-		return e.complexity.Comment.CreatedBy(childComplexity), true
+		return e.complexity.Event.EndDate(childComplexity), true
 
-	case "Comment.event":
-		if e.complexity.Comment.Event == nil {
+	case "Event.host":
+		if e.complexity.Event.Host == nil {
 			break
 		}
 
-		return e.complexity.Comment.Event(childComplexity), true
+		return e.complexity.Event.Host(childComplexity), true
 
-	case "Comment.id":
-		if e.complexity.Comment.ID == nil {
+	case "Event.id":
+		if e.complexity.Event.ID == nil {
 			break
 		}
 
-		return e.complexity.Comment.ID(childComplexity), true
+		return e.complexity.Event.ID(childComplexity), true
 
-	case "Comment.postID":
-		if e.complexity.Comment.PostID == nil {
+	case "Event.location":
+		if e.complexity.Event.Location == nil {
 			break
 		}
 
-		return e.complexity.Comment.PostID(childComplexity), true
+		return e.complexity.Event.Location(childComplexity), true
 
-	case "File.content":
-		if e.complexity.File.Content == nil {
+	case "Event.members":
+		if e.complexity.Event.Members == nil {
 			break
 		}
 
-		return e.complexity.File.Content(childComplexity), true
+		return e.complexity.Event.Members(childComplexity), true
 
-	case "File.contentType":
-		if e.complexity.File.ContentType == nil {
+	case "Event.startDate":
+		if e.complexity.Event.StartDate == nil {
 			break
 		}
 
-		return e.complexity.File.ContentType(childComplexity), true
+		return e.complexity.Event.StartDate(childComplexity), true
 
-	case "File.name":
-		if e.complexity.File.Name == nil {
+	case "Mutation.createEvent":
+		if e.complexity.Mutation.CreateEvent == nil {
 			break
 		}
 
-		return e.complexity.File.Name(childComplexity), true
-
-	case "Mutation.addComment":
-		if e.complexity.Mutation.AddComment == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_addComment_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_createEvent_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddComment(childComplexity, args["comment"].(model.AddCommentRequest)), true
+		return e.complexity.Mutation.CreateEvent(childComplexity, args["newEvent"].(model.CreateEventRequest)), true
 
-	case "Mutation.createPost":
-		if e.complexity.Mutation.CreatePost == nil {
+	case "Mutation.editEvent":
+		if e.complexity.Mutation.EditEvent == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_createPost_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_editEvent_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreatePost(childComplexity, args["newPost"].(model.CreatePostRequest)), true
+		return e.complexity.Mutation.EditEvent(childComplexity, args["edit"].(model.EditEventRequest)), true
 
-	case "Mutation.editPost":
-		if e.complexity.Mutation.EditPost == nil {
+	case "Mutation.joinEvent":
+		if e.complexity.Mutation.JoinEvent == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_editPost_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_joinEvent_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EditPost(childComplexity, args["edit"].(model.EditPostRequest)), true
+		return e.complexity.Mutation.JoinEvent(childComplexity, args["joinEvent"].(model.JoinEventRequest)), true
 
-	case "Mutation.likePost":
-		if e.complexity.Mutation.LikePost == nil {
+	case "Mutation.leaveEvent":
+		if e.complexity.Mutation.LeaveEvent == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_likePost_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_leaveEvent_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.LikePost(childComplexity, args["like"].(model.LikePostRequest)), true
+		return e.complexity.Mutation.LeaveEvent(childComplexity, args["leaveEvent"].(model.LeaveEventRequest)), true
 
-	case "Mutation.removePost":
-		if e.complexity.Mutation.RemovePost == nil {
+	case "Mutation.removeEvent":
+		if e.complexity.Mutation.RemoveEvent == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_removePost_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_removeEvent_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RemovePost(childComplexity, args["remove"].(model.RemovePostRequest)), true
+		return e.complexity.Mutation.RemoveEvent(childComplexity, args["remove"].(string)), true
 
-	case "Post.comments":
-		if e.complexity.Post.Comments == nil {
+	case "Query.getEvents":
+		if e.complexity.Query.GetEvents == nil {
 			break
 		}
 
-		return e.complexity.Post.Comments(childComplexity), true
-
-	case "Post.data":
-		if e.complexity.Post.Data == nil {
-			break
-		}
-
-		return e.complexity.Post.Data(childComplexity), true
-
-	case "Post.description":
-		if e.complexity.Post.Description == nil {
-			break
-		}
-
-		return e.complexity.Post.Description(childComplexity), true
-
-	case "Post.id":
-		if e.complexity.Post.ID == nil {
-			break
-		}
-
-		return e.complexity.Post.ID(childComplexity), true
-
-	case "Post.likedBy":
-		if e.complexity.Post.LikedBy == nil {
-			break
-		}
-
-		return e.complexity.Post.LikedBy(childComplexity), true
-
-	case "Post.username":
-		if e.complexity.Post.Username == nil {
-			break
-		}
-
-		return e.complexity.Post.Username(childComplexity), true
-
-	case "Query.getData":
-		if e.complexity.Query.GetData == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getData_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetData(childComplexity, args["fileID"].(string)), true
-
-	case "Query.getPostComments":
-		if e.complexity.Query.GetPostComments == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getPostComments_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetPostComments(childComplexity, args["id"].(string)), true
-
-	case "Query.getPosts":
-		if e.complexity.Query.GetPosts == nil {
-			break
-		}
-
-		args, err := ec.field_Query_getPosts_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.GetPosts(childComplexity, args["id"].(string), args["fetchLimit"].(int)), true
-
-	case "Subscription.newPostCreated":
-		if e.complexity.Subscription.NewPostCreated == nil {
-			break
-		}
-
-		return e.complexity.Subscription.NewPostCreated(childComplexity), true
+		return e.complexity.Query.GetEvents(childComplexity), true
 
 	}
 	return 0, false
@@ -357,23 +246,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				Data: buf.Bytes(),
 			}
 		}
-	case ast.Subscription:
-		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
-
-		var buf bytes.Buffer
-		return func(ctx context.Context) *graphql.Response {
-			buf.Reset()
-			data := next()
-
-			if data == nil {
-				return nil
-			}
-			data.MarshalGQL(&buf)
-
-			return &graphql.Response{
-				Data: buf.Bytes(),
-			}
-		}
 
 	default:
 		return graphql.OneShot(graphql.ErrorResponse(ctx, "unsupported GraphQL operation"))
@@ -400,74 +272,59 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "graph/schemas/model.graphql", Input: `type File {
-    name: String!
-    content: String!
-    contentType: String!
-}
-
-input CreatePostRequest {
-    username:       String!
+	{Name: "graph/schemas/model.graphql", Input: `input CreateEventRequest {
+    host:           String!
     description:    String!
-    data:           String!
+    startDate:      String!
+    endDate:        String!
+    location:       String!
 }
 
-input EditPostRequest {
-    id: String!
-    newDescription: String!
-    likedBy: [String!]!
-    comments: [String!]!
-}
-
-input LikePostRequest {
-    id: String!
+input JoinEventRequest {
+    eventID: String!
     description: String!
-    newLikedBy: [String!]!
-    comments: [String!]!
-    liked: Boolean!
+    newMembers: [String!]!
+    startDate: String!
+    endDate: String!
+    location: String!
 }
 
-input RemovePostRequest {
-    id: String!
-    fileID: String!
-}
-
-input AddCommentRequest {
-    postID: String!
-    comment: String!
-    createdBy: String!
-}
-
-type Post {
-    id: String!
+input LeaveEventRequest {
+    eventID: String!
     description: String!
-    data: File!
-    username: String!
-    likedBy: [String!]!
-    comments: [String!]!
+    newMembers: [String!]!
+    startDate: String!
+    endDate: String!
+    location: String!
 }
 
-type Comment {
+input EditEventRequest {
+    eventID: String!
+    description: String!
+    members: [String!]!
+    startDate: String!
+    endDate: String!
+    location: String!
+}
+
+type Event {
     id: String!
-    postID: String!
-    comment: String!
-    createdBy: String!
-    event: String!
+    startDate: String!
+    endDate: String!
+    location: String!
+    description: String!
+    members: [String!]!
+    host: String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation {
-    createPost(newPost: CreatePostRequest!): Post!
-    editPost(edit: EditPostRequest!): String!
-    removePost(remove: RemovePostRequest!): String!
-    likePost(like: LikePostRequest!): String!
-    addComment(comment: AddCommentRequest!): Comment!
+    createEvent(newEvent: CreateEventRequest!): Event!
+    editEvent(edit: EditEventRequest!): String!
+    removeEvent(remove: String!): String!
+    joinEvent(joinEvent: JoinEventRequest!): String!
+    leaveEvent(leaveEvent: LeaveEventRequest!): String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
-    getPosts(id: String!, fetchLimit: Int!): [Post!]!
-    getData(fileID: String!): String!
-    getPostComments(id: String!): [Comment!]!
-}`, BuiltIn: false},
-	{Name: "graph/schemas/subscription.graphql", Input: `type Subscription {
-    newPostCreated: Post!
+    getEvents: [Event!]!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -476,43 +333,28 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutation_addComment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_createEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.AddCommentRequest
-	if tmp, ok := rawArgs["comment"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
-		arg0, err = ec.unmarshalNAddCommentRequest2postᚑserviceᚋgraphᚋmodelᚐAddCommentRequest(ctx, tmp)
+	var arg0 model.CreateEventRequest
+	if tmp, ok := rawArgs["newEvent"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newEvent"))
+		arg0, err = ec.unmarshalNCreateEventRequest2eventᚑserviceᚋgraphᚋmodelᚐCreateEventRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["comment"] = arg0
+	args["newEvent"] = arg0
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_editEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.CreatePostRequest
-	if tmp, ok := rawArgs["newPost"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newPost"))
-		arg0, err = ec.unmarshalNCreatePostRequest2postᚑserviceᚋgraphᚋmodelᚐCreatePostRequest(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["newPost"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_editPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.EditPostRequest
+	var arg0 model.EditEventRequest
 	if tmp, ok := rawArgs["edit"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("edit"))
-		arg0, err = ec.unmarshalNEditPostRequest2postᚑserviceᚋgraphᚋmodelᚐEditPostRequest(ctx, tmp)
+		arg0, err = ec.unmarshalNEditEventRequest2eventᚑserviceᚋgraphᚋmodelᚐEditEventRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -521,28 +363,43 @@ func (ec *executionContext) field_Mutation_editPost_args(ctx context.Context, ra
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_likePost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_joinEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.LikePostRequest
-	if tmp, ok := rawArgs["like"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("like"))
-		arg0, err = ec.unmarshalNLikePostRequest2postᚑserviceᚋgraphᚋmodelᚐLikePostRequest(ctx, tmp)
+	var arg0 model.JoinEventRequest
+	if tmp, ok := rawArgs["joinEvent"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("joinEvent"))
+		arg0, err = ec.unmarshalNJoinEventRequest2eventᚑserviceᚋgraphᚋmodelᚐJoinEventRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["like"] = arg0
+	args["joinEvent"] = arg0
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_removePost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_leaveEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.RemovePostRequest
+	var arg0 model.LeaveEventRequest
+	if tmp, ok := rawArgs["leaveEvent"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("leaveEvent"))
+		arg0, err = ec.unmarshalNLeaveEventRequest2eventᚑserviceᚋgraphᚋmodelᚐLeaveEventRequest(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["leaveEvent"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_removeEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
 	if tmp, ok := rawArgs["remove"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remove"))
-		arg0, err = ec.unmarshalNRemovePostRequest2postᚑserviceᚋgraphᚋmodelᚐRemovePostRequest(ctx, tmp)
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -563,60 +420,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getData_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["fileID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileID"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["fileID"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getPostComments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_getPosts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["fetchLimit"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fetchLimit"))
-		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["fetchLimit"] = arg1
 	return args, nil
 }
 
@@ -658,7 +461,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Comment_id(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Event_id(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -666,7 +469,7 @@ func (ec *executionContext) _Comment_id(ctx context.Context, field graphql.Colle
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Comment",
+		Object:     "Event",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -693,7 +496,7 @@ func (ec *executionContext) _Comment_id(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Comment_postID(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Event_startDate(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -701,7 +504,7 @@ func (ec *executionContext) _Comment_postID(ctx context.Context, field graphql.C
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Comment",
+		Object:     "Event",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -711,7 +514,7 @@ func (ec *executionContext) _Comment_postID(ctx context.Context, field graphql.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.PostID, nil
+		return obj.StartDate, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -728,7 +531,7 @@ func (ec *executionContext) _Comment_postID(ctx context.Context, field graphql.C
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Comment_comment(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Event_endDate(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -736,7 +539,7 @@ func (ec *executionContext) _Comment_comment(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Comment",
+		Object:     "Event",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -746,7 +549,7 @@ func (ec *executionContext) _Comment_comment(ctx context.Context, field graphql.
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Comment, nil
+		return obj.EndDate, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -763,7 +566,7 @@ func (ec *executionContext) _Comment_comment(ctx context.Context, field graphql.
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Comment_createdBy(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Event_location(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -771,7 +574,7 @@ func (ec *executionContext) _Comment_createdBy(ctx context.Context, field graphq
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Comment",
+		Object:     "Event",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -781,7 +584,7 @@ func (ec *executionContext) _Comment_createdBy(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedBy, nil
+		return obj.Location, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -798,7 +601,7 @@ func (ec *executionContext) _Comment_createdBy(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Comment_event(ctx context.Context, field graphql.CollectedField, obj *model.Comment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Event_description(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -806,392 +609,7 @@ func (ec *executionContext) _Comment_event(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Comment",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Event, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _File_name(ctx context.Context, field graphql.CollectedField, obj *model.File) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "File",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _File_content(ctx context.Context, field graphql.CollectedField, obj *model.File) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "File",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Content, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _File_contentType(ctx context.Context, field graphql.CollectedField, obj *model.File) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "File",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ContentType, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_createPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createPost_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreatePost(rctx, args["newPost"].(model.CreatePostRequest))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Post)
-	fc.Result = res
-	return ec.marshalNPost2ᚖpostᚑserviceᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_editPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_editPost_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().EditPost(rctx, args["edit"].(model.EditPostRequest))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_removePost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_removePost_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RemovePost(rctx, args["remove"].(model.RemovePostRequest))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_likePost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_likePost_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().LikePost(rctx, args["like"].(model.LikePostRequest))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_addComment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_addComment_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddComment(rctx, args["comment"].(model.AddCommentRequest))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Comment)
-	fc.Result = res
-	return ec.marshalNComment2ᚖpostᚑserviceᚋgraphᚋmodelᚐComment(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Post",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Post_description(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Post",
+		Object:     "Event",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1218,7 +636,7 @@ func (ec *executionContext) _Post_description(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_data(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Event_members(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1226,7 +644,7 @@ func (ec *executionContext) _Post_data(ctx context.Context, field graphql.Collec
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Post",
+		Object:     "Event",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1236,77 +654,7 @@ func (ec *executionContext) _Post_data(ctx context.Context, field graphql.Collec
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Data, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.File)
-	fc.Result = res
-	return ec.marshalNFile2ᚖpostᚑserviceᚋgraphᚋmodelᚐFile(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Post_username(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Post",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Username, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Post_likedBy(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Post",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.LikedBy, nil
+		return obj.Members, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1323,7 +671,7 @@ func (ec *executionContext) _Post_likedBy(ctx context.Context, field graphql.Col
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
+func (ec *executionContext) _Event_host(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1331,7 +679,7 @@ func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.Co
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Post",
+		Object:     "Event",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -1341,91 +689,7 @@ func (ec *executionContext) _Post_comments(ctx context.Context, field graphql.Co
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Comments, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]string)
-	fc.Result = res
-	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_getPosts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_getPosts_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetPosts(rctx, args["id"].(string), args["fetchLimit"].(int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Post)
-	fc.Result = res
-	return ec.marshalNPost2ᚕᚖpostᚑserviceᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_getData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_getData_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetData(rctx, args["fileID"].(string))
+		return obj.Host, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1442,7 +706,217 @@ func (ec *executionContext) _Query_getData(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_getPostComments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_createEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_createEvent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateEvent(rctx, args["newEvent"].(model.CreateEventRequest))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Event)
+	fc.Result = res
+	return ec.marshalNEvent2ᚖeventᚑserviceᚋgraphᚋmodelᚐEvent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_editEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_editEvent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EditEvent(rctx, args["edit"].(model.EditEventRequest))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_removeEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_removeEvent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RemoveEvent(rctx, args["remove"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_joinEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_joinEvent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().JoinEvent(rctx, args["joinEvent"].(model.JoinEventRequest))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_leaveEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_leaveEvent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LeaveEvent(rctx, args["leaveEvent"].(model.LeaveEventRequest))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getEvents(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1458,16 +932,9 @@ func (ec *executionContext) _Query_getPostComments(ctx context.Context, field gr
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_getPostComments_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetPostComments(rctx, args["id"].(string))
+		return ec.resolvers.Query().GetEvents(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1479,9 +946,9 @@ func (ec *executionContext) _Query_getPostComments(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Comment)
+	res := resTmp.([]*model.Event)
 	fc.Result = res
-	return ec.marshalNComment2ᚕᚖpostᚑserviceᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
+	return ec.marshalNEvent2ᚕᚖeventᚑserviceᚋgraphᚋmodelᚐEventᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1553,51 +1020,6 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Subscription_newPostCreated(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = nil
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Subscription",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().NewPostCreated(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return nil
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return nil
-	}
-	return func() graphql.Marshaler {
-		res, ok := <-resTmp.(<-chan *model.Post)
-		if !ok {
-			return nil
-		}
-		return graphql.WriterFunc(func(w io.Writer) {
-			w.Write([]byte{'{'})
-			graphql.MarshalString(field.Alias).MarshalGQL(w)
-			w.Write([]byte{':'})
-			ec.marshalNPost2ᚖpostᚑserviceᚋgraphᚋmodelᚐPost(ctx, field.Selections, res).MarshalGQL(w)
-			w.Write([]byte{'}'})
-		})
-	}
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2687,53 +2109,17 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputAddCommentRequest(ctx context.Context, obj interface{}) (model.AddCommentRequest, error) {
-	var it model.AddCommentRequest
+func (ec *executionContext) unmarshalInputCreateEventRequest(ctx context.Context, obj interface{}) (model.CreateEventRequest, error) {
+	var it model.CreateEventRequest
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "postID":
+		case "host":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postID"))
-			it.PostID, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "comment":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
-			it.Comment, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "createdBy":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdBy"))
-			it.CreatedBy, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputCreatePostRequest(ctx context.Context, obj interface{}) (model.CreatePostRequest, error) {
-	var it model.CreatePostRequest
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "username":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("host"))
+			it.Host, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2745,11 +2131,27 @@ func (ec *executionContext) unmarshalInputCreatePostRequest(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
-		case "data":
+		case "startDate":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
-			it.Data, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startDate"))
+			it.StartDate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "endDate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endDate"))
+			it.EndDate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "location":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("location"))
+			it.Location, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2759,61 +2161,17 @@ func (ec *executionContext) unmarshalInputCreatePostRequest(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputEditPostRequest(ctx context.Context, obj interface{}) (model.EditPostRequest, error) {
-	var it model.EditPostRequest
+func (ec *executionContext) unmarshalInputEditEventRequest(ctx context.Context, obj interface{}) (model.EditEventRequest, error) {
+	var it model.EditEventRequest
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "id":
+		case "eventID":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "newDescription":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newDescription"))
-			it.NewDescription, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "likedBy":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("likedBy"))
-			it.LikedBy, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "comments":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comments"))
-			it.Comments, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputLikePostRequest(ctx context.Context, obj interface{}) (model.LikePostRequest, error) {
-	var it model.LikePostRequest
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "id":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventID"))
+			it.EventID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2825,27 +2183,35 @@ func (ec *executionContext) unmarshalInputLikePostRequest(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "newLikedBy":
+		case "members":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newLikedBy"))
-			it.NewLikedBy, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("members"))
+			it.Members, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "comments":
+		case "startDate":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comments"))
-			it.Comments, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startDate"))
+			it.StartDate, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "liked":
+		case "endDate":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("liked"))
-			it.Liked, err = ec.unmarshalNBoolean2bool(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endDate"))
+			it.EndDate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "location":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("location"))
+			it.Location, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2855,25 +2221,117 @@ func (ec *executionContext) unmarshalInputLikePostRequest(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputRemovePostRequest(ctx context.Context, obj interface{}) (model.RemovePostRequest, error) {
-	var it model.RemovePostRequest
+func (ec *executionContext) unmarshalInputJoinEventRequest(ctx context.Context, obj interface{}) (model.JoinEventRequest, error) {
+	var it model.JoinEventRequest
 	var asMap = obj.(map[string]interface{})
 
 	for k, v := range asMap {
 		switch k {
-		case "id":
+		case "eventID":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventID"))
+			it.EventID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "fileID":
+		case "description":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileID"))
-			it.FileID, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			it.Description, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "newMembers":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newMembers"))
+			it.NewMembers, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "startDate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startDate"))
+			it.StartDate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "endDate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endDate"))
+			it.EndDate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "location":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("location"))
+			it.Location, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLeaveEventRequest(ctx context.Context, obj interface{}) (model.LeaveEventRequest, error) {
+	var it model.LeaveEventRequest
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "eventID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventID"))
+			it.EventID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			it.Description, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "newMembers":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newMembers"))
+			it.NewMembers, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "startDate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startDate"))
+			it.StartDate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "endDate":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endDate"))
+			it.EndDate, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "location":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("location"))
+			it.Location, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -2891,76 +2349,49 @@ func (ec *executionContext) unmarshalInputRemovePostRequest(ctx context.Context,
 
 // region    **************************** object.gotpl ****************************
 
-var commentImplementors = []string{"Comment"}
+var eventImplementors = []string{"Event"}
 
-func (ec *executionContext) _Comment(ctx context.Context, sel ast.SelectionSet, obj *model.Comment) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, commentImplementors)
+func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, obj *model.Event) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, eventImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("Comment")
+			out.Values[i] = graphql.MarshalString("Event")
 		case "id":
-			out.Values[i] = ec._Comment_id(ctx, field, obj)
+			out.Values[i] = ec._Event_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "postID":
-			out.Values[i] = ec._Comment_postID(ctx, field, obj)
+		case "startDate":
+			out.Values[i] = ec._Event_startDate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "comment":
-			out.Values[i] = ec._Comment_comment(ctx, field, obj)
+		case "endDate":
+			out.Values[i] = ec._Event_endDate(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "createdBy":
-			out.Values[i] = ec._Comment_createdBy(ctx, field, obj)
+		case "location":
+			out.Values[i] = ec._Event_location(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "event":
-			out.Values[i] = ec._Comment_event(ctx, field, obj)
+		case "description":
+			out.Values[i] = ec._Event_description(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var fileImplementors = []string{"File"}
-
-func (ec *executionContext) _File(ctx context.Context, sel ast.SelectionSet, obj *model.File) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, fileImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("File")
-		case "name":
-			out.Values[i] = ec._File_name(ctx, field, obj)
+		case "members":
+			out.Values[i] = ec._Event_members(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "content":
-			out.Values[i] = ec._File_content(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "contentType":
-			out.Values[i] = ec._File_contentType(ctx, field, obj)
+		case "host":
+			out.Values[i] = ec._Event_host(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2990,80 +2421,28 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "createPost":
-			out.Values[i] = ec._Mutation_createPost(ctx, field)
+		case "createEvent":
+			out.Values[i] = ec._Mutation_createEvent(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "editPost":
-			out.Values[i] = ec._Mutation_editPost(ctx, field)
+		case "editEvent":
+			out.Values[i] = ec._Mutation_editEvent(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "removePost":
-			out.Values[i] = ec._Mutation_removePost(ctx, field)
+		case "removeEvent":
+			out.Values[i] = ec._Mutation_removeEvent(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "likePost":
-			out.Values[i] = ec._Mutation_likePost(ctx, field)
+		case "joinEvent":
+			out.Values[i] = ec._Mutation_joinEvent(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "addComment":
-			out.Values[i] = ec._Mutation_addComment(ctx, field)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var postImplementors = []string{"Post"}
-
-func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj *model.Post) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, postImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Post")
-		case "id":
-			out.Values[i] = ec._Post_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "description":
-			out.Values[i] = ec._Post_description(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "data":
-			out.Values[i] = ec._Post_data(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "username":
-			out.Values[i] = ec._Post_username(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "likedBy":
-			out.Values[i] = ec._Post_likedBy(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "comments":
-			out.Values[i] = ec._Post_comments(ctx, field, obj)
+		case "leaveEvent":
+			out.Values[i] = ec._Mutation_leaveEvent(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3093,7 +2472,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "getPosts":
+		case "getEvents":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -3101,35 +2480,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_getPosts(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "getData":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_getData(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "getPostComments":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_getPostComments(ctx, field)
+				res = ec._Query_getEvents(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -3148,26 +2499,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 	return out
-}
-
-var subscriptionImplementors = []string{"Subscription"}
-
-func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
-	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
-		Object: "Subscription",
-	})
-	if len(fields) != 1 {
-		ec.Errorf(ctx, "must subscribe to exactly one stream")
-		return nil
-	}
-
-	switch fields[0].Name {
-	case "newPostCreated":
-		return ec._Subscription_newPostCreated(ctx, fields[0])
-	default:
-		panic("unknown field " + strconv.Quote(fields[0].Name))
-	}
 }
 
 var __DirectiveImplementors = []string{"__Directive"}
@@ -3415,11 +2746,6 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNAddCommentRequest2postᚑserviceᚋgraphᚋmodelᚐAddCommentRequest(ctx context.Context, v interface{}) (model.AddCommentRequest, error) {
-	res, err := ec.unmarshalInputAddCommentRequest(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3435,11 +2761,21 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNComment2postᚑserviceᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v model.Comment) graphql.Marshaler {
-	return ec._Comment(ctx, sel, &v)
+func (ec *executionContext) unmarshalNCreateEventRequest2eventᚑserviceᚋgraphᚋmodelᚐCreateEventRequest(ctx context.Context, v interface{}) (model.CreateEventRequest, error) {
+	res, err := ec.unmarshalInputCreateEventRequest(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNComment2ᚕᚖpostᚑserviceᚋgraphᚋmodelᚐCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Comment) graphql.Marshaler {
+func (ec *executionContext) unmarshalNEditEventRequest2eventᚑserviceᚋgraphᚋmodelᚐEditEventRequest(ctx context.Context, v interface{}) (model.EditEventRequest, error) {
+	res, err := ec.unmarshalInputEditEventRequest(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNEvent2eventᚑserviceᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v model.Event) graphql.Marshaler {
+	return ec._Event(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEvent2ᚕᚖeventᚑserviceᚋgraphᚋmodelᚐEventᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Event) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -3463,7 +2799,7 @@ func (ec *executionContext) marshalNComment2ᚕᚖpostᚑserviceᚋgraphᚋmodel
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNComment2ᚖpostᚑserviceᚋgraphᚋmodelᚐComment(ctx, sel, v[i])
+			ret[i] = ec.marshalNEvent2ᚖeventᚑserviceᚋgraphᚋmodelᚐEvent(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3476,109 +2812,23 @@ func (ec *executionContext) marshalNComment2ᚕᚖpostᚑserviceᚋgraphᚋmodel
 	return ret
 }
 
-func (ec *executionContext) marshalNComment2ᚖpostᚑserviceᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v *model.Comment) graphql.Marshaler {
+func (ec *executionContext) marshalNEvent2ᚖeventᚑserviceᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v *model.Event) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
 		}
 		return graphql.Null
 	}
-	return ec._Comment(ctx, sel, v)
+	return ec._Event(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNCreatePostRequest2postᚑserviceᚋgraphᚋmodelᚐCreatePostRequest(ctx context.Context, v interface{}) (model.CreatePostRequest, error) {
-	res, err := ec.unmarshalInputCreatePostRequest(ctx, v)
+func (ec *executionContext) unmarshalNJoinEventRequest2eventᚑserviceᚋgraphᚋmodelᚐJoinEventRequest(ctx context.Context, v interface{}) (model.JoinEventRequest, error) {
+	res, err := ec.unmarshalInputJoinEventRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNEditPostRequest2postᚑserviceᚋgraphᚋmodelᚐEditPostRequest(ctx context.Context, v interface{}) (model.EditPostRequest, error) {
-	res, err := ec.unmarshalInputEditPostRequest(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNFile2ᚖpostᚑserviceᚋgraphᚋmodelᚐFile(ctx context.Context, sel ast.SelectionSet, v *model.File) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._File(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
-	res, err := graphql.UnmarshalInt(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
-	res := graphql.MarshalInt(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNLikePostRequest2postᚑserviceᚋgraphᚋmodelᚐLikePostRequest(ctx context.Context, v interface{}) (model.LikePostRequest, error) {
-	res, err := ec.unmarshalInputLikePostRequest(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNPost2postᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
-	return ec._Post(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNPost2ᚕᚖpostᚑserviceᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNPost2ᚖpostᚑserviceᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNPost2ᚖpostᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Post(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNRemovePostRequest2postᚑserviceᚋgraphᚋmodelᚐRemovePostRequest(ctx context.Context, v interface{}) (model.RemovePostRequest, error) {
-	res, err := ec.unmarshalInputRemovePostRequest(ctx, v)
+func (ec *executionContext) unmarshalNLeaveEventRequest2eventᚑserviceᚋgraphᚋmodelᚐLeaveEventRequest(ctx context.Context, v interface{}) (model.LeaveEventRequest, error) {
+	res, err := ec.unmarshalInputLeaveEventRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

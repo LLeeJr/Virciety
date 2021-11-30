@@ -1,30 +1,26 @@
 package message_queue
 
 import (
-	"encoding/json"
+	"event-service/database"
 	"github.com/streadway/amqp"
 	"log"
-	"post-service/database"
-	"post-service/graph/model"
 )
 
-const QueryQueue = "post-service-query"
-const CommandQueue = "post-service-command"
-const EventQueue = "post-service-event"
+const QueryQueue = "event-service-query"
+const CommandQueue = "event-service-command"
+const EventQueue = "event-service-event"
 
 type Consumer interface {
 	InitConsumer(ch *amqp.Channel)
 }
 
 type ConsumerConfig struct {
-	Repo      database.Repository
-	Responses map[string]chan []*model.Comment
+	Repo database.Repository
 }
 
-func NewConsumer(repo database.Repository, responses map[string]chan []*model.Comment) (Consumer, error) {
+func NewConsumer(repo database.Repository) (Consumer, error) {
 	return &ConsumerConfig{
-		Repo:      repo,
-		Responses: responses,
+		Repo: repo,
 	}, nil
 }
 
@@ -68,15 +64,6 @@ func (consumer *ConsumerConfig) InitConsumer(ch *amqp.Channel) {
 	go func() {
 		for data := range queries {
 			log.Printf("Received a query message with messageID %s : %s", data.MessageId, data.Body)
-			if data.MessageId == "Comment-Service" {
-				var comments []*model.Comment
-				err := json.Unmarshal(data.Body, &comments)
-				if err != nil {
-					log.Fatalln(err)
-				}
-
-				consumer.Responses[data.CorrelationId] <- comments
-			}
 		}
 	}()
 

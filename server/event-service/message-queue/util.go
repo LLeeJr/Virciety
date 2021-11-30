@@ -1,19 +1,17 @@
 package message_queue
 
 import (
+	"event-service/database"
 	"github.com/streadway/amqp"
 	"log"
-	"post-service/database"
-	"post-service/graph/model"
 )
 
 type RabbitMsg struct {
-	QueueName string             `json:"queueName"`
-	PostEvent database.PostEvent `json:"postEvent"`
-	Comment   model.Comment      `json:"comment"`
-	PostID    string             `json:"postID"`
-	CorrID    string             `json:"corrID"`
-	ReplyTo   string             `json:"replyTo"`
+	QueueName  string         `json:"queueName"`
+	EventEvent database.Event `json:"eventEvent"`
+	PostID     string         `json:"postID"`
+	CorrID     string         `json:"corrID"`
+	ReplyTo    string         `json:"replyTo"`
 }
 
 func initExchange(queueName string, ch *amqp.Channel) {

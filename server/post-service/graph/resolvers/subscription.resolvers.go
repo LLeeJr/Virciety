@@ -6,8 +6,8 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"posts-service/graph/generated"
-	"posts-service/graph/model"
+	"post-service/graph/generated"
+	"post-service/graph/model"
 
 	"github.com/google/uuid"
 )
