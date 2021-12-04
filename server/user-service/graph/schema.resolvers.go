@@ -21,6 +21,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserData)
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 		Follows:   make([]string, 0),
+		Followers: make([]string, 0),
 	}
 
 	user, err := r.repo.CreateUser(ctx, userEvent)
@@ -36,8 +37,8 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserData)
 	return user, nil
 }
 
-func (r *mutationResolver) AddFollow(ctx context.Context, id *string, toAdd *string) (*model.User, error) {
-	user, err := r.repo.AddFollow(ctx, id, toAdd)
+func (r *mutationResolver) AddFollow(ctx context.Context, id *string, username *string, toAdd *string) (*model.User, error) {
+	user, err := r.repo.AddFollow(ctx, id, username, toAdd)
 
 	if err != nil {
 		return nil, err
@@ -46,8 +47,8 @@ func (r *mutationResolver) AddFollow(ctx context.Context, id *string, toAdd *str
 	return user, nil
 }
 
-func (r *mutationResolver) RemoveFollow(ctx context.Context, id *string, toRemove *string) (*model.User, error) {
-	user, err := r.repo.RemoveFollow(ctx, id, toRemove)
+func (r *mutationResolver) RemoveFollow(ctx context.Context, id *string, username *string, toRemove *string) (*model.User, error) {
+	user, err := r.repo.RemoveFollow(ctx, id, username, toRemove)
 
 	if err != nil {
 		return nil, err

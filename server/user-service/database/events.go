@@ -9,6 +9,7 @@ type UserEvent struct {
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`
 	Follows   []string  `json:"follows"`
+	Followers []string  `json:"followers"`
 }
 
 type FollowEvent struct {

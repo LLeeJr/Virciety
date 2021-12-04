@@ -8,6 +8,7 @@ type User {
   firstName: String!
   lastName: String!
   follows: [String!]
+  followers: [String!]
 }
 
 type Query {
@@ -24,6 +25,6 @@ input UserData {
 
 type Mutation {
   createUser(input: UserData!): User!
-  addFollow(id: ID, toAdd: String): User!
-  removeFollow(id: ID, toRemove: String): User!
+  addFollow(id: ID, username: String, toAdd: String): User!
+  removeFollow(id: ID, username: String, toRemove: String): User!
 }

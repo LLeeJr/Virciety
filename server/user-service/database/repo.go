@@ -18,8 +18,8 @@ type Repository interface {
 	InsertUserEvent(ctx context.Context, userEvent UserEvent) (string, error)
 	GetUserByID(ctx context.Context, id *string) (*model.User, error)
 	GetUserByName(ctx context.Context, name *string) (*model.User, error)
-	AddFollow(ctx context.Context, id *string, add *string) (*model.User, error)
-	RemoveFollow(ctx context.Context, id *string, remove *string) (*model.User, error)
+	AddFollow(ctx context.Context, id *string, username *string, add *string) (*model.User, error)
+	RemoveFollow(ctx context.Context, id *string, username *string, remove *string) (*model.User, error)
 	FindUsersWithName(ctx context.Context, name *string) ([]*model.User, error)
 }
 
@@ -28,7 +28,10 @@ type repo struct {
 	bucket *gridfs.Bucket
 }
 
-func (r repo) RemoveFollow(ctx context.Context, id *string, remove *string) (*model.User, error) {
+func (r repo) RemoveFollow(ctx context.Context, id *string, username *string, remove *string) (*model.User, error) {
+	if *username == *remove {
+		return nil, errors.New("user can not unfollow himself")
+	}
 
 	objectID, err := primitive.ObjectIDFromHex(*id)
 	if err != nil {
@@ -49,6 +52,30 @@ func (r repo) RemoveFollow(ctx context.Context, id *string, remove *string) (*mo
 		query,
 		update,
 	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if updated.ModifiedCount == 0 {
+		return nil, errors.New("could not update user")
+	}
+
+	query = bson.M{
+		"username": remove,
+	}
+
+	update = bson.M{
+		"$pull": bson.M{
+			"followers": username,
+		},
+	}
+
+	updated, err = r.userCollection.UpdateOne(ctx,
+		query,
+		update,
+	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +92,10 @@ func (r repo) RemoveFollow(ctx context.Context, id *string, remove *string) (*mo
 	return user, nil
 }
 
-func (r repo) AddFollow(ctx context.Context, id *string, add *string) (*model.User, error) {
+func (r repo) AddFollow(ctx context.Context, id *string, username *string, add *string) (*model.User, error) {
+	if *username == *add {
+		return nil, errors.New("user can not follow himself")
+	}
 
 	objectID, err := primitive.ObjectIDFromHex(*id)
 	if err != nil {
@@ -94,6 +124,29 @@ func (r repo) AddFollow(ctx context.Context, id *string, add *string) (*model.Us
 		return nil, errors.New("could not update user")
 	}
 
+	query = bson.M{
+		"username": add,
+	}
+
+	update = bson.M{
+		"$addToSet": bson.M{
+			"followers": username,
+		},
+	}
+
+	updated, err = r.userCollection.UpdateOne(ctx,
+		query,
+		update,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if updated.ModifiedCount == 0 {
+		return nil, errors.New("could not update user")
+	}
+
 	user, err := r.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -107,6 +160,7 @@ type UserByName struct {
 	EventTime time.Time          `bson:"eventtime"`
 	FirstName string             `bson:"firstname"`
 	Follows   []string           `bson:"follows"`
+	Followers []string           `bson:"followers"`
 	ID        primitive.ObjectID `bson:"_id"`
 	LastName  string             `bson:"lastname"`
 	Username  string             `bson:"username"`
@@ -127,6 +181,7 @@ func (r repo) GetUserByName(ctx context.Context, name *string) (*model.User, err
 		FirstName: result.FirstName,
 		LastName:  result.LastName,
 		Follows:   result.Follows,
+		Followers: result.Followers,
 	}
 
 	return user, nil
@@ -159,6 +214,7 @@ func (r repo) FindUsersWithName(ctx context.Context, name *string) ([]*model.Use
 			FirstName: userResult.FirstName,
 			LastName:  userResult.LastName,
 			Follows:   userResult.Follows,
+			Followers: userResult.Followers,
 		}
 
 		users = append(users, user)
@@ -186,6 +242,7 @@ func (r repo) GetUserByID(ctx context.Context, id *string) (*model.User, error) 
 		FirstName: result.FirstName,
 		LastName:  result.LastName,
 		Follows:   result.Follows,
+		Followers: result.Followers,
 	}
 
 	return user, nil
@@ -211,6 +268,7 @@ func (r repo) CreateUser(ctx context.Context, userEvent UserEvent) (*model.User,
 		FirstName: userEvent.FirstName,
 		LastName:  userEvent.LastName,
 		Follows:   userEvent.Follows,
+		Followers: userEvent.Followers,
 	}
 
 	return user, nil

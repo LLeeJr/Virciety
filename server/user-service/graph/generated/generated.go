@@ -44,9 +44,9 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		AddFollow    func(childComplexity int, id *string, toAdd *string) int
+		AddFollow    func(childComplexity int, id *string, username *string, toAdd *string) int
 		CreateUser   func(childComplexity int, input model.UserData) int
-		RemoveFollow func(childComplexity int, id *string, toRemove *string) int
+		RemoveFollow func(childComplexity int, id *string, username *string, toRemove *string) int
 	}
 
 	Query struct {
@@ -57,6 +57,7 @@ type ComplexityRoot struct {
 
 	User struct {
 		FirstName func(childComplexity int) int
+		Followers func(childComplexity int) int
 		Follows   func(childComplexity int) int
 		ID        func(childComplexity int) int
 		LastName  func(childComplexity int) int
@@ -66,8 +67,8 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	CreateUser(ctx context.Context, input model.UserData) (*model.User, error)
-	AddFollow(ctx context.Context, id *string, toAdd *string) (*model.User, error)
-	RemoveFollow(ctx context.Context, id *string, toRemove *string) (*model.User, error)
+	AddFollow(ctx context.Context, id *string, username *string, toAdd *string) (*model.User, error)
+	RemoveFollow(ctx context.Context, id *string, username *string, toRemove *string) (*model.User, error)
 }
 type QueryResolver interface {
 	GetUserByID(ctx context.Context, id *string) (*model.User, error)
@@ -100,7 +101,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AddFollow(childComplexity, args["id"].(*string), args["toAdd"].(*string)), true
+		return e.complexity.Mutation.AddFollow(childComplexity, args["id"].(*string), args["username"].(*string), args["toAdd"].(*string)), true
 
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
@@ -124,7 +125,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RemoveFollow(childComplexity, args["id"].(*string), args["toRemove"].(*string)), true
+		return e.complexity.Mutation.RemoveFollow(childComplexity, args["id"].(*string), args["username"].(*string), args["toRemove"].(*string)), true
 
 	case "Query.findUsersWithName":
 		if e.complexity.Query.FindUsersWithName == nil {
@@ -168,6 +169,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.FirstName(childComplexity), true
+
+	case "User.followers":
+		if e.complexity.User.Followers == nil {
+			break
+		}
+
+		return e.complexity.User.Followers(childComplexity), true
 
 	case "User.follows":
 		if e.complexity.User.Follows == nil {
@@ -271,6 +279,7 @@ type User {
   firstName: String!
   lastName: String!
   follows: [String!]
+  followers: [String!]
 }
 
 type Query {
@@ -287,8 +296,8 @@ input UserData {
 
 type Mutation {
   createUser(input: UserData!): User!
-  addFollow(id: ID, toAdd: String): User!
-  removeFollow(id: ID, toRemove: String): User!
+  addFollow(id: ID, username: String, toAdd: String): User!
+  removeFollow(id: ID, username: String, toRemove: String): User!
 }
 `, BuiltIn: false},
 }
@@ -311,14 +320,23 @@ func (ec *executionContext) field_Mutation_addFollow_args(ctx context.Context, r
 	}
 	args["id"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["toAdd"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toAdd"))
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
 		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["toAdd"] = arg1
+	args["username"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["toAdd"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toAdd"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["toAdd"] = arg2
 	return args, nil
 }
 
@@ -350,14 +368,23 @@ func (ec *executionContext) field_Mutation_removeFollow_args(ctx context.Context
 	}
 	args["id"] = arg0
 	var arg1 *string
-	if tmp, ok := rawArgs["toRemove"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toRemove"))
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
 		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["toRemove"] = arg1
+	args["username"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["toRemove"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("toRemove"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["toRemove"] = arg2
 	return args, nil
 }
 
@@ -526,7 +553,7 @@ func (ec *executionContext) _Mutation_addFollow(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AddFollow(rctx, args["id"].(*string), args["toAdd"].(*string))
+		return ec.resolvers.Mutation().AddFollow(rctx, args["id"].(*string), args["username"].(*string), args["toAdd"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -568,7 +595,7 @@ func (ec *executionContext) _Mutation_removeFollow(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().RemoveFollow(rctx, args["id"].(*string), args["toRemove"].(*string))
+		return ec.resolvers.Mutation().RemoveFollow(rctx, args["id"].(*string), args["username"].(*string), args["toRemove"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -941,6 +968,38 @@ func (ec *executionContext) _User_follows(ctx context.Context, field graphql.Col
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Follows, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_followers(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Followers, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2269,6 +2328,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "follows":
 			out.Values[i] = ec._User_follows(ctx, field, obj)
+		case "followers":
+			out.Values[i] = ec._User_followers(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
