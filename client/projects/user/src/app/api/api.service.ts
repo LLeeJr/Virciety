@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
 import {AuthLibService} from "auth-lib";
-import {HttpLink} from "apollo-angular/http";
 import {Observable} from "rxjs";
 
 export interface User {
   firstName: string,
   follows: string[],
+  followers: string[],
   id: string,
   lastName: string,
   username: string,
@@ -24,8 +24,7 @@ export class ApiService {
   activeId: string;
 
   constructor(private apolloProvider: Apollo,
-              private auth: AuthLibService,
-              private httpLink: HttpLink) {
+              private auth: AuthLibService) {
     this.start();
     this.auth._activeId.subscribe((id: string) => {
       if (id) {
@@ -69,7 +68,8 @@ export class ApiService {
         username,
         firstName,
         lastName,
-        follows
+        follows,
+        followers
       }
     }
     `;
@@ -93,7 +93,8 @@ export class ApiService {
         username,
         firstName,
         lastName,
-        follows
+        follows,
+        followers
       }
     }
     `;
@@ -108,15 +109,16 @@ export class ApiService {
     return this.query.valueChanges;
   }
 
-  addFollow(id: string, toAdd: string): Observable<any> {
+  addFollow(id: string, username: string, toAdd: string): Observable<any> {
     const mutation = gql`
-    mutation addFollow($id: ID!, $toAdd: String!){
-      addFollow(id: $id, toAdd: $toAdd) {
+    mutation addFollow($id: ID!, $username: String!, $toAdd: String!){
+      addFollow(id: $id, username: $username, toAdd: $toAdd) {
         id,
         username,
         firstName,
         lastName,
-        follows
+        follows,
+        followers
       }
     }
     `;
@@ -125,20 +127,22 @@ export class ApiService {
       mutation: mutation,
       variables: {
         id: id,
+        username: username,
         toAdd: toAdd,
       },
     });
   }
 
-  removeFollow(id: string, toRemove: string): Observable<any> {
+  removeFollow(id: string, username: string, toRemove: string): Observable<any> {
     const mutation = gql`
-    mutation removeFollow($id: ID!, $toRemove: String!){
-      removeFollow(id: $id, toRemove: $toRemove) {
+    mutation removeFollow($id: ID!, $username: String!, $toRemove: String!){
+      removeFollow(id: $id, username: $username, toRemove: $toRemove) {
         id,
         username,
         firstName,
         lastName,
-        follows
+        follows,
+        followers
       }
     }
     `;
@@ -147,6 +151,7 @@ export class ApiService {
       mutation: mutation,
       variables: {
         id: id,
+        username: username,
         toRemove: toRemove,
       },
     });

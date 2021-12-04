@@ -81,8 +81,9 @@ export class UserComponent implements OnInit {
 
   removeFollow(username: string) {
     let id = this.activeUser.id;
-    if (id && username) {
-      this.api.removeFollow(id, username).subscribe(value => {
+    let user = this.activeUser.username;
+    if (id && user && username) {
+      this.api.removeFollow(id, user, username).subscribe(value => {
         if (value && value.data && value.data.removeFollow) {
           this.activeUser = value.data.removeFollow;
         }
@@ -92,11 +93,11 @@ export class UserComponent implements OnInit {
 
   addFollow(username: string) {
     let id = this.activeUser.id;
-    if (id && username) {
-      this.api.addFollow(id, username).subscribe(value => {
+    let user = this.activeUser.username;
+    if (id && user && username) {
+      this.api.addFollow(id, user, username).subscribe(value => {
         if (value && value.data && value.data.addFollow) {
           this.activeUser = value.data.addFollow;
-          console.log(this.activeUser);
         }
       });
     }
