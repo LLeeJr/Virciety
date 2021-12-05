@@ -9,19 +9,21 @@ import {initializeKeycloak} from "./init/keycloak-init.factory";
 import {KeycloakAngularModule, KeycloakService} from "keycloak-angular";
 import {DatePipe} from "@angular/common";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
+import {MatButtonModule} from "@angular/material/button";
 
 @NgModule({
   declarations: [
     AppComponent,
     HomeComponent
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    HttpClientModule,
-    KeycloakAngularModule,
-    BrowserAnimationsModule
-  ],
+    imports: [
+        BrowserModule,
+        AppRoutingModule,
+        HttpClientModule,
+        KeycloakAngularModule,
+        BrowserAnimationsModule,
+        MatButtonModule
+    ],
   providers: [
     DatePipe,
     {
