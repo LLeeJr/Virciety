@@ -1,0 +1,17 @@
+# use user/pass user/password credentials
+version: '3.1'
+
+services:
+  user-db:
+    image: mongo:latest
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: user
+      MONGO_INITDB_ROOT_PASSWORD: pass
+    ports:
+      - "27020:27017"
+    volumes:
+      - mongodb_data_container:/data/db
+
+volumes:
+  mongodb_data_container:

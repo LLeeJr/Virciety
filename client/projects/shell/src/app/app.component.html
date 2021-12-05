@@ -22,7 +22,8 @@
       <a mat-list-item (click)="sidenav.toggle()">Profile</a>
       <a mat-list-item routerLink="/chat" (click)="sidenav.toggle()">Chat</a>
       <a mat-list-item (click)="sidenav.toggle()">Settings</a>
-      <a mat-list-item (click)="sidenav.toggle()">Logout</a>
+      <a mat-list-item routerLink="/user" (click)="sidenav.toggle()">User</a>
+      <a mat-list-item [disabled]="!isLoggedIn" (click)="logout();sidenav.toggle()">Logout</a>
     </mat-nav-list>
   </mat-drawer>
 
