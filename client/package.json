@@ -6,6 +6,7 @@
     "start-shell": "ng serve shell",
     "start-chat": "ng serve chat",
     "start-post": "ng serve post",
+    "start-event": "ng serve event",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
