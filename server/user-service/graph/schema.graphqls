@@ -2,6 +2,12 @@
 #
 # https://gqlgen.com/getting-started/
 
+type File {
+  name: String!
+  content: String!
+  contentType: String!
+}
+
 type User {
   id: ID!
   username: String!
@@ -9,11 +15,13 @@ type User {
   lastName: String!
   follows: [String!]
   followers: [String!]
+  profilePictureId: String!
 }
 
 type Query {
   getUserByID(id: ID): User!
   getUserByName(name: String): User!
+  getProfilePicture(fileID: String): String!
   findUsersWithName(name: String): [User!]!
 }
 
@@ -23,8 +31,20 @@ input UserData {
   lastName: String!
 }
 
+input AddProfilePicture {
+  username: String!
+  data: String!
+}
+
+input RemoveProfilePicture {
+  username: String!
+  fileID: String!
+}
+
 type Mutation {
   createUser(input: UserData!): User!
   addFollow(id: ID, username: String, toAdd: String): User!
   removeFollow(id: ID, username: String, toRemove: String): User!
+  addProfilePicture(input: AddProfilePicture!): String!
+  removeProfilePicture(remove: RemoveProfilePicture!): String!
 }

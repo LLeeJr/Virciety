@@ -1,6 +1,8 @@
 package database
 
-import "time"
+import (
+	"time"
+)
 
 type UserEvent struct {
 	EventType string    `json:"eventType"`
@@ -10,11 +12,12 @@ type UserEvent struct {
 	LastName  string    `json:"lastName"`
 	Follows   []string  `json:"follows"`
 	Followers []string  `json:"followers"`
+	FileId    string    `json:"fileId"`
 }
 
-type FollowEvent struct {
+type ProfilePictureEvent struct {
 	EventType string    `json:"eventType"`
 	EventTime time.Time `json:"eventTime"`
-	Follows   string    `json:"follows"`
-	ID        string    `json:"id"`
+	FileId    string    `json:"fileID"`
+	Username  string    `json:"username"`
 }

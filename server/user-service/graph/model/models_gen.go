@@ -2,13 +2,30 @@
 
 package model
 
+type AddProfilePicture struct {
+	Username string `json:"username"`
+	Data     string `json:"data"`
+}
+
+type File struct {
+	Name        string `json:"name"`
+	Content     string `json:"content"`
+	ContentType string `json:"contentType"`
+}
+
+type RemoveProfilePicture struct {
+	Username string `json:"username"`
+	FileID   string `json:"fileID"`
+}
+
 type User struct {
-	ID        string   `json:"id"`
-	Username  string   `json:"username"`
-	FirstName string   `json:"firstName"`
-	LastName  string   `json:"lastName"`
-	Follows   []string `json:"follows"`
-	Followers []string `json:"followers"`
+	ID               string   `json:"id"`
+	Username         string   `json:"username"`
+	FirstName        string   `json:"firstName"`
+	LastName         string   `json:"lastName"`
+	Follows          []string `json:"follows"`
+	Followers        []string `json:"followers"`
+	ProfilePictureID string   `json:"profilePictureId"`
 }
 
 type UserData struct {
