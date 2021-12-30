@@ -4,6 +4,7 @@ Promise.all([
   loadRemoteEntry('http://localhost:5001/chatremoteEntry.js', 'chat'),
   loadRemoteEntry('http://localhost:5002/postremoteEntry.js', 'post'),
   loadRemoteEntry('http://localhost:5003/userremoteEntry.js', 'user'),
+  loadRemoteEntry('http://localhost:5005/profileViewerremoteEntry.js', 'profileViewer'),
 ])
   .catch(err => console.error('Error loading remote entries', err))
   .then(() => import('./bootstrap'))

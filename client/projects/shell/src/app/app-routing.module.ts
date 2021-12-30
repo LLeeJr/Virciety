@@ -46,6 +46,14 @@ const routes: Routes = [
         exposedModule: './UserModule',
       }).then(m => m.UserModule),
   },
+  {
+    path: 'profile-viewer',
+    loadChildren: () =>
+      loadRemoteModule({
+        remoteName: 'profileViewer',
+        exposedModule: './ProfileViewerModule',
+      }).then(m => m.ProfileViewerModule),
+  },
 ];
 
 @NgModule({
