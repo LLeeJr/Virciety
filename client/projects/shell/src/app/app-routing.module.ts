@@ -48,6 +48,7 @@ const routes: Routes = [
   },
   {
     path: 'profile-viewer',
+    canActivate: [AuthGuard],
     loadChildren: () =>
       loadRemoteModule({
         remoteName: 'profileViewer',
