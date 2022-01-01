@@ -2,14 +2,12 @@
   <button mat-icon-button (click)="sidenav.toggle()">
     <mat-icon>menu</mat-icon>
   </button>
-  <span class="title" routerLink="/home">Welcome back, *Insert Username*</span>
+  <span class="title" routerLink="/home">Welcome back, {{username}}</span>
   <span class="spacer"></span>
   <button mat-icon-button>
     <mat-icon>search</mat-icon>
   </button>
-  <button mat-icon-button>
-    <mat-icon>add</mat-icon>
-  </button>
+  <app-federated-component remoteEntry="http://localhost:5002/remoteEntry.js" remoteName="post" exposedModule="CreatePostModule" componentName="DialogCreatePostComponent"></app-federated-component>
   <button mat-icon-button routerLink="/chat">
     <mat-icon>message</mat-icon>
   </button>
@@ -31,7 +29,5 @@
     <router-outlet></router-outlet>
   </mat-drawer-content>
 </mat-drawer-container>
-
-<!--<mfe-proxy [options]="activeMfe"></mfe-proxy>-->
 
 

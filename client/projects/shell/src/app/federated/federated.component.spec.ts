@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { MfeProxyComponent } from './mfe-proxy.component';
+import { FederatedComponent } from './federated.component';
 
-describe('MfeProxyComponent', () => {
-  let component: MfeProxyComponent;
-  let fixture: ComponentFixture<MfeProxyComponent>;
+describe('FederatedComponent', () => {
+  let component: FederatedComponent;
+  let fixture: ComponentFixture<FederatedComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ MfeProxyComponent ]
+      declarations: [ FederatedComponent ]
     })
     .compileComponents();
   });
 
   beforeEach(() => {
-    fixture = TestBed.createComponent(MfeProxyComponent);
+    fixture = TestBed.createComponent(FederatedComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

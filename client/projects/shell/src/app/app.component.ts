@@ -1,6 +1,4 @@
 import {Component, OnInit} from '@angular/core';
-import {MfeOptions} from "./mfe/mfe";
-import {LookupService} from "./mfe/lookup.service";
 import {KeycloakService} from "keycloak-angular";
 
 @Component({
@@ -10,26 +8,19 @@ import {KeycloakService} from "keycloak-angular";
 })
 export class AppComponent implements OnInit {
   title = 'shell';
-  mfes: MfeOptions[] = [];
   isLoggedIn: boolean = false;
-  activeMfe: MfeOptions;
+  username: string
 
   constructor(
-    private lookupService: LookupService,
-    private keycloak: KeycloakService
+    private keycloak: KeycloakService,
   ) {
     this.keycloak.isLoggedIn().then((loggedIn) => {
       this.isLoggedIn = loggedIn;
+      this.keycloak.loadUserProfile().then(() => this.username = this.keycloak.getUsername())
     });
   }
 
-  async ngOnInit(): Promise<void> {
-    this.mfes = await this.lookupService.lookup();
-  }
-
-  activate(mfe: MfeOptions): void {
-    this.activeMfe = mfe;
-  }
+  ngOnInit() {}
 
   logout() {
     this.keycloak.isLoggedIn().then((loggedIn) => {
