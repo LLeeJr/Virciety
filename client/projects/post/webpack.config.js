@@ -30,9 +30,10 @@ module.exports = {
         // For remotes (please adjust)
         name: "post",
         filename: "remoteEntry.js",
+        library: { type: "var", name: "post" },
         exposes: {
           './PostModule': './projects/post/src/app/post/post.module.ts',
-          './CreatePostComponent': './projects/post/src/app/create-post/create-post.component.ts'
+          CreatePostModule: './projects/post/src/app/create-post/create-post.module.ts',
         },
 
         // For hosts (please adjust)
@@ -50,6 +51,7 @@ module.exports = {
           "keycloak-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
           "@apollo/client": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
           "apollo-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+          "@angular/material": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
 
           ...sharedMappings.getDescriptors()
         })
