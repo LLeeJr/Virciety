@@ -84,11 +84,49 @@ services:
     networks:
       main:
 
+  dm-service:
+    container_name: 'dm-service'
+    image: 'dm-service'
+    restart: on-failure
+    build: dm-service/
+    ports:
+      - "8081:8081"
+    env_file:
+      - dm-service/config.env
+    volumes:
+      - .:/app/dm-service
+    depends_on:
+      - rabbitmq
+      - dm-db
+    links:
+      - rabbitmq
+      - dm-db
+    #command: ["sh", "./wait-for-it.sh", "rabbitmq:5672", "--", "./out"]
+    networks:
+      main:
+      dm:
+
+  dm-db:
+    container_name: 'dm-db'
+    image: mongo:latest
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb_dm:/data/db
+    command: mongod
+    networks:
+      dm:
+
 volumes:
   mongodb_post:
   mongodb_comment:
+  mongodb_dm:
 
 networks:
   main:
   post:
   comment:
+  dm:
