@@ -1,39 +1,44 @@
-<h2>Create a new post</h2>
+<h2 mat-dialog-title>Create a new post</h2>
 
-<div *ngIf="fileBase64 && content_type !== ''">
-  <div *ngIf="!(content_type.startsWith('image') || content_type.startsWith('video')); else elseIfBlock">
-    {{alertFunction()}}
-  </div>
-  <ng-template #elseIfBlock>
-    <div style="margin-bottom: 10px">
-      <label>Do you want to upload this?</label>
+<mat-dialog-content>
+  <div *ngIf="fileBase64 && content_type !== ''">
+    <div *ngIf="!(content_type.startsWith('image') || content_type.startsWith('video')); else elseIfBlock">
+      {{alertFunction()}}
     </div>
-    <div *ngIf="content_type.startsWith('video'); else elseBlock">
-      <video width="300px" controls>
-        <source src="{{fileBase64}}">
-      </video>
-    </div>
-    <ng-template #elseBlock>
-      <div>
-        <img src="{{fileBase64}}" alt="Photo you want to upload" width="300px">
+    <ng-template #elseIfBlock>
+      <div style="margin-bottom: 10px">
+        <label>Do you want to upload this?</label>
       </div>
+      <div *ngIf="content_type.startsWith('video'); else elseBlock">
+        <video width="300px" controls>
+          <source src="{{fileBase64}}">
+        </video>
+      </div>
+      <ng-template #elseBlock>
+        <div>
+          <img src="{{fileBase64}}" alt="Photo you want to upload" width="300px">
+        </div>
+      </ng-template>
+      <input [(ngModel)]="description" width="300px" placeholder="Write a caption...">
     </ng-template>
-    <input [(ngModel)]="description" placeholder="Write a caption...">
-    <button (click)="createPost()">Create Post</button>
-  </ng-template>
-</div>
+  </div>
 
-<input type="file" class="file-input" (click)="reset()" [accept]="'image/*'"
-       (change)="onFileSelected($event)" #fileUpload>
+  <input type="file" class="file-input" (click)="reset()" [accept]="'image/*'"
+         (change)="onFileSelected($event)" #fileUpload>
 
-<div class="file-upload">
+  <div class="file-upload">
 
-  {{filename || "No file uploaded yet."}}
+    {{filename || "No file uploaded yet."}}
 
-  <button mat-mini-fab color="accent" class="upload-btn"
-          (click)="fileUpload.click()">
-    <mat-icon>attach_file</mat-icon>
-  </button>
+    <button mat-mini-fab color="accent" class="upload-btn"
+            (click)="fileUpload.click()">
+      <mat-icon>attach_file</mat-icon>
+    </button>
 
-</div>
+  </div>
+</mat-dialog-content>
 
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-button [mat-dialog-close]="true" (click)="createPost()">Create Post</button>
+</mat-dialog-actions>

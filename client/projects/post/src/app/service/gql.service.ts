@@ -56,36 +56,40 @@ export class GQLService {
       http
     )
 
-    this.apolloProvider.createNamed('post', {
-      cache: new InMemoryCache({
-        typePolicies: {
-          Query: {
-            fields: {
-              getPosts: {
-                keyArgs: [],
-                merge(existing = [], incoming, { args}) {
-                  // console.log('Existing: ', existing);
-                  // console.log('Incoming: ', incoming);
-                  // console.log('Args: ', args);
+    try {
+      this.apolloProvider.createNamed('post', {
+        cache: new InMemoryCache({
+          typePolicies: {
+            Query: {
+              fields: {
+                getPosts: {
+                  keyArgs: [],
+                  merge(existing = [], incoming, { args}) {
+                    // console.log('Existing: ', existing);
+                    // console.log('Incoming: ', incoming);
+                    // console.log('Args: ', args);
 
-                  if (incoming.length === 0) {
-                    GQLService._oldestPostReached = true;
-                    return existing;
-                  }
+                    if (incoming.length === 0) {
+                      GQLService._oldestPostReached = true;
+                      return existing;
+                    }
 
-                  if (args && (args['id'] === 'remove' || args['id'] === 'create')) {
-                    return incoming
-                  }
+                    if (args && (args['id'] === 'remove' || args['id'] === 'create')) {
+                      return incoming
+                    }
 
-                  return [...existing, ...incoming];
+                    return [...existing, ...incoming];
+                  },
                 },
-              },
+              }
             }
           }
-        }
-      }),
-      link: link,
-    });
+        }),
+        link: link,
+      });
+    } catch (e) {
+      console.error('Error when creating apollo client \'post\'', e);
+    }
 
     this.apollo = this.apolloProvider.use('post');
   }
