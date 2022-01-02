@@ -2,7 +2,8 @@
 <mat-card class="profile-card" *ngIf="activeUser">
   <img src="{{this.source}}"
        alt="{{this.activeUser.username}}-profile-picture"
-       class="profile-image">
+       class="profile-image" (click)="openDialog()"
+  >
   <div class="profile-info">
     <mat-card-title>{{this.activeUser.username}}</mat-card-title>
     <mat-card-subtitle>{{this.activeUser.firstName}} {{this.activeUser.lastName}}</mat-card-subtitle>

@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, Inject, OnInit} from '@angular/core';
 import {ApiService} from "../../../../user/src/app/api/api.service";
 import {AuthLibService} from "auth-lib";
 import {User} from "../api/api.service";
+import {MAT_DIALOG_DATA, MatDialog} from "@angular/material/dialog";
 
 @Component({
   selector: 'app-profile-viewer',
@@ -14,7 +15,8 @@ export class ProfileViewerComponent implements OnInit {
   activeUser: User;
   source: string = '';
 
-  constructor(private api: ApiService,
+  constructor(public dialog: MatDialog,
+              private api: ApiService,
               private auth: AuthLibService) { }
 
   ngOnInit(): void {
@@ -37,5 +39,20 @@ export class ProfileViewerComponent implements OnInit {
         }
       });
     }
+  }
+
+  openDialog() {
+    this.dialog.open(ProfilePictureDialog, {
+      data: this.source,
+    });
+  }
+}
+
+@Component({
+  selector: 'profile-picture-dialog',
+  templateUrl: './profile-picture-dialog.html'
+})
+export class ProfilePictureDialog {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: any) {
   }
 }
