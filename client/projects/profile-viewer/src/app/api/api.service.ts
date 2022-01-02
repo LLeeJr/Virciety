@@ -3,6 +3,17 @@ import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
 import {AuthLibService} from "auth-lib";
 import {Observable} from "rxjs";
 
+export interface User {
+  firstName: string,
+  follows: string[],
+  followers: string[],
+  id: string,
+  lastName: string,
+  profilePictureId: string;
+  username: string,
+  __typename: string,
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -38,7 +49,8 @@ export class ApiService {
         firstName,
         lastName,
         follows,
-        followers
+        followers,
+        profilePictureId
       }
     }
     `;

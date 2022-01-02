@@ -1,1 +1,16 @@
-<p>profile-viewer works!</p>
+
+<mat-card class="profile-card" *ngIf="activeUser">
+  <img src="{{this.source}}"
+       alt="{{this.activeUser.username}}-profile-picture"
+       class="profile-image">
+  <div class="profile-info">
+    <mat-card-title>{{this.activeUser.username}}</mat-card-title>
+    <mat-card-subtitle>{{this.activeUser.firstName}} {{this.activeUser.lastName}}</mat-card-subtitle>
+    <div>
+      <span style="font-weight: bold">{{this.activeUser.followers.length}}</span>
+      Follower
+      <span style="margin-left: 1em; font-weight: bold">{{this.activeUser.follows.length}}</span>
+      Subscribed
+    </div>
+  </div>
+</mat-card>

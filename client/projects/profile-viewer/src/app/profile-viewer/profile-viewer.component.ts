@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import {ApiService} from "../../../../user/src/app/api/api.service";
 import {AuthLibService} from "auth-lib";
+import {User} from "../api/api.service";
 
 @Component({
   selector: 'app-profile-viewer',
@@ -10,7 +11,8 @@ import {AuthLibService} from "auth-lib";
 export class ProfileViewerComponent implements OnInit {
 
   id: string = '';
-  activeUser: any;
+  activeUser: User;
+  source: string = '';
 
   constructor(private api: ApiService,
               private auth: AuthLibService) { }
@@ -21,9 +23,19 @@ export class ProfileViewerComponent implements OnInit {
       this.api.getUserByID(this.id).subscribe(value => {
         if (value && value.data && value.data.getUserByID) {
           this.activeUser = value.data.getUserByID;
+          this.getProfilePicture(this.activeUser.profilePictureId);
         }
       });
     });
   }
 
+  getProfilePicture(fileId: string) {
+    if (this.activeUser && fileId !== '') {
+      this.api.getProfilePicture(fileId).subscribe(value => {
+        if (value && value.data && value.data.getProfilePicture) {
+          this.source = value.data.getProfilePicture
+        }
+      });
+    }
+  }
 }
