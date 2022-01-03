@@ -2,6 +2,7 @@ import {Component, EventEmitter, Inject, OnInit, Output} from '@angular/core';
 import {AuthLibService} from "auth-lib";
 import {ApiService, User} from "../api/api.service";
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-profile-viewer',
@@ -16,9 +17,12 @@ export class ProfileViewerComponent implements OnInit {
 
   constructor(public dialog: MatDialog,
               private api: ApiService,
-              private auth: AuthLibService) { }
+              private auth: AuthLibService,
+              private router: Router) { }
 
   ngOnInit(): void {
+    console.log(this.router.url);
+    this.router.navigate(['/home'])
     this.auth._activeId.subscribe(id => {
       this.id = id;
       this.api.getUserByID(this.id).subscribe(value => {

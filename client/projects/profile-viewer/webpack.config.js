@@ -29,7 +29,7 @@ module.exports = {
 
         // For remotes (please adjust)
         name: "profileViewer",
-        filename: "profileViewerremoteEntry.js",
+        filename: "remoteEntry.js",
         exposes: {
             './ProfileViewerModule': './projects/profile-viewer/src/app/profile-viewer/profile-viewer.module.ts',
         },
