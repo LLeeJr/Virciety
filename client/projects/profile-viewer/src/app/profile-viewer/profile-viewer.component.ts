@@ -1,7 +1,7 @@
 import {Component, EventEmitter, Inject, OnInit, Output} from '@angular/core';
 import {AuthLibService} from "auth-lib";
 import {ApiService, User} from "../api/api.service";
-import {MAT_DIALOG_DATA, MatDialog} from "@angular/material/dialog";
+import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog";
 
 @Component({
   selector: 'app-profile-viewer',
@@ -44,8 +44,15 @@ export class ProfileViewerComponent implements OnInit {
     let dialogRef = this.dialog.open(ProfilePictureDialog, {
       data: this.activeUser,
     });
-    dialogRef.componentInstance.sourceChanged.subscribe(result => {
-      this.source = result;
+    dialogRef.componentInstance.fileId.subscribe(fileId => {
+      this.api.getUserByID(this.id).subscribe(value => {
+        if (value && value.data && value.data.getUserByID) {
+          this.activeUser = value.data.getUserByID;
+        }
+      });
+      if (fileId !== '') {
+        this.getProfilePicture(fileId);
+      }
     })
   }
 }
@@ -59,10 +66,11 @@ export class ProfilePictureDialog {
   content_type: string = '';
   filename: string | undefined;
   source: string;
-  @Output() sourceChanged = new EventEmitter<string>();
+  @Output() fileId = new EventEmitter<string>();
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: any,
-              private api: ApiService) {
+              private api: ApiService,
+              private dialogRef: MatDialogRef<ProfilePictureDialog>) {
   }
 
   onFileSelected(event: any) {
@@ -97,9 +105,26 @@ export class ProfilePictureDialog {
       this.api.addProfilePicture(this.content_type, this.fileBase64, this.data.username)
         .subscribe((value) => {
           if (value && value.data && value.data.addProfilePicture) {
-            this.sourceChanged.emit(this.fileBase64)
+            this.fileId.emit(value.data.addProfilePicture);
+            this.dialogRef.close();
           }
         }, () => alert('Error during updating profile picture'));
+    }
+  }
+
+  remove() {
+    if (this.data && this.data.username) {
+      if (this.data.profilePictureId) {
+        this.api.removeProfilePicture(this.data.username, this.data.profilePictureId)
+          .subscribe(value => {
+            if (value && value.data && value.data.removeProfilePicture) {
+              this.fileId.emit('');
+              this.dialogRef.close();
+            }
+          }, () => alert('Error during removing profile picture'));
+      } else {
+        alert('No profile picture available to remove')
+      }
     }
   }
 
