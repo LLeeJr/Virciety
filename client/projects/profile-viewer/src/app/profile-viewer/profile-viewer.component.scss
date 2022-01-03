@@ -6,6 +6,7 @@
 
 .profile-info {
   margin-left: 1em;
+  display: grid;
   align-content: center;
 }
 
@@ -16,6 +17,7 @@
   min-width: 150px;
   min-height: 150px;
   cursor: pointer;
+  border: 1px solid white;
 }
 
 .dialog-button {
