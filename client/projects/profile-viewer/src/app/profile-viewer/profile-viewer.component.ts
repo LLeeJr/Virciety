@@ -1,7 +1,6 @@
 import {Component, EventEmitter, Inject, OnInit, Output} from '@angular/core';
-import {ApiService} from "../../../../user/src/app/api/api.service";
 import {AuthLibService} from "auth-lib";
-import {User} from "../api/api.service";
+import {ApiService, User} from "../api/api.service";
 import {MAT_DIALOG_DATA, MatDialog} from "@angular/material/dialog";
 
 @Component({

@@ -64,4 +64,41 @@ export class ApiService {
 
     return this.query.valueChanges;
   }
+
+  addProfilePicture(contentType: string, fileBase64: any, username: string): Observable<any> {
+    const mutation = gql`
+    mutation addProfilePicture($input: AddProfilePicture!) {
+        addProfilePicture(input: $input)
+      }
+    `;
+
+    const input = {
+      username: username,
+      data: fileBase64,
+    };
+
+    return this.apollo.mutate({
+      mutation: mutation,
+      variables: {
+        input: input,
+      },
+    })
+  }
+
+  getProfilePicture(fileID: string): Observable<any> {
+    const query = gql`
+    query getProfilePicture($fileID: String!) {
+      getProfilePicture(fileID: $fileID)
+    }
+    `;
+
+    this.query = this.apollo.watchQuery<any>({
+      query: query,
+      variables: {
+        fileID: fileID,
+      },
+    });
+
+    return this.query.valueChanges;
+  }
 }
