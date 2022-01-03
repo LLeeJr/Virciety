@@ -1,4 +1,4 @@
-import {Component, Inject, OnInit} from '@angular/core';
+import {Component, EventEmitter, Inject, OnInit, Output} from '@angular/core';
 import {ApiService} from "../../../../user/src/app/api/api.service";
 import {AuthLibService} from "auth-lib";
 import {User} from "../api/api.service";
@@ -42,9 +42,12 @@ export class ProfileViewerComponent implements OnInit {
   }
 
   openDialog() {
-    this.dialog.open(ProfilePictureDialog, {
-      data: this.source,
+    let dialogRef = this.dialog.open(ProfilePictureDialog, {
+      data: this.activeUser,
     });
+    dialogRef.componentInstance.sourceChanged.subscribe(result => {
+      this.source = result;
+    })
   }
 }
 
@@ -53,6 +56,57 @@ export class ProfileViewerComponent implements OnInit {
   templateUrl: './profile-picture-dialog.html'
 })
 export class ProfilePictureDialog {
-  constructor(@Inject(MAT_DIALOG_DATA) public data: any) {
+  fileBase64: any;
+  content_type: string = '';
+  filename: string | undefined;
+  source: string;
+  @Output() sourceChanged = new EventEmitter<string>();
+
+  constructor(@Inject(MAT_DIALOG_DATA) public data: any,
+              private api: ApiService) {
+  }
+
+  onFileSelected(event: any) {
+    // get selected file
+    const file = event.target.files[0] as File;
+    this.filename = file.name;
+
+    // get file data as base64 string
+    if (file) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      reader.onload = () => {
+        if (reader.result) {
+          const base64 = reader.result;
+          const data: string = base64.toString().split(";base64,")[0];
+
+          this.content_type = data.split(":")[1];
+
+          this.fileBase64 = base64;
+        }
+      }
+
+      reader.onloadend = () => {
+        this.upload();
+      }
+    }
+  }
+
+  upload() {
+    if (this.fileBase64) {
+      this.api.addProfilePicture(this.content_type, this.fileBase64, this.data.username)
+        .subscribe((value) => {
+          if (value && value.data && value.data.addProfilePicture) {
+            this.sourceChanged.emit(this.fileBase64)
+          }
+        }, () => alert('Error during updating profile picture'));
+    }
+  }
+
+  reset() {
+    this.fileBase64 = null;
+    this.content_type = '';
+    this.filename = undefined;
   }
 }

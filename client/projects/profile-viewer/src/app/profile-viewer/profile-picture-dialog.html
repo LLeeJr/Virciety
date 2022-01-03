@@ -4,7 +4,7 @@
   </mat-list-item>
   <mat-divider></mat-divider>
   <mat-list-item>
-    <button mat-button class="dialog-button">Upload Image</button>
+    <button mat-button class="dialog-button" (click)="fileUpload.click()">Upload Image</button>
   </mat-list-item>
   <mat-divider></mat-divider>
   <mat-list-item>
@@ -12,6 +12,9 @@
   </mat-list-item>
   <mat-divider></mat-divider>
   <mat-list-item>
-    <button mat-button class="dialog-button">Cancel</button>
+    <button mat-button mat-dialog-close class="dialog-button">Cancel</button>
   </mat-list-item>
 </mat-list>
+
+<input type="file" (click)="reset()"
+       (change)="onFileSelected($event)" #fileUpload [hidden]="true">
