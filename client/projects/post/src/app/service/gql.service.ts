@@ -56,36 +56,40 @@ export class GQLService {
       http
     )
 
-    this.apolloProvider.createNamed('post', {
-      cache: new InMemoryCache({
-        typePolicies: {
-          Query: {
-            fields: {
-              getPosts: {
-                keyArgs: [],
-                merge(existing = [], incoming, { args}) {
-                  console.log('Existing: ', existing);
-                  console.log('Incoming: ', incoming);
-                  console.log('Args: ', args);
+    try {
+      this.apolloProvider.createNamed('post', {
+        cache: new InMemoryCache({
+          typePolicies: {
+            Query: {
+              fields: {
+                getPosts: {
+                  keyArgs: [],
+                  merge(existing = [], incoming, { args}) {
+                    // console.log('Existing: ', existing);
+                    // console.log('Incoming: ', incoming);
+                    // console.log('Args: ', args);
 
-                  if (incoming.length === 0) {
-                    GQLService._oldestPostReached = true;
-                    return existing;
-                  }
+                    if (incoming.length === 0) {
+                      GQLService._oldestPostReached = true;
+                      return existing;
+                    }
 
-                  if (args && (args['id'] === 'remove' || args['id'] === 'create')) {
-                    return incoming
-                  }
+                    if (args && (args['id'] === 'remove' || args['id'] === 'create')) {
+                      return incoming
+                    }
 
-                  return [...existing, ...incoming];
+                    return [...existing, ...incoming];
+                  },
                 },
-              },
+              }
             }
           }
-        }
-      }),
-      link: link,
-    });
+        }),
+        link: link,
+      });
+    } catch (e) {
+      console.error('Error when creating apollo client \'post\'', e);
+    }
 
     this.apollo = this.apolloProvider.use('post');
   }
@@ -111,13 +115,13 @@ export class GQLService {
     }
 
     return this.getPostQuery?.valueChanges.pipe(map(({data}: any) => {
-      console.log('GetPostData: ', data);
+      // console.log('GetPostData: ', data);
 
       const posts = this.dataService.posts;
 
       for (let getPost of data.getPosts) {
         if (posts.some(p => p.id === getPost.id)) {
-          console.log('post already exists');
+          // console.log('post already exists');
           continue;
         }
 
@@ -173,7 +177,7 @@ export class GQLService {
         id: post.id
       },
     }).valueChanges.subscribe(({data}: any) => {
-      console.log('GetPostComments-data: ', data);
+      // console.log('GetPostComments-data: ', data);
 
       const commentList: Comment[] = [];
 
@@ -207,7 +211,7 @@ export class GQLService {
         const post = new Post(data.createPost);
 
         if (this.dataService.posts.some(p => p.id === post.id)) {
-          console.log('post already exists');
+          // console.log('post already exists');
           return;
         }
 
@@ -234,7 +238,7 @@ export class GQLService {
         useMultipart: true,
       }*/
       }).subscribe(({data}: any) => {
-      console.log('CreatePostData: ', data);
+        // console.log('CreatePostData: ', data);
     }, (error: any) => {
       console.error('there was an error sending the createPost-mutation', error);
     });
@@ -251,7 +255,7 @@ export class GQLService {
         liked: liked,
       }
     }).subscribe(({data}: any) => {
-      console.log('LikePostData: ', data);
+      // console.log('LikePostData: ', data);
     }, (error: any) => {
       console.error('there was an error sending the likePost-mutation', error);
     })
@@ -267,7 +271,7 @@ export class GQLService {
         comments: post.comments,
       }
     }).subscribe(({data}) => {
-      console.log('EditPostData: ', data)
+      // console.log('EditPostData: ', data)
     }, (error: any) => {
       console.error('there was an error sending the editPost-mutation', error);
     });
@@ -297,7 +301,7 @@ export class GQLService {
         });
       },
     }).subscribe(({data}: any) => {
-      console.log('RemovePostData: ', data);
+      // console.log('RemovePostData: ', data);
     }, (error: any) => {
       console.error('there was an error sending the removePost-mutation', error);
     });
@@ -312,7 +316,7 @@ export class GQLService {
       const post = new Post(data.newPostCreated);
 
       if (this.dataService.posts.some(p => p.id === post.id)) {
-        console.log('post already exists');
+        // console.log('post already exists');
         return;
       }
 
@@ -356,7 +360,7 @@ export class GQLService {
 
       post.comments = [comment, ...post.comments];
 
-      console.log('AddCommentData: ', data)
+      // console.log('AddCommentData: ', data)
     }, (error: any) => {
       console.error('there was an error sending the addComment-mutation', error);
     });

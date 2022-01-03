@@ -4,20 +4,30 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"log"
+	"os"
 	"time"
 
 	_ "github.com/lib/pq"
 )
 
-const url = "mongodb://admin:admin@localhost:27019/"
+const defaultMongoDBUrl = "mongodb://admin:admin@localhost:27019/"
 
 var ctx context.Context
 
 func dbConnect() (*mongo.Client, error) {
+	url := os.Getenv("COMMENT_MONGODB_URL")
+	if url == "" {
+		url = defaultMongoDBUrl
+	}
+
 	client, err := mongo.NewClient(options.Client().ApplyURI(url))
 	if err != nil {
 		return nil, err
 	}
+
+	log.Printf("Connecto to DB: %v", url)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -27,5 +37,10 @@ func dbConnect() (*mongo.Client, error) {
 		return nil, err
 	}
 
+	err = client.Ping(ctx, readpref.Primary())
+	if err != nil {
+		return nil, err
+	}
+	
 	return client, nil
 }

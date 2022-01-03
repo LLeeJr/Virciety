@@ -2,7 +2,7 @@ import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {Post} from "../../model/post";
 
 @Component({
-  selector: 'app-post-comment',
+  selector: 'post-comment',
   templateUrl: './comment.component.html',
   styleUrls: ['./comment.component.scss']
 })

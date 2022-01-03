@@ -3,19 +3,26 @@ import { CommonModule } from '@angular/common';
 
 import { CreatePostRoutingModule } from './create-post-routing.module';
 import {MaterialModule} from "../material.module";
-import {CreatePostComponent} from "./create-post.component";
+import {CreatePostComponent, DialogCreatePostComponent} from "./create-post.component";
 import {FormsModule} from "@angular/forms";
 
+const EXPORTS = [
+  CreatePostComponent,
+  DialogCreatePostComponent
+]
 
 @NgModule({
-    declarations: [
-        CreatePostComponent
-    ],
-    imports: [
-        CommonModule,
-        CreatePostRoutingModule,
-        MaterialModule,
-        FormsModule,
-    ]
+  declarations: [
+    ...EXPORTS
+  ],
+  imports: [
+    CommonModule,
+    CreatePostRoutingModule,
+    MaterialModule,
+    FormsModule,
+  ],
+  exports: [...EXPORTS],
 })
-export class CreatePostModule { }
+export class CreatePostModule {
+  static exports = EXPORTS;
+}

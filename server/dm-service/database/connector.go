@@ -4,12 +4,19 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"os"
 	"time"
 )
 
-const url = "mongodb://user:pass@localhost:27018"
+const defaultMongoDBUrl = "mongodb://admin:admin@localhost:27018/"
 
 func Connect() (*mongo.Client, error) {
+	url := os.Getenv("DM_MONGODB_URL")
+	if url == "" {
+		url = defaultMongoDBUrl
+	}
+
 	client, err := mongo.NewClient(options.Client().ApplyURI(url))
 	if err != nil {
 		return nil, err
@@ -19,6 +26,11 @@ func Connect() (*mongo.Client, error) {
 	defer cancel()
 
 	err = client.Connect(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
 		return nil, err
 	}

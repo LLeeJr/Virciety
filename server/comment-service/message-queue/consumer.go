@@ -66,6 +66,7 @@ func (channel *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 			log.Printf("ReplyTo: %s, CorrelationID: %s\n", data.ReplyTo, data.CorrelationId)
 			if data.MessageId == "Post-Service" {
 				comments, err := channel.Repo.GetCommentsByPostId(string(data.Body))
+				FailOnError(err, "Failed getting comments from db")
 
 				body, err := json.Marshal(comments)
 

@@ -3,7 +3,7 @@ import {Post} from "../../model/post";
 import {MAT_DIALOG_DATA, MatDialog} from "@angular/material/dialog";
 
 @Component({
-  selector: 'app-post-media',
+  selector: 'post-media',
   templateUrl: './media.component.html',
   styleUrls: ['./media.component.scss']
 })
