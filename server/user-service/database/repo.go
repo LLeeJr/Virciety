@@ -160,8 +160,6 @@ func (r repo) AddProfilePicture(ctx context.Context, profilePictureEvent Profile
 		return "error while inserting file related data in db", err
 	}
 
-
-
 	objectID, err := primitive.ObjectIDFromHex(user.ID)
 	query := bson.M{
 		"_id": objectID,
@@ -179,7 +177,7 @@ func (r repo) AddProfilePicture(ctx context.Context, profilePictureEvent Profile
 		return "error during updating user profile", err
 	}
 
-	return "added profile picture successfully", nil
+	return file.Name, nil
 
 }
 
