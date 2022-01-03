@@ -56,6 +56,7 @@ export class ApiService {
     `;
 
     this.query = this.apollo.watchQuery<any>({
+      fetchPolicy: 'network-only',
       query: query,
       variables: {
         id: id,
@@ -100,5 +101,25 @@ export class ApiService {
     });
 
     return this.query.valueChanges;
+  }
+
+  removeProfilePicture(username: string, fileID: string): Observable<any> {
+    const mutation = gql`
+    mutation removeProfilePicture($remove: RemoveProfilePicture!) {
+      removeProfilePicture(remove: $remove)
+    }
+    `;
+
+    const remove = {
+      username: username,
+      fileID: fileID,
+    };
+
+    return this.apollo.mutate({
+      mutation: mutation,
+      variables: {
+        remove: remove,
+      },
+    });
   }
 }
