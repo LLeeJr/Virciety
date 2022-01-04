@@ -37,7 +37,7 @@ const routes: Routes = [
       }).then(m => m.UserModule),
   },
   {
-    path: 'profile-viewer',
+    path: ':username',
     canActivate: [AuthGuard],
     loadChildren: () =>
       loadRemoteModule({

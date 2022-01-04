@@ -21,8 +21,7 @@ export class ProfileViewerComponent implements OnInit {
               private router: Router) { }
 
   ngOnInit(): void {
-    console.log(this.router.url);
-    this.router.navigate(['/home'])
+    // console.log(this.router.url);
     this.auth._activeId.subscribe(id => {
       this.id = id;
       this.api.getUserByID(this.id).subscribe(value => {
