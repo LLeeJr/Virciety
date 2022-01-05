@@ -1,6 +1,8 @@
 <mat-card-header>
   <div mat-card-avatar class="example-header-image"></div>
-  <mat-card-title>{{post.username}}</mat-card-title>
+  <mat-card-title>
+    <a class="username" routerLink="/profile" [queryParams]="{username: post.username}">{{post.username}}</a>
+  </mat-card-title>
 </mat-card-header>
 
 <ng-container [ngTemplateOutlet]="post.data.content !== '' ? media_tp : loading_tp"></ng-container>
