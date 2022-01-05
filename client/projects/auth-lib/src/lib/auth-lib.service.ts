@@ -5,6 +5,16 @@ import {HttpLink} from "apollo-angular/http";
 import {InMemoryCache} from "@apollo/client/core";
 import {KeycloakService} from "keycloak-angular";
 
+export interface User {
+  firstName: string,
+  follows: string[],
+  followers: string[],
+  id: string,
+  lastName: string,
+  profilePictureId: string;
+  username: string,
+  __typename: string,
+}
 @Injectable({
   providedIn: 'root'
 })
@@ -64,6 +74,90 @@ export class AuthLibService {
     });
   }
 
+  getUserByID(id: string): Observable<any> {
+    const query = gql`
+    query getUserByID($id: ID!) {
+      getUserByID(id: $id)
+      {
+        id,
+        username,
+        firstName,
+        lastName,
+        follows,
+        followers,
+        profilePictureId
+      }
+    }
+    `;
+
+    this.query = this.apollo.watchQuery<any>({
+      fetchPolicy: 'network-only',
+      query: query,
+      variables: {
+        id: id,
+      },
+    });
+
+    return this.query.valueChanges;
+  }
+
+  addProfilePicture(contentType: string, fileBase64: any, username: string): Observable<any> {
+    const mutation = gql`
+    mutation addProfilePicture($input: AddProfilePicture!) {
+        addProfilePicture(input: $input)
+      }
+    `;
+
+    const input = {
+      username: username,
+      data: fileBase64,
+    };
+
+    return this.apollo.mutate({
+      mutation: mutation,
+      variables: {
+        input: input,
+      },
+    })
+  }
+
+  getProfilePicture(fileID: string): Observable<any> {
+    const query = gql`
+    query getProfilePicture($fileID: String!) {
+      getProfilePicture(fileID: $fileID)
+    }
+    `;
+
+    this.query = this.apollo.watchQuery<any>({
+      query: query,
+      variables: {
+        fileID: fileID,
+      },
+    });
+
+    return this.query.valueChanges;
+  }
+
+  removeProfilePicture(username: string, fileID: string): Observable<any> {
+    const mutation = gql`
+    mutation removeProfilePicture($remove: RemoveProfilePicture!) {
+      removeProfilePicture(remove: $remove)
+    }
+    `;
+
+    const remove = {
+      username: username,
+      fileID: fileID,
+    };
+
+    return this.apollo.mutate({
+      mutation: mutation,
+      variables: {
+        remove: remove,
+      },
+    });
+  }
+
   getUserByName(name: string): Observable<any> {
     const query = gql`
     query getUserByName($name: String!) {
@@ -73,7 +167,9 @@ export class AuthLibService {
         username,
         firstName,
         lastName,
-        follows
+        follows,
+        followers,
+        profilePictureId
       }
     }
     `;

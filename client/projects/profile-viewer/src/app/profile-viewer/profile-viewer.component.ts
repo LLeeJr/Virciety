@@ -1,6 +1,5 @@
 import {Component, EventEmitter, Inject, OnInit, Output} from '@angular/core';
-import {AuthLibService} from "auth-lib";
-import {ApiService, User} from "../api/api.service";
+import {AuthLibService, User} from "auth-lib";
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog";
 import {ActivatedRoute} from "@angular/router";
 
@@ -16,13 +15,12 @@ export class ProfileViewerComponent implements OnInit {
   source: string = '';
 
   constructor(public dialog: MatDialog,
-              private api: ApiService,
               private auth: AuthLibService,
               private route: ActivatedRoute) { }
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(({username}) => {
-      this.api.getUserByName(username).subscribe(value => {
+      this.auth.getUserByName(username).subscribe(value => {
         if (value && value.data && value.data.getUserByName) {
           this.activeUser = value.data.getUserByName;
           this.getProfilePicture(this.activeUser.profilePictureId);
@@ -36,7 +34,7 @@ export class ProfileViewerComponent implements OnInit {
 
   getProfilePicture(fileId: string) {
     if (this.activeUser && fileId !== '') {
-      this.api.getProfilePicture(fileId).subscribe(value => {
+      this.auth.getProfilePicture(fileId).subscribe(value => {
         if (value && value.data && value.data.getProfilePicture) {
           this.source = value.data.getProfilePicture
         }
@@ -49,7 +47,7 @@ export class ProfileViewerComponent implements OnInit {
       data: this.activeUser,
     });
     dialogRef.componentInstance.fileId.subscribe(fileId => {
-      this.api.getUserByID(this.id).subscribe(value => {
+      this.auth.getUserByID(this.id).subscribe(value => {
         if (value && value.data && value.data.getUserByID) {
           this.activeUser = value.data.getUserByID;
         }
@@ -73,7 +71,7 @@ export class ProfilePictureDialog {
   @Output() fileId = new EventEmitter<string>();
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: any,
-              private api: ApiService,
+              private auth: AuthLibService,
               private dialogRef: MatDialogRef<ProfilePictureDialog>) {
   }
 
@@ -106,7 +104,7 @@ export class ProfilePictureDialog {
 
   upload() {
     if (this.fileBase64) {
-      this.api.addProfilePicture(this.content_type, this.fileBase64, this.data.username)
+      this.auth.addProfilePicture(this.content_type, this.fileBase64, this.data.username)
         .subscribe((value) => {
           if (value && value.data && value.data.addProfilePicture) {
             this.fileId.emit(value.data.addProfilePicture);
@@ -119,7 +117,7 @@ export class ProfilePictureDialog {
   remove() {
     if (this.data && this.data.username) {
       if (this.data.profilePictureId) {
-        this.api.removeProfilePicture(this.data.username, this.data.profilePictureId)
+        this.auth.removeProfilePicture(this.data.username, this.data.profilePictureId)
           .subscribe(value => {
             if (value && value.data && value.data.removeProfilePicture) {
               this.fileId.emit('');
