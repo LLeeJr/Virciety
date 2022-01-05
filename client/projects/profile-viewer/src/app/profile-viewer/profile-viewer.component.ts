@@ -2,6 +2,7 @@ import {Component, EventEmitter, Inject, OnInit, Output} from '@angular/core';
 import {AuthLibService, User} from "auth-lib";
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog";
 import {ActivatedRoute} from "@angular/router";
+import {KeycloakService} from "keycloak-angular";
 
 @Component({
   selector: 'app-profile-viewer',
@@ -13,13 +14,20 @@ export class ProfileViewerComponent implements OnInit {
   id: string = '';
   activeUser: User;
   source: string = '';
+  loggedInUser: string;
+  pickedUser: string;
 
   constructor(public dialog: MatDialog,
               private auth: AuthLibService,
+              private keycloak: KeycloakService,
               private route: ActivatedRoute) { }
 
   ngOnInit(): void {
+    this.keycloak.isLoggedIn().then((loggedIn) => {
+      this.keycloak.loadUserProfile().then(() => this.loggedInUser = this.keycloak.getUsername())
+    });
     this.route.queryParams.subscribe(({username}) => {
+      this.pickedUser = username;
       this.auth.getUserByName(username).subscribe(value => {
         if (value && value.data && value.data.getUserByName) {
           this.activeUser = value.data.getUserByName;

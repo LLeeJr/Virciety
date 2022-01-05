@@ -1,10 +1,9 @@
 
 <mat-card class="profile-card" *ngIf="activeUser">
   <div *ngIf="this.activeUser.profilePictureId !== ''; else placeholder">
-    <img src="{{this.source}}"
+    <img *ngIf="this.loggedInUser === this.pickedUser; else foreignProfile" src="{{this.source}}"
          alt="{{this.activeUser.username}}-profile-picture"
-         class="profile-image" (click)="openDialog()"
-    >
+         class="profile-image" (click)="openDialog()">
   </div>
   <div class="profile-info">
     <mat-card-title>{{this.activeUser.username}}</mat-card-title>
@@ -17,6 +16,12 @@
     </div>
   </div>
 </mat-card>
+
+<ng-template #foreignProfile>
+  <img src="{{this.source}}"
+       alt="{{this.activeUser.username}}-profile-picture"
+       class="foreign-profile">
+</ng-template>
 
 <ng-template #placeholder>
   <div class="profile-image" >
