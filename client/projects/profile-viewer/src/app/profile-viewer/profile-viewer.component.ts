@@ -55,11 +55,11 @@ export class ProfileViewerComponent implements OnInit {
       data: this.activeUser,
     });
     dialogRef.componentInstance.fileId.subscribe(fileId => {
-      this.auth.getUserByID(this.id).subscribe(value => {
+      this.auth.getUserByID(this.activeUser.id).subscribe(value => {
         if (value && value.data && value.data.getUserByID) {
           this.activeUser = value.data.getUserByID;
         }
-      });
+      }, (error => console.error(error)));
       if (fileId !== '') {
         this.getProfilePicture(fileId);
       }
