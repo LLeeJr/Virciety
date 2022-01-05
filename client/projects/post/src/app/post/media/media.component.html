@@ -1,5 +1,9 @@
-<mat-card-header>
-  <div mat-card-avatar class="example-header-image"></div>
+<mat-card-header class="post-header">
+  <div mat-card-avatar *ngIf="this.source !== ''; else placeholder">
+    <img src="{{this.source}}"
+         alt="{{this.post.username}}-profile-picture"
+         class="user-image">
+  </div>
   <mat-card-title>
     <a class="username" routerLink="/profile" [queryParams]="{username: post.username}">{{post.username}}</a>
   </mat-card-title>
@@ -65,4 +69,12 @@
   <video mat-card-image controls>
     <source src="{{post.data.content}}">
   </video>
+</ng-template>
+
+<ng-template #placeholder>
+  <div class="user-image" >
+    <span class="material-icons" style="font-size: 40px;">
+    account_circle
+  </span>
+  </div>
 </ng-template>

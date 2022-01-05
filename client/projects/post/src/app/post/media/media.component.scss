@@ -4,6 +4,19 @@
   margin-bottom: 10px;
 }
 
+.post-header {
+  margin-bottom: 1em;
+}
+
+.user-image {
+  border-radius: 50%;
+  max-height: 40px;
+  max-width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border: 1px solid white;
+}
+
 .username {
   color: inherit;
   text-decoration: none;

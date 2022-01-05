@@ -24,8 +24,16 @@
 </ng-template>
 
 <ng-template #placeholder>
-  <div class="profile-image" >
+  <div class="profile-image" *ngIf="this.loggedInUser === this.pickedUser; else foreignPlaceholder">
     <span class="material-icons" (click)="openDialog()">
+    account_circle
+  </span>
+  </div>
+</ng-template>
+
+<ng-template #foreignPlaceholder>
+  <div class="foreign-profile" >
+    <span class="material-icons">
     account_circle
   </span>
   </div>
