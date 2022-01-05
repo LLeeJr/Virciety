@@ -2,7 +2,7 @@ import {Component, EventEmitter, Inject, OnInit, Output} from '@angular/core';
 import {AuthLibService} from "auth-lib";
 import {ApiService, User} from "../api/api.service";
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog";
-import {Router} from "@angular/router";
+import {ActivatedRoute} from "@angular/router";
 
 @Component({
   selector: 'app-profile-viewer',
@@ -18,18 +18,19 @@ export class ProfileViewerComponent implements OnInit {
   constructor(public dialog: MatDialog,
               private api: ApiService,
               private auth: AuthLibService,
-              private router: Router) { }
+              private route: ActivatedRoute) { }
 
   ngOnInit(): void {
-    // console.log(this.router.url);
-    this.auth._activeId.subscribe(id => {
-      this.id = id;
-      this.api.getUserByID(this.id).subscribe(value => {
-        if (value && value.data && value.data.getUserByID) {
-          this.activeUser = value.data.getUserByID;
+    this.route.queryParams.subscribe(({username}) => {
+      this.api.getUserByName(username).subscribe(value => {
+        if (value && value.data && value.data.getUserByName) {
+          this.activeUser = value.data.getUserByName;
           this.getProfilePicture(this.activeUser.profilePictureId);
         }
       });
+    })
+    this.auth._activeId.subscribe(id => {
+      this.id = id;
     });
   }
 

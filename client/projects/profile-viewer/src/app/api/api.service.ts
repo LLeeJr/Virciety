@@ -122,4 +122,30 @@ export class ApiService {
       },
     });
   }
+
+  getUserByName(name: string): Observable<any> {
+    const query = gql`
+    query getUserByName($name: String!) {
+      getUserByName(name: $name)
+      {
+        id,
+        username,
+        firstName,
+        lastName,
+        follows,
+        followers,
+        profilePictureId
+      }
+    }
+    `;
+
+    this.query = this.apollo.watchQuery<any>({
+      query: query,
+      variables: {
+        name: name,
+      },
+    });
+
+    return this.query.valueChanges;
+  }
 }
