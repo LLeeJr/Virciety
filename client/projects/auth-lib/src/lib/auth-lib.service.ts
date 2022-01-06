@@ -206,4 +206,76 @@ export class AuthLibService {
       }
     });
   }
+
+  findUsersWithName(name: string): Observable<any> {
+    const query = gql`
+    query findUsersWithName($name: String!) {
+      findUsersWithName(name: $name)
+      {
+        username,
+        firstName,
+        lastName,
+      }
+    }
+    `;
+
+    this.query = this.apollo.watchQuery<any>({
+      query: query,
+      variables: {
+        name: name,
+      },
+    });
+
+    return this.query.valueChanges;
+  }
+
+  addFollow(id: string, username: string, toAdd: string): Observable<any> {
+    const mutation = gql`
+    mutation addFollow($id: ID!, $username: String!, $toAdd: String!){
+      addFollow(id: $id, username: $username, toAdd: $toAdd) {
+        id,
+        username,
+        firstName,
+        lastName,
+        follows,
+        followers,
+        profilePictureId
+      }
+    }
+    `;
+
+    return this.apollo.mutate<any>({
+      mutation: mutation,
+      variables: {
+        id: id,
+        username: username,
+        toAdd: toAdd,
+      },
+    });
+  }
+
+  removeFollow(id: string, username: string, toRemove: string): Observable<any> {
+    const mutation = gql`
+    mutation removeFollow($id: ID!, $username: String!, $toRemove: String!){
+      removeFollow(id: $id, username: $username, toRemove: $toRemove) {
+        id,
+        username,
+        firstName,
+        lastName,
+        follows,
+        followers,
+        profilePictureId
+      }
+    }
+    `;
+
+    return this.apollo.mutate<any>({
+      mutation: mutation,
+      variables: {
+        id: id,
+        username: username,
+        toRemove: toRemove,
+      },
+    });
+  }
 }

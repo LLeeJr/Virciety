@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import {ApiService, User} from "../api/api.service";
-import {AuthLibService} from "auth-lib";
+import {AuthLibService, User} from "auth-lib";
 import {FormControl} from "@angular/forms";
 import {debounceTime, filter} from "rxjs/operators";
 
@@ -29,13 +28,12 @@ export class UserComponent implements OnInit {
   activeUser: User;
   notFound = false;
 
-  constructor(private api: ApiService,
-              private auth: AuthLibService) { }
+  constructor(private auth: AuthLibService) { }
 
   ngOnInit(): void {
     this.auth._activeId.subscribe(id => {
       this.id = id;
-      this.api.getUserByID(this.id).subscribe(value => {
+      this.auth.getUserByID(this.id).subscribe(value => {
         if (value && value.data && value.data.getUserByID) {
           this.activeUser = value.data.getUserByID;
         }
@@ -60,7 +58,7 @@ export class UserComponent implements OnInit {
 
   search(username: string) {
     if (username && username.length > 0) {
-      this.api.findUsersWithName(username).subscribe(value => {
+      this.auth.findUsersWithName(username).subscribe(value => {
         if (value && value.data && value.data.findUsersWithName) {
           this.notFound = false;
           this.users = value.data.findUsersWithName;
@@ -83,7 +81,7 @@ export class UserComponent implements OnInit {
     let id = this.activeUser.id;
     let user = this.activeUser.username;
     if (id && user && username) {
-      this.api.removeFollow(id, user, username).subscribe(value => {
+      this.auth.removeFollow(id, user, username).subscribe(value => {
         if (value && value.data && value.data.removeFollow) {
           this.activeUser = value.data.removeFollow;
         }
@@ -95,7 +93,7 @@ export class UserComponent implements OnInit {
     let id = this.activeUser.id;
     let user = this.activeUser.username;
     if (id && user && username) {
-      this.api.addFollow(id, user, username).subscribe(value => {
+      this.auth.addFollow(id, user, username).subscribe(value => {
         if (value && value.data && value.data.addFollow) {
           this.activeUser = value.data.addFollow;
         }
