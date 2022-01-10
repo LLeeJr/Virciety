@@ -28,6 +28,7 @@ export class GQLService {
   private getPostQuery: QueryRef<any, {
     id: string;
     fetchLimit: number;
+    filter: string | null;
   }> | undefined;
 
   private lastPostID: string = "";
@@ -102,14 +103,15 @@ export class GQLService {
 
   // Getter + Setter end
 
-  getPosts(): any {
+  getPosts(filter: string | null = null): any {
     if (!this.getPostQuery) {
       this.getPostQuery = this.apollo
         .watchQuery({
           query: GET_POSTS,
           variables: {
             id: this.lastPostID,
-            fetchLimit: this.fetchLimit
+            fetchLimit: this.fetchLimit,
+            filter: filter
           },
         });
     }
@@ -118,6 +120,10 @@ export class GQLService {
       // console.log('GetPostData: ', data);
 
       const posts = this.dataService.posts;
+
+      if (data.getPosts.length < this.fetchLimit) {
+        GQLService._oldestPostReached = true;
+      }
 
       for (let getPost of data.getPosts) {
         if (posts.some(p => p.id === getPost.id)) {

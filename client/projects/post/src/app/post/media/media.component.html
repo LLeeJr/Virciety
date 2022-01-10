@@ -34,8 +34,7 @@
     <mat-icon>add_comment</mat-icon>
     Comment
   </button>
-  <!--TODO add this.authService.username as condition-->
-  <button mat-button *ngIf="post.username === 'user3'" (click)="post.editMode = true">
+  <button mat-button *ngIf="post.username === this.username" (click)="post.editMode = true">
     <mat-icon>edit</mat-icon>
     Edit
   </button>

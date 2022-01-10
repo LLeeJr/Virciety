@@ -11,7 +11,8 @@ import {KeycloakService} from "keycloak-angular";
 })
 export class PostComponent implements OnInit, OnDestroy {
   posts: Observable<Post[]> | undefined;
-  username: string
+  username: string;
+  filter: string | null;
 
   constructor(private gqlService: GQLService,
               private keycloak: KeycloakService) {
@@ -22,7 +23,10 @@ export class PostComponent implements OnInit, OnDestroy {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
-          this.posts = this.gqlService.getPosts();
+
+          this.filter = null; // TODO change to get username out of url
+          this.posts = this.gqlService.getPosts(this.filter);
+
           this.gqlService.getPostCreated();
         })
       } else {
@@ -39,11 +43,6 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   get oldestPostReached(): boolean {
-    // TODO when changing components and coming back to this one
-    // check whether it is necessary to refetch newer posts than the newest this client has
-    // ideas: send newest post id to server and ask whether new posts are there
-    // subscription notification maybe?
-    //
     return GQLService._oldestPostReached;
   }
 
@@ -57,7 +56,7 @@ export class PostComponent implements OnInit, OnDestroy {
     const addCommentRequest = {
       postID: post.id,
       comment: newComment,
-      createdBy: 'user3', //this.authService.username
+      createdBy: this.username
     };
 
     this.gqlService.addComment(post, addCommentRequest);
@@ -76,8 +75,7 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   likePost(post: Post) {
-    // TODO uncomment this
-    const username: string = /*this.authService.userName*/ 'user4';
+    const username: string = this.username;
     let liked: boolean = true;
 
     // check if it's a like or unlike
