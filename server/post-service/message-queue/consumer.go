@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"github.com/streadway/amqp"
 	"log"
-	"posts-service/database"
-	"posts-service/graph/model"
+	"post-service/database"
+	"post-service/graph/model"
 )
 
 const QueryQueue = "post-service-query"

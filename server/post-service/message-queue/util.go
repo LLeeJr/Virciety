@@ -3,8 +3,8 @@ package message_queue
 import (
 	"github.com/streadway/amqp"
 	"log"
-	"posts-service/database"
-	"posts-service/graph/model"
+	"post-service/database"
+	"post-service/graph/model"
 )
 
 type RabbitMsg struct {

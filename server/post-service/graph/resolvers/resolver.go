@@ -1,9 +1,9 @@
 package resolvers
 
 import (
-	"posts-service/database"
-	"posts-service/graph/model"
-	messagequeue "posts-service/message-queue"
+	"post-service/database"
+	"post-service/graph/model"
+	messagequeue "post-service/message-queue"
 	"sync"
 )
 

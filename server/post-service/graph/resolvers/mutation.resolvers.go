@@ -5,9 +5,9 @@ package resolvers
 
 import (
 	"context"
-	"posts-service/database"
-	"posts-service/graph/generated"
-	"posts-service/graph/model"
+	"post-service/database"
+	"post-service/graph/generated"
+	"post-service/graph/model"
 	"time"
 )
 
