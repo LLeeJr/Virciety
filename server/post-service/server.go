@@ -11,7 +11,6 @@ import (
 	"github.com/streadway/amqp"
 	"log"
 	"net/http"
-	_ "net/http"
 	"os"
 	"post-service/database"
 	"post-service/graph/generated"
@@ -22,6 +21,7 @@ import (
 )
 
 const defaultPort = "8083"
+const defaultRabbitMQUrl = "amqp://guest:guest@localhost:5672/"
 
 func main() {
 	port := os.Getenv("PORT")
@@ -29,17 +29,24 @@ func main() {
 		port = defaultPort
 	}
 
-	repo, _ := database.NewRepo()
-	responses := map[string]chan []*model.Comment{}
+	rabbitmqURL := os.Getenv("RABBITMQ_URL")
+	if rabbitmqURL == "" {
+		rabbitmqURL = defaultRabbitMQUrl
+	}
 
 	// rabbitmq connection
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err := amqp.Dial(rabbitmqURL)
 	messagequeue.FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	messagequeue.FailOnError(err, "Failed to open a channel")
 	defer ch.Close()
+
+	repo, err := database.NewRepo()
+	messagequeue.FailOnError(err, "Failed to connect to DB")
+
+	responses := map[string]chan []*model.Comment{}
 
 	producerQueue, _ := messagequeue.NewPublisher()
 	go producerQueue.InitPublisher(ch)

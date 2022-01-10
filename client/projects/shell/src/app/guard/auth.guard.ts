@@ -25,8 +25,8 @@ export class AuthGuard extends KeycloakAuthGuard {
 
     if (await this.keycloak.isLoggedIn()) {
       this.keycloak.loadUserProfile().then((r) => {
-        const userName = this.keycloak.getUsername();
-        this.auth.login(userName);
+        // const userName = this.keycloak.getUsername();
+        this.auth.login(r.firstName, r.lastName, r.username);
       })
     }
 

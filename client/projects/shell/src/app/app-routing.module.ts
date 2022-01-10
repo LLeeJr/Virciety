@@ -1,14 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import {HomeComponent} from "./home/home.component";
 import {AuthGuard} from "./guard/auth.guard";
 import {loadRemoteModule} from "@angular-architects/module-federation";
 
 const routes: Routes = [
   {
     path: '',
-    component: HomeComponent,
-    pathMatch: 'full',
+    redirectTo: '/home',
+    pathMatch: 'full'
   },
   {
     path: 'chat',
@@ -20,7 +19,7 @@ const routes: Routes = [
       }).then(m => m.ChatModule),
   },
   {
-    path: 'post',
+    path: 'home',
     canActivate: [AuthGuard],
     loadChildren: () =>
       loadRemoteModule({
@@ -29,14 +28,14 @@ const routes: Routes = [
       }).then(m => m.PostModule),
   },
   {
-    path: 'post/create_post',
+    path: 'user',
     canActivate: [AuthGuard],
     loadChildren: () =>
       loadRemoteModule({
-        remoteName: 'post',
-        exposedModule: './CreatePostModule',
-      }).then(m => m.CreatePostModule),
-  }
+        remoteName: 'user',
+        exposedModule: './UserModule',
+      }).then(m => m.UserModule),
+  },
 ];
 
 @NgModule({

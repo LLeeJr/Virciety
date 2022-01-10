@@ -26,7 +26,7 @@ module.exports = {
 
         // For remotes (please adjust)
         name: "chat",
-        filename: "chatremoteEntry.js",
+        filename: "remoteEntry.js",
         exposes: {
             './ChatModule': './projects/chat/src/app/chat/chat.module.ts',
         },

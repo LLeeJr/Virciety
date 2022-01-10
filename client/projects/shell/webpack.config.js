@@ -45,6 +45,7 @@ module.exports = {
           "keycloak-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
           "@apollo/client": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
           "apollo-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+          "@angular/material": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
 
           ...sharedMappings.getDescriptors()
         })

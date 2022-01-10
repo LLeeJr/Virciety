@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import {CreatePostComponent} from "./create-post.component";
+import {DialogCreatePostComponent} from "./create-post.component";
 
 const routes: Routes = [
   {
     path: '',
-    component: CreatePostComponent,
+    component: DialogCreatePostComponent,
   }
 ];
 

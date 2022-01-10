@@ -2,6 +2,7 @@ import {Component, OnDestroy, OnInit} from '@angular/core';
 import { Post } from "../model/post";
 import {GQLService} from "../service/gql.service";
 import {Observable} from "rxjs";
+import {KeycloakService} from "keycloak-angular";
 
 @Component({
   selector: 'app-post',
@@ -10,13 +11,27 @@ import {Observable} from "rxjs";
 })
 export class PostComponent implements OnInit, OnDestroy {
   posts: Observable<Post[]> | undefined;
+  username: string
 
-  constructor(private gqlService: GQLService) {
+  constructor(private gqlService: GQLService,
+              private keycloak: KeycloakService) {
   }
 
-  ngOnInit(): void {
-    this.posts = this.gqlService.getPosts();
-    this.gqlService.getPostCreated();
+  async ngOnInit(): Promise<void> {
+    await this.keycloak.isLoggedIn().then(loggedIn => {
+      if (loggedIn) {
+        this.keycloak.loadUserProfile().then(() => {
+          this.username = this.keycloak.getUsername();
+          this.posts = this.gqlService.getPosts();
+          this.gqlService.getPostCreated();
+        })
+      } else {
+        this.keycloak.login();
+      }
+    });
+
+    /*this.posts = this.gqlService.getPosts();
+    this.gqlService.getPostCreated();*/
   }
 
   ngOnDestroy(): void {
