@@ -12,11 +12,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"posts-service/database"
-	"posts-service/graph/generated"
-	"posts-service/graph/model"
-	"posts-service/graph/resolvers"
-	messagequeue "posts-service/message-queue"
+	"post-service/database"
+	"post-service/graph/generated"
+	"post-service/graph/model"
+	"post-service/graph/resolvers"
+	messagequeue "post-service/message-queue"
 	"time"
 )
 

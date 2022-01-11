@@ -1,4 +1,4 @@
-module posts-service
+module post-service
 
 go 1.16
 

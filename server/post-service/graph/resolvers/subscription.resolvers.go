@@ -6,8 +6,8 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"posts-service/graph/generated"
-	"posts-service/graph/model"
+	generated1 "post-service/graph/generated"
+	"post-service/graph/model"
 
 	"github.com/google/uuid"
 )
@@ -33,7 +33,7 @@ func (r *subscriptionResolver) NewPostCreated(ctx context.Context) (<-chan *mode
 	return events, nil
 }
 
-// Subscription returns generated.SubscriptionResolver implementation.
-func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+// Subscription returns generated1.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated1.SubscriptionResolver { return &subscriptionResolver{r} }
 
 type subscriptionResolver struct{ *Resolver }

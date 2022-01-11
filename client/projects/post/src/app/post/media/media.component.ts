@@ -11,6 +11,7 @@ import {AuthLibService} from "auth-lib";
 export class MediaComponent implements OnInit {
 
   @Input() post: Post;
+  @Input() username: string;
   @Output() newEvent = new EventEmitter<string>();
   editMode: boolean = false;
   source: string = '';

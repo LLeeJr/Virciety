@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 	"io"
-	"posts-service/graph/model"
+	"post-service/graph/model"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -79,7 +79,7 @@ type ComplexityRoot struct {
 	Query struct {
 		GetData         func(childComplexity int, fileID string) int
 		GetPostComments func(childComplexity int, id string) int
-		GetPosts        func(childComplexity int, id string, fetchLimit int) int
+		GetPosts        func(childComplexity int, id string, fetchLimit int, filter *string) int
 	}
 
 	Subscription struct {
@@ -95,7 +95,7 @@ type MutationResolver interface {
 	AddComment(ctx context.Context, comment model.AddCommentRequest) (*model.Comment, error)
 }
 type QueryResolver interface {
-	GetPosts(ctx context.Context, id string, fetchLimit int) ([]*model.Post, error)
+	GetPosts(ctx context.Context, id string, fetchLimit int, filter *string) ([]*model.Post, error)
 	GetData(ctx context.Context, fileID string) (string, error)
 	GetPostComments(ctx context.Context, id string) ([]*model.Comment, error)
 }
@@ -310,7 +310,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetPosts(childComplexity, args["id"].(string), args["fetchLimit"].(int)), true
+		return e.complexity.Query.GetPosts(childComplexity, args["id"].(string), args["fetchLimit"].(int), args["filter"].(*string)), true
 
 	case "Subscription.newPostCreated":
 		if e.complexity.Subscription.NewPostCreated == nil {
@@ -462,7 +462,7 @@ type Comment {
     addComment(comment: AddCommentRequest!): Comment!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
-    getPosts(id: String!, fetchLimit: Int!): [Post!]!
+    getPosts(id: String!, fetchLimit: Int!, filter: String): [Post!]!
     getData(fileID: String!): String!
     getPostComments(id: String!): [Comment!]!
 }`, BuiltIn: false},
@@ -482,7 +482,7 @@ func (ec *executionContext) field_Mutation_addComment_args(ctx context.Context, 
 	var arg0 model.AddCommentRequest
 	if tmp, ok := rawArgs["comment"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comment"))
-		arg0, err = ec.unmarshalNAddCommentRequest2postsᚑserviceᚋgraphᚋmodelᚐAddCommentRequest(ctx, tmp)
+		arg0, err = ec.unmarshalNAddCommentRequest2postᚑserviceᚋgraphᚋmodelᚐAddCommentRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -497,7 +497,7 @@ func (ec *executionContext) field_Mutation_createPost_args(ctx context.Context, 
 	var arg0 model.CreatePostRequest
 	if tmp, ok := rawArgs["newPost"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("newPost"))
-		arg0, err = ec.unmarshalNCreatePostRequest2postsᚑserviceᚋgraphᚋmodelᚐCreatePostRequest(ctx, tmp)
+		arg0, err = ec.unmarshalNCreatePostRequest2postᚑserviceᚋgraphᚋmodelᚐCreatePostRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -512,7 +512,7 @@ func (ec *executionContext) field_Mutation_editPost_args(ctx context.Context, ra
 	var arg0 model.EditPostRequest
 	if tmp, ok := rawArgs["edit"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("edit"))
-		arg0, err = ec.unmarshalNEditPostRequest2postsᚑserviceᚋgraphᚋmodelᚐEditPostRequest(ctx, tmp)
+		arg0, err = ec.unmarshalNEditPostRequest2postᚑserviceᚋgraphᚋmodelᚐEditPostRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -527,7 +527,7 @@ func (ec *executionContext) field_Mutation_likePost_args(ctx context.Context, ra
 	var arg0 model.LikePostRequest
 	if tmp, ok := rawArgs["like"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("like"))
-		arg0, err = ec.unmarshalNLikePostRequest2postsᚑserviceᚋgraphᚋmodelᚐLikePostRequest(ctx, tmp)
+		arg0, err = ec.unmarshalNLikePostRequest2postᚑserviceᚋgraphᚋmodelᚐLikePostRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -542,7 +542,7 @@ func (ec *executionContext) field_Mutation_removePost_args(ctx context.Context, 
 	var arg0 model.RemovePostRequest
 	if tmp, ok := rawArgs["remove"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remove"))
-		arg0, err = ec.unmarshalNRemovePostRequest2postsᚑserviceᚋgraphᚋmodelᚐRemovePostRequest(ctx, tmp)
+		arg0, err = ec.unmarshalNRemovePostRequest2postᚑserviceᚋgraphᚋmodelᚐRemovePostRequest(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -617,6 +617,15 @@ func (ec *executionContext) field_Query_getPosts_args(ctx context.Context, rawAr
 		}
 	}
 	args["fetchLimit"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg2
 	return args, nil
 }
 
@@ -977,7 +986,7 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 	}
 	res := resTmp.(*model.Post)
 	fc.Result = res
-	return ec.marshalNPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚖpostᚑserviceᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_editPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1145,7 +1154,7 @@ func (ec *executionContext) _Mutation_addComment(ctx context.Context, field grap
 	}
 	res := resTmp.(*model.Comment)
 	fc.Result = res
-	return ec.marshalNComment2ᚖpostsᚑserviceᚋgraphᚋmodelᚐComment(ctx, field.Selections, res)
+	return ec.marshalNComment2ᚖpostᚑserviceᚋgraphᚋmodelᚐComment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_id(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -1250,7 +1259,7 @@ func (ec *executionContext) _Post_data(ctx context.Context, field graphql.Collec
 	}
 	res := resTmp.(*model.File)
 	fc.Result = res
-	return ec.marshalNFile2ᚖpostsᚑserviceᚋgraphᚋmodelᚐFile(ctx, field.Selections, res)
+	return ec.marshalNFile2ᚖpostᚑserviceᚋgraphᚋmodelᚐFile(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_username(ctx context.Context, field graphql.CollectedField, obj *model.Post) (ret graphql.Marshaler) {
@@ -1383,7 +1392,7 @@ func (ec *executionContext) _Query_getPosts(ctx context.Context, field graphql.C
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetPosts(rctx, args["id"].(string), args["fetchLimit"].(int))
+		return ec.resolvers.Query().GetPosts(rctx, args["id"].(string), args["fetchLimit"].(int), args["filter"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1397,7 +1406,7 @@ func (ec *executionContext) _Query_getPosts(ctx context.Context, field graphql.C
 	}
 	res := resTmp.([]*model.Post)
 	fc.Result = res
-	return ec.marshalNPost2ᚕᚖpostsᚑserviceᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
+	return ec.marshalNPost2ᚕᚖpostᚑserviceᚋgraphᚋmodelᚐPostᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1481,7 +1490,7 @@ func (ec *executionContext) _Query_getPostComments(ctx context.Context, field gr
 	}
 	res := resTmp.([]*model.Comment)
 	fc.Result = res
-	return ec.marshalNComment2ᚕᚖpostsᚑserviceᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
+	return ec.marshalNComment2ᚕᚖpostᚑserviceᚋgraphᚋmodelᚐCommentᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1594,7 +1603,7 @@ func (ec *executionContext) _Subscription_newPostCreated(ctx context.Context, fi
 			w.Write([]byte{'{'})
 			graphql.MarshalString(field.Alias).MarshalGQL(w)
 			w.Write([]byte{':'})
-			ec.marshalNPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPost(ctx, field.Selections, res).MarshalGQL(w)
+			ec.marshalNPost2ᚖpostᚑserviceᚋgraphᚋmodelᚐPost(ctx, field.Selections, res).MarshalGQL(w)
 			w.Write([]byte{'}'})
 		})
 	}
@@ -3415,7 +3424,7 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNAddCommentRequest2postsᚑserviceᚋgraphᚋmodelᚐAddCommentRequest(ctx context.Context, v interface{}) (model.AddCommentRequest, error) {
+func (ec *executionContext) unmarshalNAddCommentRequest2postᚑserviceᚋgraphᚋmodelᚐAddCommentRequest(ctx context.Context, v interface{}) (model.AddCommentRequest, error) {
 	res, err := ec.unmarshalInputAddCommentRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -3435,11 +3444,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNComment2postsᚑserviceᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v model.Comment) graphql.Marshaler {
+func (ec *executionContext) marshalNComment2postᚑserviceᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v model.Comment) graphql.Marshaler {
 	return ec._Comment(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNComment2ᚕᚖpostsᚑserviceᚋgraphᚋmodelᚐCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Comment) graphql.Marshaler {
+func (ec *executionContext) marshalNComment2ᚕᚖpostᚑserviceᚋgraphᚋmodelᚐCommentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Comment) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -3463,7 +3472,7 @@ func (ec *executionContext) marshalNComment2ᚕᚖpostsᚑserviceᚋgraphᚋmode
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNComment2ᚖpostsᚑserviceᚋgraphᚋmodelᚐComment(ctx, sel, v[i])
+			ret[i] = ec.marshalNComment2ᚖpostᚑserviceᚋgraphᚋmodelᚐComment(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3476,7 +3485,7 @@ func (ec *executionContext) marshalNComment2ᚕᚖpostsᚑserviceᚋgraphᚋmode
 	return ret
 }
 
-func (ec *executionContext) marshalNComment2ᚖpostsᚑserviceᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v *model.Comment) graphql.Marshaler {
+func (ec *executionContext) marshalNComment2ᚖpostᚑserviceᚋgraphᚋmodelᚐComment(ctx context.Context, sel ast.SelectionSet, v *model.Comment) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -3486,17 +3495,17 @@ func (ec *executionContext) marshalNComment2ᚖpostsᚑserviceᚋgraphᚋmodel�
 	return ec._Comment(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNCreatePostRequest2postsᚑserviceᚋgraphᚋmodelᚐCreatePostRequest(ctx context.Context, v interface{}) (model.CreatePostRequest, error) {
+func (ec *executionContext) unmarshalNCreatePostRequest2postᚑserviceᚋgraphᚋmodelᚐCreatePostRequest(ctx context.Context, v interface{}) (model.CreatePostRequest, error) {
 	res, err := ec.unmarshalInputCreatePostRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNEditPostRequest2postsᚑserviceᚋgraphᚋmodelᚐEditPostRequest(ctx context.Context, v interface{}) (model.EditPostRequest, error) {
+func (ec *executionContext) unmarshalNEditPostRequest2postᚑserviceᚋgraphᚋmodelᚐEditPostRequest(ctx context.Context, v interface{}) (model.EditPostRequest, error) {
 	res, err := ec.unmarshalInputEditPostRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNFile2ᚖpostsᚑserviceᚋgraphᚋmodelᚐFile(ctx context.Context, sel ast.SelectionSet, v *model.File) graphql.Marshaler {
+func (ec *executionContext) marshalNFile2ᚖpostᚑserviceᚋgraphᚋmodelᚐFile(ctx context.Context, sel ast.SelectionSet, v *model.File) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -3521,16 +3530,16 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNLikePostRequest2postsᚑserviceᚋgraphᚋmodelᚐLikePostRequest(ctx context.Context, v interface{}) (model.LikePostRequest, error) {
+func (ec *executionContext) unmarshalNLikePostRequest2postᚑserviceᚋgraphᚋmodelᚐLikePostRequest(ctx context.Context, v interface{}) (model.LikePostRequest, error) {
 	res, err := ec.unmarshalInputLikePostRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPost2postsᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2postᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v model.Post) graphql.Marshaler {
 	return ec._Post(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPost2ᚕᚖpostsᚑserviceᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2ᚕᚖpostᚑserviceᚋgraphᚋmodelᚐPostᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Post) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -3554,7 +3563,7 @@ func (ec *executionContext) marshalNPost2ᚕᚖpostsᚑserviceᚋgraphᚋmodel�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
+			ret[i] = ec.marshalNPost2ᚖpostᚑserviceᚋgraphᚋmodelᚐPost(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3567,7 +3576,7 @@ func (ec *executionContext) marshalNPost2ᚕᚖpostsᚑserviceᚋgraphᚋmodel�
 	return ret
 }
 
-func (ec *executionContext) marshalNPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
+func (ec *executionContext) marshalNPost2ᚖpostᚑserviceᚋgraphᚋmodelᚐPost(ctx context.Context, sel ast.SelectionSet, v *model.Post) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -3577,7 +3586,7 @@ func (ec *executionContext) marshalNPost2ᚖpostsᚑserviceᚋgraphᚋmodelᚐPo
 	return ec._Post(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNRemovePostRequest2postsᚑserviceᚋgraphᚋmodelᚐRemovePostRequest(ctx context.Context, v interface{}) (model.RemovePostRequest, error) {
+func (ec *executionContext) unmarshalNRemovePostRequest2postᚑserviceᚋgraphᚋmodelᚐRemovePostRequest(ctx context.Context, v interface{}) (model.RemovePostRequest, error) {
 	res, err := ec.unmarshalInputRemovePostRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
