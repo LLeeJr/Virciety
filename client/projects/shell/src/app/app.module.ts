@@ -1,6 +1,5 @@
 import {APP_INITIALIZER, NgModule} from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { HomeComponent } from './home/home.component';
@@ -11,12 +10,14 @@ import {DatePipe} from "@angular/common";
 import {BrowserAnimationsModule} from "@angular/platform-browser/animations";
 import {MaterialModule} from "./material.module";
 import { FederatedComponent } from './federated/federated.component';
+import { ProfileComponent } from './profile/profile.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     HomeComponent,
-    FederatedComponent
+    FederatedComponent,
+    ProfileComponent
   ],
   imports: [
     BrowserModule,
@@ -34,6 +35,9 @@ import { FederatedComponent } from './federated/federated.component';
       multi: true,
       deps: [KeycloakService],
     }
+  ],
+  exports: [
+    FederatedComponent
   ],
   bootstrap: [AppComponent]
 })
