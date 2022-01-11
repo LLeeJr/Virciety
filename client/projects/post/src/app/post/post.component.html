@@ -1,7 +1,8 @@
-<div infiniteScroll
+<div class="scroller" infiniteScroll
      [infiniteScrollDistance]="2"
      [infiniteScrollThrottle]="50"
-     (scrolled)="onScroll()">
+     (scrolled)="onScroll()"
+     [scrollWindow]="false">
   <div *ngFor="let post of posts | async">
     <mat-card class="post-card">
       <div *ngIf="post.commentMode">
