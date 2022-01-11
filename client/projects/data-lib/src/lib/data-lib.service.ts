@@ -13,6 +13,10 @@ export class DataLibService {
     return this._posts;
   }
 
+  set posts(posts) {
+    this._posts = posts;
+  }
+
   removePost(id: string) {
     this._posts = this._posts.filter(post => post.id !== id);
   }

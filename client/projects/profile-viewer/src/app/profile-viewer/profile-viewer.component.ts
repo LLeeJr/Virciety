@@ -1,13 +1,14 @@
 import {Component, EventEmitter, Inject, OnInit, Output} from '@angular/core';
 import {AuthLibService, User} from "auth-lib";
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog";
-import {ActivatedRoute} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 import {KeycloakService} from "keycloak-angular";
 
 @Component({
   selector: 'app-profile-viewer',
   templateUrl: './profile-viewer.component.html',
-  styleUrls: ['./profile-viewer.component.scss']
+  styleUrls: ['./profile-viewer.component.scss'],
+  exportAs: 'ProfileViewerComponent'
 })
 export class ProfileViewerComponent implements OnInit {
 
@@ -20,23 +21,26 @@ export class ProfileViewerComponent implements OnInit {
   constructor(public dialog: MatDialog,
               private auth: AuthLibService,
               private keycloak: KeycloakService,
-              private route: ActivatedRoute) { }
+              private route: ActivatedRoute,
+              private router: Router) { }
 
-  ngOnInit(): void {
-    this.keycloak.isLoggedIn().then((loggedIn) => {
-      this.keycloak.loadUserProfile().then(() => this.loggedInUser = this.keycloak.getUsername())
-    });
-    this.route.queryParams.subscribe(({username}) => {
-      this.pickedUser = username;
-      this.auth.getUserByName(username).subscribe(value => {
-        if (value && value.data && value.data.getUserByName) {
-          this.activeUser = value.data.getUserByName;
-          this.getProfilePicture(this.activeUser.profilePictureId);
-        }
+  async ngOnInit(): Promise<void> {
+    await this.keycloak.isLoggedIn().then(() => {
+      this.keycloak.loadUserProfile().then(() => {
+        this.loggedInUser = this.keycloak.getUsername();
+        this.route.queryParams.subscribe(({username}) => {
+          this.pickedUser = username;
+          this.auth.getUserByName(username).subscribe(value => {
+            if (value && value.data && value.data.getUserByName) {
+              this.activeUser = value.data.getUserByName;
+              this.getProfilePicture(this.activeUser.profilePictureId);
+            }
+          });
+        })
+        this.auth._activeId.subscribe(id => {
+          this.id = id;
+        });
       });
-    })
-    this.auth._activeId.subscribe(id => {
-      this.id = id;
     });
   }
 
@@ -64,6 +68,14 @@ export class ProfileViewerComponent implements OnInit {
         this.getProfilePicture(fileId);
       }
     })
+  }
+
+  openChat() {
+    this.router.navigate(['/chat', this.pickedUser]);
+  }
+
+  isCurrentUser(): boolean {
+    return this.loggedInUser === this.pickedUser;
   }
 }
 

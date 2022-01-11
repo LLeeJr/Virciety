@@ -3,11 +3,13 @@ import { Post } from "../model/post";
 import {GQLService} from "../service/gql.service";
 import {Observable} from "rxjs";
 import {KeycloakService} from "keycloak-angular";
+import {ActivatedRoute} from "@angular/router";
 
 @Component({
   selector: 'app-post',
   templateUrl: './post.component.html',
-  styleUrls: ['./post.component.scss']
+  styleUrls: ['./post.component.scss'],
+  exportAs: 'PostComponent'
 })
 export class PostComponent implements OnInit, OnDestroy {
   posts: Observable<Post[]> | undefined;
@@ -15,7 +17,8 @@ export class PostComponent implements OnInit, OnDestroy {
   filter: string | null;
 
   constructor(private gqlService: GQLService,
-              private keycloak: KeycloakService) {
+              private keycloak: KeycloakService,
+              private route: ActivatedRoute) {
   }
 
   async ngOnInit(): Promise<void> {
@@ -23,11 +26,11 @@ export class PostComponent implements OnInit, OnDestroy {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
-
-          this.filter = null; // TODO change to get username out of url
-          this.posts = this.gqlService.getPosts(this.filter);
-
-          this.gqlService.getPostCreated();
+          this.route.queryParams.subscribe(({username}) => {
+            this.filter = username;
+            this.posts = this.gqlService.getPosts(this.filter);
+            this.gqlService.getPostCreated();
+          });
         })
       } else {
         this.keycloak.login();

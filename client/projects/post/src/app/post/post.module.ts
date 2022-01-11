@@ -9,10 +9,13 @@ import {FormsModule} from "@angular/forms";
 import {MediaComponent, DialogLikedBy} from './media/media.component';
 import { CommentComponent } from './comment/comment.component';
 
+const EXPORTS = [
+  PostComponent
+]
 
 @NgModule({
   declarations: [
-    PostComponent,
+    ...EXPORTS,
     MediaComponent,
     DialogLikedBy,
     CommentComponent
@@ -23,6 +26,10 @@ import { CommentComponent } from './comment/comment.component';
     InfiniteScrollModule,
     MaterialModule,
     FormsModule
-  ]
+  ],
+  exports: [...EXPORTS],
+
 })
-export class PostModule { }
+export class PostModule {
+  static exports = EXPORTS;
+}

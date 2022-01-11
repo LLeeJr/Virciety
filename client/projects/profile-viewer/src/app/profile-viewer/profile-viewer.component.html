@@ -1,12 +1,19 @@
 
 <mat-card class="profile-card" *ngIf="activeUser">
   <div *ngIf="this.activeUser.profilePictureId !== ''; else placeholder">
-    <img *ngIf="this.loggedInUser === this.pickedUser; else foreignProfile" src="{{this.source}}"
+    <img *ngIf="isCurrentUser(); else foreignProfile" src="{{this.source}}"
          alt="{{this.activeUser.username}}-profile-picture"
          class="profile-image" (click)="openDialog()">
   </div>
   <div class="profile-info">
-    <mat-card-title>{{this.activeUser.username}}</mat-card-title>
+    <mat-card-title>
+      <div>
+        {{this.activeUser.username}}
+        <button mat-icon-button color="accent" (click)="openChat()" *ngIf="!isCurrentUser()">
+          <mat-icon style="font-size: 40px">message</mat-icon>
+        </button>
+      </div>
+    </mat-card-title>
     <mat-card-subtitle>{{this.activeUser.firstName}} {{this.activeUser.lastName}}</mat-card-subtitle>
     <div>
       <span style="font-weight: bold">{{this.activeUser.followers.length}}</span>
@@ -24,7 +31,7 @@
 </ng-template>
 
 <ng-template #placeholder>
-  <div class="profile-image" *ngIf="this.loggedInUser === this.pickedUser; else foreignPlaceholder">
+  <div class="profile-image" *ngIf="isCurrentUser(); else foreignPlaceholder">
     <span class="material-icons" (click)="openDialog()">
     account_circle
   </span>
