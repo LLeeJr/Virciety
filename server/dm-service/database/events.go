@@ -16,4 +16,5 @@ type ChatroomEvent struct {
 	EventType string `json:"eventType"`
 	Member    []string `json:"member"`
 	Name      string `json:"name"`
+	Owner     string `json:"owner"`
 }

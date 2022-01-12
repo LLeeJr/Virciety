@@ -9,8 +9,6 @@ import (
 	"dm-service/graph/generated"
 	"dm-service/graph/model"
 	"dm-service/util"
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -20,10 +18,12 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName st
 	r.mu.Lock()
 	room := r.Rooms[roomName]
 
-	// if room does not exist yet, create a new one
+	// if no room was found in current server session, try retrieving from db
 	if room == nil {
 		chatroom, err := r.repo.GetRoom(ctx, roomName)
 		if err != nil {
+			// room does not exist in db
+			r.mu.Unlock()
 			return nil, err
 		}
 
@@ -32,50 +32,52 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName st
 				Name:   chatroom.Name,
 				Member: chatroom.Member,
 				Id:     chatroom.ID,
+				Owner:  chatroom.Owner,
 				Observers: map[string]struct {
 					Username string
 					Message  chan *model.Dm
 				}{},
 			}
-		} else {
-			// room exists neither in db nor in server cache
-			room = &Chatroom{
-				Name:   roomName,
-				Member: []string{userName},
-				Observers: map[string]struct {
-					Username string
-					Message  chan *model.Dm
-				}{},
-			}
-			roomEvent := database.ChatroomEvent{
-				EventType: "CreateRoom",
-				Member:    room.Member,
-				Name:      room.Name,
-			}
-
-			createdRoom, err := r.repo.CreateRoom(ctx, roomEvent)
-			if err != nil {
-				return nil, err
-			}
-			// update repos room map since the current room now has an id
-			room.Id = createdRoom.ID
+			r.Rooms[roomName] = room
 		}
-		r.Rooms[roomName] = room
-	}
-
-	// if the user is no member of the chatroom yet, add the user as member
-	if !util.Contains(room.Member, userName) {
-		room.Member = append(room.Member, userName)
-		_, err := r.repo.UpdateRoom(ctx, &model.Chatroom{
-			ID:     room.Id,
-			Member: room.Member,
-			Name:   room.Name,
-		})
-		if err != nil {
-			return nil, err
-		}
+		//else {
+		//	// room exists neither in db nor in server cache
+		//	room = &Chatroom{
+		//		Name:   roomName,
+		//		Member: []string{userName},
+		//		Observers: map[string]struct {
+		//			Username string
+		//			Message  chan *model.Dm
+		//		}{},
+		//	}
+		//	roomEvent := database.ChatroomEvent{
+		//		EventType: "CreateRoom",
+		//		Member:    room.Member,
+		//		Name:      room.Name,
+		//	}
+		//
+		//	createdRoom, err := r.repo.CreateRoom(ctx, roomEvent)
+		//	if err != nil {
+		//		return nil, err
+		//	}
+		//	// update repos room map since the current room now has an id
+		//	room.Id = createdRoom.ID
+		//}
 	}
 	r.mu.Unlock()
+
+	// if the user is no member of the chatroom yet, add the user as member
+	//if !util.Contains(room.Member, userName) {
+	//	room.Member = append(room.Member, userName)
+	//	_, err := r.repo.UpdateRoom(ctx, &model.Chatroom{
+	//		ID:     room.Id,
+	//		Member: room.Member,
+	//		Name:   room.Name,
+	//	})
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
 
 	dmEvent := database.DmEvent{
 		ChatroomId: room.Id,
@@ -107,14 +109,72 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName st
 	return dm, nil
 }
 
-func (r *queryResolver) GetRoom(ctx context.Context, name string) (*model.Chatroom, error) {
+func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoom) (*model.Chatroom, error) {
 	r.mu.Lock()
-	room := r.Rooms[name]
+	room := r.Rooms[input.Name]
+
+	// if no room was found in current server session, try retrieving from db
+	if r.Rooms[input.Name] == nil {
+		chatroom, err := r.repo.GetRoom(ctx, input.Name)
+		if err != nil {
+			// no room was found in db, so create one
+			roomEvent := database.ChatroomEvent{
+				EventType: "CreateRoom",
+				Member:    input.Member,
+				Name:      input.Name,
+				Owner:     input.Owner,
+			}
+			createRoom, createRoomErr := r.repo.CreateRoom(ctx, roomEvent)
+			if createRoomErr != nil {
+				r.mu.Unlock()
+				return nil, createRoomErr
+			}
+			room = &Chatroom{
+				Id:     createRoom.ID,
+				Name:   createRoom.Name,
+				Member: createRoom.Member,
+				Owner:  createRoom.Owner,
+				Observers: map[string]struct {
+					Username string
+					Message  chan *model.Dm
+				}{},
+			}
+			r.Rooms[createRoom.Name] = room
+		} else {
+			// no error occurred, so a room was found in db
+			room = &Chatroom{
+				Id:     chatroom.ID,
+				Name:   chatroom.Name,
+				Member: chatroom.Member,
+				Owner:  chatroom.Owner,
+				Observers: map[string]struct {
+					Username string
+					Message  chan *model.Dm
+				}{},
+			}
+			r.Rooms[chatroom.Name] = room
+		}
+	}
+
+	r.mu.Unlock()
+	return &model.Chatroom{
+		ID:     room.Id,
+		Member: room.Member,
+		Name:   room.Name,
+		Owner:  room.Owner,
+	}, nil
+}
+
+func (r *queryResolver) GetRoom(ctx context.Context, roomName string) (*model.Chatroom, error) {
+	r.mu.Lock()
+	room := r.Rooms[roomName]
 
 	// if room does not exist in cache look for the room in db
-	if r.Rooms[name] == nil {
-		chatroom, err := r.repo.GetRoom(ctx, name)
+	if r.Rooms[roomName] == nil {
+		chatroom, err := r.repo.GetRoom(ctx, roomName)
 		if err != nil {
+			// room does not exist in db
+			r.mu.Unlock()
 			return nil, err
 		}
 
@@ -124,23 +184,22 @@ func (r *queryResolver) GetRoom(ctx context.Context, name string) (*model.Chatro
 				Id:     chatroom.ID,
 				Name:   chatroom.Name,
 				Member: chatroom.Member,
+				Owner:  chatroom.Owner,
 				Observers: map[string]struct {
 					Username string
 					Message  chan *model.Dm
 				}{},
 			}
-			r.Rooms[name] = room
-		} else {
-			errorMsg := fmt.Sprint("no existing room with given name: ", name)
-			return nil, errors.New(errorMsg)
+			r.Rooms[roomName] = room
 		}
 	}
 	r.mu.Unlock()
 
 	return &model.Chatroom{
 		ID:     room.Id,
-		Name:   room.Name,
 		Member: room.Member,
+		Name:   room.Name,
+		Owner:  room.Owner,
 	}, nil
 }
 
@@ -160,6 +219,7 @@ func (r *queryResolver) GetRoomsByUser(ctx context.Context, userName string) ([]
 				Id:     room.ID,
 				Name:   room.Name,
 				Member: room.Member,
+				Owner:  room.Owner,
 				Observers: map[string]struct {
 					Username string
 					Message  chan *model.Dm
@@ -232,6 +292,7 @@ type Chatroom struct {
 	Name      string
 	Messages  []*model.Dm
 	Member    []string
+	Owner     string
 	Observers map[string]struct {
 		Username string
 		Message  chan *model.Dm
