@@ -1,37 +1,38 @@
-<h3>Chatroom: {{this.api.selectedRoom.name}}</h3>
-<div class="chat">
-  <div *ngFor="let message of messages" class="message-container">
-    <ng-container [ngTemplateOutlet]="message.createdBy === this.username ? userMessage : friendMessage"
-                  [ngTemplateOutletContext]="{message: message}">
-    </ng-container>
+<div class="chat-container">
+  <div class="chatroom-title">Chatroom: {{this.api.selectedRoom.name}}</div>
+  <div class="chat">
+    <div *ngFor="let message of messages" class="message-container">
+      <ng-container [ngTemplateOutlet]="message.createdBy === this.username ? userMessage : friendMessage"
+                    [ngTemplateOutletContext]="{message: message}">
+      </ng-container>
+    </div>
   </div>
-  <div class="chat-input" style="bottom: 0">
-    <input
-      type="text"
-      class="form-control"
-      id="message-input"
-      name="message"
-      placeholder="Message ..."
-      [(ngModel)]="message"
-    />
-    <button class="send-button" (click)="sendMessage()" name="message-input" ngDefaultControl [(ngModel)]="message">Send</button>
+
+  <div class="chat-input">
+    <mat-form-field class="message-form-field" appearance="fill">
+      <mat-label>Enter your message</mat-label>
+      <input matInput type="text" [(ngModel)]="message"
+             class="form-control" id="message-input"
+             name="message" placeholder="Message ...">
+      <button *ngIf="message" matSuffix mat-icon-button aria-label="Clear"
+              (click)="sendMessage()" name="message-input" class="send-button"
+              (keyup.enter)="sendMessage()">
+        <mat-icon>send</mat-icon>
+      </button>
+    </mat-form-field>
   </div>
 </div>
 
 <ng-template #userMessage let-message='message' class="message-card">
-  <div class="message-card">
-    <mat-card class="user-message-card">
-      {{message.msg}}
-      <small>{{message.createdBy}}, {{message.createdAt}}</small>
-    </mat-card>
-  </div>
+  <mat-card class="user-message-card">
+    {{message.msg}}
+    <small>{{message.createdBy}}, {{message.createdAt}}</small>
+  </mat-card>
 </ng-template>
 
 <ng-template #friendMessage let-message='message'>
-  <div class="message-card">
-    <mat-card class="friend-message-card">
-      {{message.msg}}
-      <small>{{message.createdBy}}, {{message.createdAt}}</small>
-    </mat-card>
-  </div>
+  <mat-card class="friend-message-card">
+    {{message.msg}}
+    <small>{{message.createdBy}}, {{message.createdAt}}</small>
+  </mat-card>
 </ng-template>
