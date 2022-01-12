@@ -1,7 +1,8 @@
 .profile-card {
   display: flex;
-  margin: 1em;
-  width: fit-content;
+  margin: 0 20px 0 0;
+  max-width: 26em;
+  min-width: 26em;
 }
 
 .profile-info {

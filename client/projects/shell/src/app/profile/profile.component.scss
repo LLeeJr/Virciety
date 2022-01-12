@@ -1,0 +1,29 @@
+:host {
+  width: 100%;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow-y: auto;
+}
+
+.profile-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: hidden;
+}
+
+.profile-viewer-container {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.post-container {
+  width: 100%;
+  overflow-y: hidden;
+}
