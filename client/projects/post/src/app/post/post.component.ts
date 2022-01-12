@@ -42,7 +42,8 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    GQLService._oldestPostReached = false;
+    this.filter = null;
+    this.gqlService.resetService();
   }
 
   get oldestPostReached(): boolean {
@@ -51,7 +52,7 @@ export class PostComponent implements OnInit, OnDestroy {
 
   onScroll() {
     if (!this.oldestPostReached) {
-      this.gqlService.refreshPosts();
+      this.gqlService.refreshPosts(this.filter);
     }
   }
 
