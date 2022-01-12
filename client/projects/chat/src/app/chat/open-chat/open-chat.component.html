@@ -13,10 +13,10 @@
       <mat-label>Enter your message</mat-label>
       <input matInput type="text" [(ngModel)]="message"
              class="form-control" id="message-input"
-             name="message" placeholder="Message ...">
+             name="message" placeholder="Message ..."
+             (keyup.enter)="sendMessage()">
       <button *ngIf="message" matSuffix mat-icon-button aria-label="Clear"
-              (click)="sendMessage()" name="message-input" class="send-button"
-              (keyup.enter)="sendMessage()">
+              (click)="sendMessage()" name="message-input" class="send-button">
         <mat-icon>send</mat-icon>
       </button>
     </mat-form-field>
