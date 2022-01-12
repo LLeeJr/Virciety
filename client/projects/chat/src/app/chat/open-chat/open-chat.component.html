@@ -1,4 +1,4 @@
-<div class="chat-container">
+<div class="chat-container" *ngIf="this.api.selectedRoom">
   <div class="chatroom-title">Chatroom: {{this.api.selectedRoom.name}}</div>
   <div class="chat">
     <div *ngFor="let message of messages" class="message-container">

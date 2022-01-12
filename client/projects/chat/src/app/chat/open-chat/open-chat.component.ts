@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
+import {Component, ElementRef, OnDestroy, OnInit} from '@angular/core';
 import {ApiService} from "../../api/api.service";
 import {Dm} from "../../data/dm";
 import {KeycloakService} from "keycloak-angular";
@@ -34,28 +34,50 @@ export class OpenChatComponent implements OnInit, OnDestroy {
     this.keycloak.isLoggedIn().then(isLoggedIn => {
       if (isLoggedIn) {
         this.username = this.keycloak.getUsername();
+
+        this.route.params.subscribe((params: Params) => {
+          let roomName = params['name'];
+          this.api.getRoom(roomName).subscribe(value => {
+            if (value && value.data && value.data.getRoom) {
+              this.api.selectedRoom = value.data.getRoom;
+              let id = value.data.getRoom.id;
+
+              this.getMessagesAndSubscribe(id, roomName);
+            }
+          }, () => {
+            // no room exists with the given room name
+            let user = roomName.split('-')[1];
+            this.api.createRoom([this.username, user], roomName, this.username).subscribe(value => {
+              if (value && value.data && value.data.createRoom) {
+                this.api.selectedRoom = value.data.createRoom;
+                let id = value.data.createRoom.id;
+
+                this.getMessagesAndSubscribe(id, roomName);
+              }
+            });
+          });
+        });
       }
     });
+  }
 
-    this.route.params.subscribe((params: Params) => {
-      let roomName = params['name'];
-      this.subscription = this.api.getMessagesFromRoom(roomName).subscribe(value => {
-        this.messages = value.data.getMessagesFromRoom;
-      });
+  private getMessagesAndSubscribe(id: string, roomName: string) {
+    this.subscription = this.api.getMessagesFromRoom(id).subscribe(value => {
+      this.messages = value.data.getMessagesFromRoom;
+    });
 
-      this.api.subscribeToChat(roomName).subscribe(value => {
-        if (!value || !value.data || !value.data.dmAdded) {
-          return;
-        }
+    this.api.subscribeToChat(roomName).subscribe(value => {
+      if (!value || !value.data || !value.data.dmAdded) {
+        return;
+      }
 
-        const { data } = value
+      const {data} = value
 
-        const { chatroomId, createdAt, createdBy, msg, __typename } = data.dmAdded;
+      const {chatroomId, createdAt, createdBy, msg, __typename} = data.dmAdded;
 
-        const dm = new Dm(chatroomId, createdAt, createdBy, msg, __typename);
-        this.messages = Object.assign([], this.messages)
-        this.messages.push(dm);
-      });
+      const dm = new Dm(chatroomId, createdAt, createdBy, msg, __typename);
+      this.messages = Object.assign([], this.messages)
+      this.messages.push(dm);
     });
   }
 

@@ -71,7 +71,8 @@ export class ProfileViewerComponent implements OnInit {
   }
 
   openChat() {
-    this.router.navigate(['/chat', this.pickedUser]);
+    let param = `direct-${this.pickedUser}`
+    this.router.navigate(['/chat', param]);
   }
 
   isCurrentUser(): boolean {
