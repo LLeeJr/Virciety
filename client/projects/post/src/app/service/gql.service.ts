@@ -19,19 +19,21 @@ import {
 } from "./gql-request-strings";
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
+import {SubscriptionClient} from "subscriptions-transport-ws";
 
 @Injectable({
   providedIn: 'root'
 })
 export class GQLService {
   private apollo: ApolloBase;
+  private readonly webSocketClient: SubscriptionClient;
   private getPostQuery: QueryRef<any, {
     id: string;
     fetchLimit: number;
     filter: string | null;
   }> | undefined;
 
-  private lastPostID: string = "";
+  private lastPostID: string = '';
   private _fetchLimit: number = 5;
   static _oldestPostReached: boolean = false;
 
@@ -42,9 +44,10 @@ export class GQLService {
       uri: 'http://localhost:8083/query',
     });
 
-    const ws = new WebSocketLink({
-      uri: `ws://localhost:8083/query`,
-    })
+    this.webSocketClient = new SubscriptionClient('ws://localhost:8083/query', {
+      reconnect: true,
+    });
+    const ws = new WebSocketLink(this.webSocketClient);
 
     const link = split(
       ({query}) => {
@@ -65,7 +68,7 @@ export class GQLService {
               fields: {
                 getPosts: {
                   keyArgs: [],
-                  merge(existing = [], incoming, { args}) {
+                  merge(existing = [], incoming, { args }) {
                     // console.log('Existing: ', existing);
                     // console.log('Incoming: ', incoming);
                     // console.log('Args: ', args);
@@ -76,6 +79,10 @@ export class GQLService {
                     }
 
                     if (args && (args['id'] === 'remove' || args['id'] === 'create')) {
+                      return incoming
+                    }
+
+                    if (args && args['id'] === '') {
                       return incoming
                     }
 
@@ -90,15 +97,22 @@ export class GQLService {
       });
     } catch (e) {
       console.error('Error when creating apollo client \'post\'', e);
+    } finally {
+      this.apollo = this.apolloProvider.use('post');
     }
-
-    this.apollo = this.apolloProvider.use('post');
   }
 
   // Getter + Setter
 
   get fetchLimit(): number {
     return this._fetchLimit;
+  }
+
+  resetService() {
+    this.dataService.posts = [];
+    this.lastPostID = '';
+    GQLService._oldestPostReached = false;
+    this.getPostQuery = undefined;
   }
 
   // Getter + Setter end
@@ -108,6 +122,7 @@ export class GQLService {
       this.getPostQuery = this.apollo
         .watchQuery({
           query: GET_POSTS,
+          fetchPolicy: "network-only",
           variables: {
             id: this.lastPostID,
             fetchLimit: this.fetchLimit,
@@ -144,12 +159,13 @@ export class GQLService {
     }));
   }
 
-  refreshPosts() {
+  refreshPosts(filter: string | null) {
     if (this.getPostQuery) {
       this.getPostQuery.fetchMore({
         variables: {
           id: this.lastPostID,
           fetchLimit: this.fetchLimit,
+          filter: filter
         }
       }).then(() => {
         // console.log('getPost fetchMore success!');
