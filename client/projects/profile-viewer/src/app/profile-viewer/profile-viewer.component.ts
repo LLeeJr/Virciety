@@ -14,6 +14,7 @@ export class ProfileViewerComponent implements OnInit {
 
   id: string = '';
   activeUser: User;
+  user: User;
   source: string = '';
   loggedInUser: string;
   pickedUser: string;
@@ -28,6 +29,12 @@ export class ProfileViewerComponent implements OnInit {
     await this.keycloak.isLoggedIn().then(() => {
       this.keycloak.loadUserProfile().then(() => {
         this.loggedInUser = this.keycloak.getUsername();
+        this.auth.getUserByName(this.loggedInUser).subscribe(value => {
+          if (value && value.data && value.data.getUserByName) {
+            this.user = value.data.getUserByName;
+          }
+        });
+
         this.route.queryParams.subscribe(({username}) => {
           this.pickedUser = username;
           this.auth.getUserByName(username).subscribe(value => {
@@ -77,6 +84,36 @@ export class ProfileViewerComponent implements OnInit {
 
   isCurrentUser(): boolean {
     return this.loggedInUser === this.pickedUser;
+  }
+
+  isFollowedByUser() {
+    return this.loggedInUser !== this.activeUser.username && this.user.follows.includes(this.activeUser.username);
+  }
+
+  unfollow() {
+    this.auth.removeFollow(this.user.id, this.user.username, this.activeUser.username).subscribe(value => {
+      if (value && value.data && value.data.removeFollow) {
+        this.user = value.data.removeFollow;
+        this.auth.getUserByID(this.activeUser.id).subscribe(value => {
+          if (value && value.data && value.data.getUserByID) {
+            this.activeUser = value.data.getUserByID;
+          }
+        });
+      }
+    });
+  }
+
+  follow() {
+    this.auth.addFollow(this.user.id, this.user.username, this.activeUser.username).subscribe(value => {
+      if (value && value.data && value.data.addFollow) {
+        this.user = value.data.addFollow;
+        this.auth.getUserByID(this.activeUser.id).subscribe(value => {
+          if (value && value.data && value.data.getUserByID) {
+            this.activeUser = value.data.getUserByID;
+          }
+        });
+      }
+    });
   }
 }
 

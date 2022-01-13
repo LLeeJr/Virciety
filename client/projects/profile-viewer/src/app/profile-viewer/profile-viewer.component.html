@@ -6,11 +6,14 @@
          class="profile-image" (click)="openDialog()">
   </div>
   <div class="profile-info">
-    <mat-card-title>
-      <div>
-        {{this.activeUser.username}}
-        <button mat-icon-button color="accent" (click)="openChat()" *ngIf="!isCurrentUser()">
+    <mat-card-title class="profile-title">
+      {{this.activeUser.username}}
+      <div *ngIf="!isCurrentUser()">
+        <button mat-icon-button (click)="openChat()">
           <mat-icon style="font-size: 40px">message</mat-icon>
+        </button>
+        <button mat-icon-button *ngIf="isFollowedByUser(); else followIcon" (click)="unfollow()">
+          <mat-icon style="font-size: 40px">person_remove</mat-icon>
         </button>
       </div>
     </mat-card-title>
@@ -44,4 +47,10 @@
     account_circle
   </span>
   </div>
+</ng-template>
+
+<ng-template #followIcon>
+  <button mat-icon-button (click)="follow()">
+    <mat-icon style="font-size: 40px">person_add</mat-icon>
+  </button>
 </ng-template>
