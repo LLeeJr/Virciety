@@ -1,5 +1,35 @@
-.mat-card {
+.chat-title {
+  font: 500 20px/32px;
+  font-size: 20px;
+  letter-spacing: normal;
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+.chat-rooms {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: auto;
+}
+
+.room-card {
   cursor: pointer;
   margin-bottom: 1em;
-  max-width: 20em;
+  min-width: 30em;
+}
+
+.addButton {
+  position: fixed;
+  right: 3em;
+  margin-top: 1em;
+}
+
+:host {
+  overflow-y: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
 }
