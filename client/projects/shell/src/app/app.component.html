@@ -4,7 +4,7 @@
   </button>
   <span class="title" routerLink="/home">Welcome back, {{username}}</span>
   <span class="spacer"></span>
-  <button mat-icon-button>
+  <button mat-icon-button (click)="openSearch()" *ngIf="!searchMode; else searchInput">
     <mat-icon>search</mat-icon>
   </button>
   <app-federated-component remoteEntry="http://localhost:5002/remoteEntry.js" remoteName="post" exposedModule="CreatePostModule" componentName="DialogCreatePostComponent"></app-federated-component>
@@ -28,3 +28,24 @@
     <router-outlet></router-outlet>
   </mat-drawer-content>
 </mat-drawer-container>
+
+<ng-template #searchInput>
+  <form>
+    <mat-form-field appearance="fill" style="font-size: 12px; height: 2.3em">
+      <mat-label>Search</mat-label>
+      <input type="text"
+             placeholder="Username"
+             matInput
+             [formControl]="searchFormControl"
+             [matAutocomplete]="auto">
+      <button matSuffix mat-icon-button aria-label="Clear" (click)="closeSearch()" type="reset">
+        <mat-icon>close</mat-icon>
+      </button>
+      <mat-autocomplete #auto="matAutocomplete">
+        <mat-option *ngFor="let option of filteredOptions | async" [value]="option" (click)="redirect(option)">
+          {{option}}
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+  </form>
+</ng-template>
