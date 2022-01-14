@@ -1,57 +1,18 @@
-
-<div class="user-container">
-  <form class="mat-form-field" (keydown.enter)="$event.preventDefault()">
-    <mat-form-field>
-      <mat-label>Username</mat-label>
-      <input type="text"
-             placeholder="type a username..."
-             aria-label="Username"
-             matInput
-             [formControl]="searchFormControl"
-             class="username-input"
-      >
-    </mat-form-field>
-    <button id="search-button"
-            mat-raised-button
-            type="button"
-            (click)="search(searchFormControl.value)"
-    >Search
+<form>
+  <mat-form-field appearance="fill" style="font-size: 12px; height: 2.3em">
+    <mat-label>Search</mat-label>
+    <input type="text"
+           placeholder="Username"
+           matInput
+           [formControl]="searchFormControl"
+           [matAutocomplete]="auto">
+    <button matSuffix mat-icon-button aria-label="Clear" type="reset">
+      <mat-icon>close</mat-icon>
     </button>
-  </form>
-  <div>
-    <mat-list *ngIf="!this.notFound; else notFoundPlaceholder">
-      <mat-list-item class="user-item" *ngFor="let user of users">
-        <mat-card class="user-card">
-          <div>
-            <div>{{user.username}}</div>
-            <small>{{user.firstName}} {{user.lastName}}</small>
-          </div>
-          <ng-container [ngTemplateOutlet]="checkFollow(user.username) ? unfollow : follow"
-                        [ngTemplateOutletContext]="{user: user}">
-          </ng-container>
-        </mat-card>
-      </mat-list-item>
-    </mat-list>
-  </div>
-
-</div>
-
-<ng-template #unfollow let-user='user'>
-  <button mat-raised-button
-          (click)="removeFollow(user.username)"
-          class="follow-button">
-    {{followButtonText(user.username)}}
-  </button>
-</ng-template>
-
-<ng-template #follow let-user='user'>
-  <button mat-raised-button
-          (click)="addFollow(user.username)"
-          class="follow-button">
-    {{followButtonText(user.username)}}
-  </button>
-</ng-template>
-
-<ng-template #notFoundPlaceholder>
-  <h4>No users found with name: {{searchFormControl.value}}</h4>
-</ng-template>
+    <mat-autocomplete #auto="matAutocomplete">
+      <mat-option *ngFor="let option of filteredOptions | async" [value]="option" (click)="redirect(option)">
+        {{option}}
+      </mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
+</form>

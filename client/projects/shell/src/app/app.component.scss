@@ -24,3 +24,10 @@
   justify-content: flex-start;
   overflow-y: hidden;
 }
+
+.search-container {
+  display: flex;
+  flex-direction: row;
+  align-content: center;
+  align-items: center;
+}

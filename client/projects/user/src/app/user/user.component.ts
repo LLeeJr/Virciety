@@ -1,34 +1,27 @@
-import { Component, OnInit } from '@angular/core';
+import {Component, OnDestroy, OnInit} from '@angular/core';
 import {AuthLibService, User} from "auth-lib";
 import {FormControl} from "@angular/forms";
-import {debounceTime, filter} from "rxjs/operators";
+import {debounceTime, map, startWith} from "rxjs/operators";
+import {Observable} from "rxjs";
+import {Router} from "@angular/router";
 
-class UserData {
-  constructor(firstName: string, lastName: string, username: string) {
-    this.firstName = firstName;
-    this.lastName = lastName;
-    this.username = username;
-  }
-
-  firstName: string;
-  lastName: string;
-  username: string;
-}
 
 @Component({
   selector: 'app-user',
   templateUrl: './user.component.html',
-  styleUrls: ['./user.component.scss']
+  styleUrls: ['./user.component.scss'],
+  exportAs: 'UserComponent'
 })
-export class UserComponent implements OnInit {
+export class UserComponent implements OnInit, OnDestroy {
 
-  id: string = '';
   searchFormControl = new FormControl();
-  users: UserData[] = [];
+  options: string[] = [];
+  filteredOptions: Observable<string[]>;
+  id: string = '';
   activeUser: User;
-  notFound = false;
 
-  constructor(private auth: AuthLibService) { }
+  constructor(private auth: AuthLibService,
+              private router: Router) { }
 
   ngOnInit(): void {
     this.auth._activeId.subscribe(id => {
@@ -39,69 +32,55 @@ export class UserComponent implements OnInit {
         }
       });
     });
-    this.searchFormControl
-      .valueChanges
-      .pipe(
-        filter((username) => username),
-        debounceTime(250),
-      )
-      .subscribe(username => {
-        if (username.length > 0) {
-          this.search(username);
-        } else {
-          this.users = [];
-        }
-      }, () => {
-        this.users = [];
-      });
+    this.searchFormControl.valueChanges.pipe(
+      debounceTime(250),
+    ).subscribe(username => {
+      if (username && username.length > 0) {
+        this.search(username);
+      } else {
+        this.options = [];
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.options = [];
+    this.searchFormControl.reset();
   }
 
   search(username: string) {
-    if (username && username.length > 0) {
-      this.auth.findUsersWithName(username).subscribe(value => {
-        if (value && value.data && value.data.findUsersWithName) {
-          this.notFound = false;
-          this.users = value.data.findUsersWithName;
+    this.auth.findUsersWithName(username).subscribe(value => {
+      if (value && value.data && value.data.findUsersWithName) {
+        let users: string[] = [];
+        for (let user of value.data.findUsersWithName) {
+          users.push(user.username);
         }
-      }, () => {
-        this.notFound = true;
-      });
-    }
+        this.options = [...users];
+        this.filteredOptions = this.searchFormControl.valueChanges.pipe(
+          startWith(''),
+          map(value => this._filter(value)),
+        );
+      }
+    }, () => {
+      this.options = [];
+    });
   }
 
-  checkFollow(username: string): boolean {
-    if (this.activeUser) {
-      return this.activeUser.follows.includes(username);
-    } else {
-      return false;
+  private _filter(value: string) {
+    if (this.options.length == 0) {
+      return [];
     }
+    const filterValue = value.toLowerCase();
+    return this.options.filter(option => option.toLowerCase().includes(filterValue));
   }
 
-  removeFollow(username: string) {
-    let id = this.activeUser.id;
-    let user = this.activeUser.username;
-    if (id && user && username) {
-      this.auth.removeFollow(id, user, username).subscribe(value => {
-        if (value && value.data && value.data.removeFollow) {
-          this.activeUser = value.data.removeFollow;
-        }
-      });
-    }
-  }
-
-  addFollow(username: string) {
-    let id = this.activeUser.id;
-    let user = this.activeUser.username;
-    if (id && user && username) {
-      this.auth.addFollow(id, user, username).subscribe(value => {
-        if (value && value.data && value.data.addFollow) {
-          this.activeUser = value.data.addFollow;
+  redirect(option: string) {
+    if (option.length > 0) {
+      this.router.navigate(['profile'], {
+        queryParams: {
+          username: option,
         }
       });
     }
-  }
-
-  followButtonText(username: string): string {
-    return this.activeUser.follows.includes(username) ? "Unfollow" : "Follow";
   }
 }
