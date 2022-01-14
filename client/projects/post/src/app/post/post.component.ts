@@ -27,6 +27,9 @@ export class PostComponent implements OnInit, OnDestroy {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
           this.route.queryParams.subscribe(({username}) => {
+            if (this.filter && username !== this.filter) {
+              this.gqlService.resetService();
+            }
             this.filter = username;
             this.posts = this.gqlService.getPosts(this.filter);
             this.gqlService.getPostCreated();
@@ -42,7 +45,6 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.filter = null;
     this.gqlService.resetService();
   }
 
