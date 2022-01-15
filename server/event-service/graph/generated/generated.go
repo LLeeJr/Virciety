@@ -280,6 +280,8 @@ var sources = []*ast.Source{
     location:       String!
 }
 
+scalar Time
+
 input JoinEventRequest {
     eventID: String!
     description: String!

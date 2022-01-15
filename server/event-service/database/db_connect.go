@@ -4,6 +4,7 @@ import (
 	"context"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -27,5 +28,10 @@ func dbConnect() (*mongo.Client, error) {
 		return nil, err
 	}
 
+	err = client.Ping(ctx, readpref.Primary())
+	if err != nil {
+		return nil, err
+	}
+	
 	return client, nil
 }

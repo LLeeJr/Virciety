@@ -12,7 +12,7 @@ import (
 )
 
 func (r *mutationResolver) CreateEvent(ctx context.Context, newEvent model.CreateEventRequest) (*model.Event, error) {
-	created := time.Now().Format("2006-01-02 15:04:05")
+	created := time.Now()
 
 	event := database.Event{
 		EventID:     "",
@@ -38,7 +38,7 @@ func (r *mutationResolver) EditEvent(ctx context.Context, edit model.EditEventRe
 	// process the data and create new event
 	event := database.Event{
 		EventID:     edit.EventID,
-		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
+		EventTime:   time.Now(),
 		EventType:   "EditEvent",
 		Members:     edit.Members,
 		Description: edit.Description,
@@ -60,7 +60,7 @@ func (r *mutationResolver) RemoveEvent(ctx context.Context, remove string) (stri
 	// process the data and create new event
 	event := database.Event{
 		EventID:   remove,
-		EventTime: time.Now().Format("2006-01-02 15:04:05"),
+		EventTime: time.Now(),
 		EventType: "RemoveEvent",
 	}
 
@@ -77,7 +77,7 @@ func (r *mutationResolver) JoinEvent(ctx context.Context, joinEvent model.JoinEv
 	// process the data and create new event
 	event := database.Event{
 		EventID:     joinEvent.EventID,
-		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
+		EventTime:   time.Now(),
 		EventType:   "AddedMember",
 		Members:     joinEvent.NewMembers,
 		Description: joinEvent.Description,
@@ -99,7 +99,7 @@ func (r *mutationResolver) LeaveEvent(ctx context.Context, leaveEvent model.Leav
 	// process the data and create new event
 	event := database.Event{
 		EventID:     leaveEvent.EventID,
-		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
+		EventTime:   time.Now(),
 		EventType:   "RemoveMember",
 		Members:     leaveEvent.NewMembers,
 		Description: leaveEvent.Description,
