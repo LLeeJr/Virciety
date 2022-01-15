@@ -36,6 +36,15 @@ const routes: Routes = [
         exposedModule: './UserModule',
       }).then(m => m.UserModule),
   },
+  {
+    path: 'event',
+    canActivate: [AuthGuard],
+    loadChildren: () =>
+      loadRemoteModule({
+        remoteName: 'event',
+        exposedModule: './EventModule',
+      }).then(m => m.EventModule),
+  },
 ];
 
 @NgModule({
