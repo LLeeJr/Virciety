@@ -81,7 +81,10 @@ export class CreatePostComponent implements OnInit {
 
 @Component({
   selector: 'app-dialog-create-post',
-  templateUrl: './dialog-create-post.component.html',
+  template: `
+    <button mat-icon-button (click)="openDialog()">
+      <mat-icon>add</mat-icon>
+    </button>`,
   styleUrls: ['./create-post.component.scss'],
   exportAs: 'DialogCreatePostComponent'
 })
