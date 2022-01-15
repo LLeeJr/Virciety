@@ -36,6 +36,7 @@ export class GQLService {
   private lastPostID: string = '';
   private _fetchLimit: number = 5;
   static _oldestPostReached: boolean = false;
+  private filter: string | null;
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink,
@@ -118,6 +119,7 @@ export class GQLService {
   // Getter + Setter end
 
   getPosts(filter: string | null = null): any {
+    this.filter = filter;
     if (!this.getPostQuery) {
       this.getPostQuery = this.apollo
         .watchQuery({
@@ -226,35 +228,36 @@ export class GQLService {
         data: fileBase64
       },
       update: (cache, {data}: any) => {
-        const existingPosts: any = cache.readQuery({
-          query: GET_POSTS
-        });
+        if (!this.filter || this.filter === username) {
+          const existingPosts: any = cache.readQuery({
+            query: GET_POSTS
+          });
 
-        const post = new Post(data.createPost);
+          const post = new Post(data.createPost);
 
-        if (this.dataService.posts.some(p => p.id === post.id)) {
-          // console.log('post already exists');
-          return;
+          if (this.dataService.posts.some(p => p.id === post.id)) {
+            return;
+          }
+
+          post.data.content = fileBase64;
+          this.dataService.addNewPost(post);
+
+          let newPosts;
+
+          if (existingPosts) {
+            newPosts = [data.createPost, ...existingPosts.getPosts];
+          } else {
+            newPosts = [data.createPost];
+          }
+
+          cache.writeQuery({
+            query: GET_POSTS,
+            variables: {
+              id: 'create',
+            },
+            data: {getPosts: newPosts}
+          });
         }
-
-        post.data.content = fileBase64;
-        this.dataService.addNewPost(post);
-
-        let newPosts;
-
-        if (existingPosts) {
-          newPosts = [data.createPost, ...existingPosts.getPosts];
-        } else {
-          newPosts = [data.createPost];
-        }
-
-        cache.writeQuery({
-          query: GET_POSTS,
-          variables: {
-            id: 'create',
-          },
-          data: { getPosts : newPosts }
-        });
       },
       /*context: {
         useMultipart: true,
@@ -334,38 +337,38 @@ export class GQLService {
       query: NEW_POST_CREATED,
     }).subscribe(({data}: any) => {
       // console.log('NewPostCreated: ', data);
+      if (!this.filter || this.filter === data.newPostCreated.username) {
+        const post = new Post(data.newPostCreated);
 
-      const post = new Post(data.newPostCreated);
+        if (this.dataService.posts.some(p => p.id === post.id)) {
+          return;
+        }
 
-      if (this.dataService.posts.some(p => p.id === post.id)) {
-        // console.log('post already exists');
-        return;
+        this.dataService.addNewPost(post);
+        this.getData(post);
+
+        const cache = this.apollo.client.cache;
+
+        const existingPosts: any = cache.readQuery({
+          query: GET_POSTS,
+        });
+
+        let newPosts;
+
+        if (existingPosts) {
+          newPosts = [data.newPostCreated, ...existingPosts.getPosts];
+        } else {
+          newPosts = [data.newPostCreated];
+        }
+
+        cache.writeQuery({
+          query: GET_POSTS,
+          variables: {
+            id: 'create',
+          },
+          data: {getPosts: newPosts}
+        });
       }
-
-      this.dataService.addNewPost(post);
-      this.getData(post);
-
-      const cache = this.apollo.client.cache;
-
-      const existingPosts: any = cache.readQuery({
-        query: GET_POSTS,
-      });
-
-      let newPosts;
-
-      if (existingPosts) {
-        newPosts = [data.newPostCreated, ...existingPosts.getPosts];
-      } else {
-        newPosts = [data.newPostCreated];
-      }
-
-      cache.writeQuery({
-        query: GET_POSTS,
-        variables: {
-          id: 'create',
-        },
-        data: { getPosts : newPosts }
-      });
     }, (error: any) => {
       console.error('there was an error sending the newPostCreated-subscription', error)
     })
