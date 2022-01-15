@@ -12,7 +12,7 @@ export class AuthLibService {
 
   private apollo: ApolloBase;
   private query: QueryRef<any>;
-  private _userName = new Subject<string>()
+  private _userName = new Subject<string | undefined>()
   _activeId = new Subject<string>()
 
   userName: string = '';
@@ -40,7 +40,7 @@ export class AuthLibService {
     }
   }
 
-  getUserName(): Subject<string> {
+  getUserName(): Subject<string | undefined> {
     return this._userName;
   }
 

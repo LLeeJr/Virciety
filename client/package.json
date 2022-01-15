@@ -34,7 +34,8 @@
     "keycloak-angular": "^8.3.0",
     "keycloak-js": "^14.0.0",
     "ngx-infinite-scroll": "^10.0.1",
-    "rxjs": "~6.6.0",
+    "ngx-mat-timepicker": "^13.0.0",
+    "rxjs": "~7.5.0",
     "subscriptions-transport-ws": "^0.9.19",
     "tslib": "^2.1.0",
     "zone.js": "~0.11.4"
