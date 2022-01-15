@@ -10,6 +10,7 @@ type Event struct {
 	EventID     string             `bson:"id,omitempty"`
 	EventTime   time.Time          `bson:"event_time,omitempty"`
 	EventType   string             `bson:"event_type,omitempty"`
+	Title       string             `bson:"title,omitempty"`
 	Members     []string           `bson:"members,omitempty"`
 	Host        string             `bson:"host,omitempty"`
 	Description string             `bson:"description,omitempty"`

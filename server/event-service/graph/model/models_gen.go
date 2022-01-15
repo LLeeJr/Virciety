@@ -3,6 +3,7 @@
 package model
 
 type CreateEventRequest struct {
+	Title       string `json:"title"`
 	Host        string `json:"host"`
 	Description string `json:"description"`
 	StartDate   string `json:"startDate"`
@@ -12,6 +13,7 @@ type CreateEventRequest struct {
 
 type EditEventRequest struct {
 	EventID     string   `json:"eventID"`
+	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Members     []string `json:"members"`
 	StartDate   string   `json:"startDate"`
@@ -21,6 +23,7 @@ type EditEventRequest struct {
 
 type Event struct {
 	ID          string   `json:"id"`
+	Title       string   `json:"title"`
 	StartDate   string   `json:"startDate"`
 	EndDate     string   `json:"endDate"`
 	Location    string   `json:"location"`
@@ -31,6 +34,7 @@ type Event struct {
 
 type JoinEventRequest struct {
 	EventID     string   `json:"eventID"`
+	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	NewMembers  []string `json:"newMembers"`
 	StartDate   string   `json:"startDate"`
@@ -40,6 +44,7 @@ type JoinEventRequest struct {
 
 type LeaveEventRequest struct {
 	EventID     string   `json:"eventID"`
+	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	NewMembers  []string `json:"newMembers"`
 	StartDate   string   `json:"startDate"`

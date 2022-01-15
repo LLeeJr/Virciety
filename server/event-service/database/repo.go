@@ -54,6 +54,7 @@ func (repo *Repo) CreateEvent(event Event) (*model.Event, error) {
 
 	eventModel := &model.Event{
 		ID:          insertedID,
+		Title:       event.Title,
 		StartDate:   event.StartDate,
 		EndDate:     event.EndDate,
 		Host:        event.Host,
@@ -89,6 +90,7 @@ func (repo *Repo) GetEvents() ([]*model.Event, error) {
 		// add new eventModel to output for getEvents
 		events = append(events, &model.Event{
 			ID:          event.ID.Hex(),
+			Title:       event.Title,
 			StartDate:   event.StartDate,
 			EndDate:     event.EndDate,
 			Location:    event.Location,
@@ -119,6 +121,7 @@ func (repo *Repo) GetEvents() ([]*model.Event, error) {
 			}
 
 			// Add editable data
+			eventModel.Title = event.Title
 			eventModel.Description = event.Description
 			eventModel.Members = event.Members
 			eventModel.EndDate = event.EndDate
