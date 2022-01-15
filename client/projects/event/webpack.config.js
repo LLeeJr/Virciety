@@ -15,7 +15,7 @@ module.exports = {
   },
   optimization: {
     runtimeChunk: false
-  },   
+  },
   resolve: {
     alias: {
       ...sharedMappings.getAliases(),
@@ -23,31 +23,28 @@ module.exports = {
   },
   plugins: [
     new ModuleFederationPlugin({
-      
-        // For remotes (please adjust)
-        // name: "event",
-        // filename: "remoteEntry.js",
-        // exposes: {
-        //     './Component': './projects/event/src/app/app.component.ts',
-        // },        
-        
-        // For hosts (please adjust)
-        // remotes: {
-        //     "shell": "shell@http://localhost:4200/remoteEntry.js",
-        //     "chat": "chat@http://localhost:5001/remoteEntry.js",
-        //     "post": "post@http://localhost:5002/remoteEntry.js",
 
-        // },
+      // For remotes (please adjust)
+      name: "event",
+      filename: "remoteEntry.js",
+      exposes: {
+        './EventModule': './projects/event/src/app/event/event.module.ts',
+      },
 
-        shared: share({
-          "@angular/core": { singleton: true, strictVersion: true, requiredVersion: 'auto' }, 
-          "@angular/common": { singleton: true, strictVersion: true, requiredVersion: 'auto' }, 
-          "@angular/common/http": { singleton: true, strictVersion: true, requiredVersion: 'auto' }, 
-          "@angular/router": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+      shared: share({
+        "@angular/core": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+        "@angular/common": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+        "@angular/common/http": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+        "@angular/router": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+        "keycloak-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+        "@apollo/client": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+        "apollo-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
+        "@angular/material": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
 
-          ...sharedMappings.getDescriptors()
-        })
-        
+        ...sharedMappings.getDescriptors()
+      })
+
+
     }),
     sharedMappings.getPlugin()
   ],
