@@ -28,20 +28,18 @@ export class GQLService {
     this.apollo = this.apolloProvider.use('event');
   }
 
-  createEvent(host: string, startDate: string, endDate: string, location: string, description: string) {
-    this.apollo.mutate({
+  createEvent(title: string, host: string, startDate: string, endDate: string, location: string, description: string) {
+    return this.apollo.mutate({
       mutation: CREATE_EVENT,
       variables: {
+        title: title,
         host: host,
         description: description,
         startDate: startDate,
         endDate: endDate,
         location: location,
       }
-    }).subscribe(({data}: any) => {
-      console.log(data);
     })
-
   }
 
   getEvents(): any {

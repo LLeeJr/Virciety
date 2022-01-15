@@ -6,6 +6,7 @@ export const GET_EVENTS = gql`
   query getEvents {
     getEvents {
       id
+      title
       host
       location
       description
@@ -16,9 +17,10 @@ export const GET_EVENTS = gql`
 `
 
 export const CREATE_EVENT = gql`
-    mutation createEvent($host: String!, $description: String!, $startDate: String!, $endDate: String!, $location: String!) {
-      createEvent(newEvent: {host: $host, description: $description, startDate: $startDate, endDate: $endDate, location: $location}) {
+    mutation createEvent($title: String!, $host: String!, $description: String!, $startDate: String!, $endDate: String!, $location: String!) {
+      createEvent(newEvent: {title: $title, host: $host, description: $description, startDate: $startDate, endDate: $endDate, location: $location}) {
         id
+        title
         host
         location
         description

@@ -1,14 +1,19 @@
+<mat-form-field appearance="fill">
+  <mat-label>Enter title</mat-label>
+  <input matInput [(ngModel)]="title">
+</mat-form-field>
+
 <p>
   <mat-form-field appearance="fill">
     <mat-label>Start Date</mat-label>
-    <input matInput [matDatepicker]="dp1" (dateChange)="addEvent('start date', $event)" disabled>
+    <input matInput [matDatepicker]="dp1" (dateChange)="saveStartDate($event)" disabled>
     <mat-datepicker-toggle matSuffix [for]="dp1"></mat-datepicker-toggle>
     <mat-datepicker #dp1 disabled="false"></mat-datepicker>
   </mat-form-field>
 
   <mat-form-field appearance="fill">
     <mat-label>End Date</mat-label>
-    <input matInput [matDatepicker]="dp2" (dateChange)="addEvent('end date',$event)" disabled>
+    <input matInput [matDatepicker]="dp2" (dateChange)="saveEndDate($event)" disabled>
     <mat-datepicker-toggle matSuffix [for]="dp2"></mat-datepicker-toggle>
     <mat-datepicker #dp2 disabled="false"></mat-datepicker>
   </mat-form-field>
@@ -26,11 +31,23 @@
 
 <button mat-button (click)="createEvent()">Create Event</button>
 
-<div class="example-events">
+<div>
   <div *ngFor="let e of events">
-    <mat-label>
-      Event ID: {{e.id}}
-      Description: {{e.description}}
-    </mat-label>
+    <div *ngIf="events.indexOf(e) > 0">
+      <mat-divider class="divider"></mat-divider>
+    </div>
+    <mat-card class="event-card">
+      <mat-card-header class="header">
+        {{e.startDate}} - {{e.endDate}}
+      </mat-card-header>
+      <mat-card-title-group>
+        <mat-card-title>{{e.title}}</mat-card-title>
+        <mat-card-subtitle>{{e.location}}</mat-card-subtitle>
+        <mat-card-subtitle>Hosted by: {{e.host}}</mat-card-subtitle>
+      </mat-card-title-group>
+      <mat-card-content>
+        {{e.description}}
+      </mat-card-content>
+    </mat-card>
   </div>
 </div>
