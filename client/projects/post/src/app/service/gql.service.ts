@@ -75,7 +75,6 @@ export class GQLService {
 
                     if (incoming.length === 0) {
                       GQLService._oldestPostReached = true;
-                      return existing;
                     }
 
                     if (args && (args['id'] === 'remove' || args['id'] === 'create')) {
@@ -109,6 +108,7 @@ export class GQLService {
   }
 
   resetService() {
+    // console.log("reset service");
     this.dataService.posts = [];
     this.lastPostID = '';
     GQLService._oldestPostReached = false;
