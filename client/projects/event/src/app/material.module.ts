@@ -5,6 +5,11 @@ import {MatInputModule} from "@angular/material/input";
 import {MatNativeDateModule} from "@angular/material/core";
 import {MatCardModule} from "@angular/material/card";
 import {MatDividerModule} from "@angular/material/divider";
+import {MatIconModule} from "@angular/material/icon";
+import {MatCheckboxModule} from "@angular/material/checkbox";
+import {NgxMatTimepickerModule} from "ngx-mat-timepicker";
+import {MatDialogModule} from "@angular/material/dialog";
+import {MatButtonModule} from "@angular/material/button";
 
 @NgModule({
   imports: [
@@ -13,7 +18,12 @@ import {MatDividerModule} from "@angular/material/divider";
     MatFormFieldModule,
     MatInputModule,
     MatNativeDateModule,
-    MatDividerModule
+    MatDividerModule,
+    MatIconModule,
+    MatCheckboxModule,
+    NgxMatTimepickerModule,
+    MatDialogModule,
+    MatButtonModule,
   ],
   exports: [
     MatCardModule,
@@ -21,7 +31,12 @@ import {MatDividerModule} from "@angular/material/divider";
     MatFormFieldModule,
     MatInputModule,
     MatNativeDateModule,
-    MatDividerModule
+    MatDividerModule,
+    MatIconModule,
+    MatCheckboxModule,
+    NgxMatTimepickerModule,
+    MatDialogModule,
+    MatButtonModule,
   ],
   providers: [
     MatDatepickerModule

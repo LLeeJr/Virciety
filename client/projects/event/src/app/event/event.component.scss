@@ -10,3 +10,14 @@ mat-form-field {
 .header {
   margin-bottom: 10px;
 }
+
+.location_host {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.time {
+  display: flex;
+  align-items: center;
+}

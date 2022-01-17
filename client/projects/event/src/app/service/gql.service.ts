@@ -28,7 +28,7 @@ export class GQLService {
     this.apollo = this.apolloProvider.use('event');
   }
 
-  createEvent(title: string, host: string, startDate: string, endDate: string, location: string, description: string) {
+  createEvent(title: string, host: string, startDate: string, endDate: string, location: string = '', description: string = '') {
     return this.apollo.mutate({
       mutation: CREATE_EVENT,
       variables: {
