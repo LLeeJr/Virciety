@@ -1,9 +1,9 @@
 import {Component, OnInit} from '@angular/core';
-import {formatDate} from "@angular/common";
 import {KeycloakService} from "keycloak-angular";
 import {GQLService} from "../service/gql.service";
 import {Event} from "../model/event";
-import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from "@angular/forms";
+import {MatDialog} from "@angular/material/dialog";
+import {CreateEventComponent} from "../create-event/create-event.component";
 
 @Component({
   selector: 'app-event',
@@ -13,23 +13,12 @@ import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, 
 export class EventComponent implements OnInit {
 
   events: Event[] = [];
-  currDate: string = formatDate(new Date(), 'fullDate', 'en-GB');
 
-  description: string;
-  location: string;
   username: string;
-  checked: boolean;
-
-  title: FormControl = new FormControl('', [Validators.required, emptyTextValidator('')]);
-  startTime: FormControl = new FormControl('', Validators.required);
-  endTime: FormControl = new FormControl('', Validators.required);
-  range = new FormGroup({
-    start: new FormControl('', Validators.required),
-    end: new FormControl('', Validators.required),
-  });
 
   constructor(private keycloak: KeycloakService,
-              private gqlService: GQLService) { }
+              private gqlService: GQLService,
+              private dialog: MatDialog) { }
 
   async ngOnInit(): Promise<void> {
     await this.keycloak.isLoggedIn().then(loggedIn => {
@@ -72,13 +61,8 @@ export class EventComponent implements OnInit {
     });*/
   }
 
-  // TODO create dialog for this
   createEvent() {
-    if (this.checkFields()) {
-      return;
-    }
-
-    let startDate = formatDate(this.range.controls.start.value, 'fullDate', 'en-GB');
+    /*let startDate = formatDate(this.range.controls.start.value, 'fullDate', 'en-GB');
     let endDate = formatDate(this.range.controls.end.value, 'fullDate', 'en-GB');
     if (this.checked) {
       let shortDate = formatDate(startDate, 'short', 'en-GB');
@@ -95,91 +79,24 @@ export class EventComponent implements OnInit {
       .createEvent(this.title.value, this.username, startDate, endDate, this.location, this.description)
       .subscribe(({data}: any) => {
         console.log(data);
-        this.events = [...this.events, data.createEvent]
-      });
-  }
-
-  checkFields(): boolean {
-    let required = false;
-
-    if (!this.title.value) {
-      this.title.markAsTouched();
-      this.title.setErrors({required: true});
-      required = true;
-    }
-    if (!this.range.controls.start.value) {
-      this.range.controls.start.markAsTouched();
-      this.range.controls.start.setErrors({required: true});
-      required = true;
-    }
-    if (!this.range.controls.end.value) {
-      this.range.controls.end.markAsTouched();
-      this.range.controls.end.setErrors({required: true});
-      required = true;
-    }
-    if (this.checked && !this.startTime.value) {
-      this.startTime.markAsTouched();
-      this.startTime.setErrors({required: true});
-      required = true;
-    }
-    if (this.checked && !this.endTime.value) {
-      this.endTime.markAsTouched();
-      this.endTime.setErrors({required: true});
-      required = true;
-    }
-
-    return required;
+        this.events = [...this.events, data.createEvent].sort((a, b) => +new Date(b.startDate) - +new Date(a.startDate))
+      });*/
   }
 
   gotToMaps(location: string) {
     window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location))
   }
 
-  openEditDialog() {
-
-  }
-
-  checkTimes() {
-    let startDate = formatDate(this.range.controls.start.value, 'fullDate', 'en-GB');
-    let endDate = formatDate(this.range.controls.end.value, 'fullDate', 'en-GB');
-
-    let startTime: string = this.startTime.value;
-    let endTime: string = this.endTime.value;
-
-    // compare dates and times
-    if (startDate && endDate && startDate === endDate && startTime && endTime) {
-      if (startTime.endsWith('PM') && endTime.endsWith('AM')) {
-        this.endTime.setErrors({wrongTime: true});
-      } else if (startTime.endsWith('AM') && endTime.endsWith('AM') || startTime.endsWith('PM') && endTime.endsWith('PM')) {
-        let startHour: number = parseInt(startTime.split(':')[0]);
-        let endHour: number = parseInt(endTime.split(':')[0]);
-
-        if (startHour >= endHour) {
-          this.endTime.setErrors({wrongTime: true});
-        } else {
-          this.endTime.setErrors(null);
-        }
-      } else {
-        this.endTime.setErrors(null);
+  openDialog(event: Event | null, editMode: boolean) {
+    let dialogRef = this.dialog.open(CreateEventComponent, {
+      data: {
+        editMode: editMode,
+        event: event,
       }
-    }
-  }
+    })
 
-  checkDate() {
-    let startDate = formatDate(this.range.controls.start.value, 'fullDate', 'en-GB');
-
-    if (+new Date(startDate) - +new Date(this.currDate) < 0) {
-      this.range.controls.start.markAsTouched();
-      this.range.controls.start.setErrors({wrongDate: true});
-    } else {
-      this.range.controls.start.setErrors(null);
-    }
-  }
-}
-
-export function emptyTextValidator(_: string): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    const emptyText = control.value !== '' && control.value.trim().length === 0;
-    return emptyText ? {emptyText: true} : null;
+    dialogRef.afterClosed().subscribe(data => {
+      console.log(data);
+    })
   }
 }

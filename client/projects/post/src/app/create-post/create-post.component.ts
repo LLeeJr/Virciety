@@ -96,11 +96,7 @@ export class DialogCreatePostComponent implements OnInit {
   }
 
   openDialog() {
-    const dialogRef = this.dialog.open(CreatePostComponent);
-
-    dialogRef.afterClosed().subscribe((result: any) => {
-      console.log(`Dialog result: ${result}`);
-    });
+    this.dialog.open(CreatePostComponent);
   }
 }
 

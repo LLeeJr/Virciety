@@ -10,6 +10,7 @@ import {MatCheckboxModule} from "@angular/material/checkbox";
 import {NgxMatTimepickerModule} from "ngx-mat-timepicker";
 import {MatDialogModule} from "@angular/material/dialog";
 import {MatButtonModule} from "@angular/material/button";
+import {MatToolbarModule} from "@angular/material/toolbar";
 
 @NgModule({
   imports: [
@@ -24,6 +25,7 @@ import {MatButtonModule} from "@angular/material/button";
     NgxMatTimepickerModule,
     MatDialogModule,
     MatButtonModule,
+    MatToolbarModule
   ],
   exports: [
     MatCardModule,
@@ -37,6 +39,7 @@ import {MatButtonModule} from "@angular/material/button";
     NgxMatTimepickerModule,
     MatDialogModule,
     MatButtonModule,
+    MatToolbarModule
   ],
   providers: [
     MatDatepickerModule

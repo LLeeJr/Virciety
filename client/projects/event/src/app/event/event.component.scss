@@ -1,23 +1,28 @@
-mat-form-field {
-  margin-right: 12px;
-}
-
 .divider {
   margin-bottom: 5px;
   margin-top: 5px;
 }
 
-.header {
+.event-header {
   margin-bottom: 10px;
+  display: block;
 }
 
-.location_host {
+.event-location-host {
   cursor: pointer;
   display: flex;
   align-items: center;
 }
 
-.time {
+.event-time {
   display: flex;
   align-items: center;
+}
+
+.event-toolbar {
+  background: #42424200;
+}
+
+.spacer {
+  flex: 1 1 auto;
 }

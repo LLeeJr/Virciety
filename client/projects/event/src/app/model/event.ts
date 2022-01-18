@@ -1,5 +1,3 @@
-import {formatDate} from "@angular/common";
-
 export class Event {
   private _description: string;
   private _endDate: string;
@@ -8,7 +6,8 @@ export class Event {
   private _location: string;
   private _startDate: string;
   private _title: string;
-  private _time: string | null;
+  private _startTime: string | null;
+  private _endTime: string | null;
 
   constructor(data: any) {
     this._description = data.description;
@@ -16,14 +15,12 @@ export class Event {
     this._host = data.host;
     this._id = data.id;
     this._location = data.location;
+    this._startDate = data.startDate;
+    this._endDate = data.endDate;
 
     if (data.startDate.endsWith('M') && data.endDate.endsWith('M')) {
-      this._startDate = formatDate(data.startDate, 'fullDate', 'en-GB');
-      this._endDate = formatDate(data.endDate, 'fullDate', 'en-GB');
-      this._time = `${data.startDate.split(',')[1].trim()} -${data.endDate.split(',')[1]}`;
-    } else {
-      this._startDate = data.startDate;
-      this._endDate = data.endDate;
+      this._startTime = data.startDate.split(',')[1].trim();
+      this._endTime = data.endDate.split(',')[1].trim();
     }
   }
 
@@ -55,8 +52,12 @@ export class Event {
     return this._title;
   }
 
-  get time(): string | null {
-    return this._time;
+  get startTime(): string | null {
+    return this._startTime;
+  }
+
+  get endTime(): string | null {
+    return this._endTime;
   }
 
   set description(value: string) {
@@ -79,7 +80,11 @@ export class Event {
     this._title = value;
   }
 
-  set time(value: string | null) {
-    this._time = value;
+  set startTime(value: string | null) {
+    this._startTime = value;
+  }
+
+  set endTime(value: string | null) {
+    this._endTime = value;
   }
 }

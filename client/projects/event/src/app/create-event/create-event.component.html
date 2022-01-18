@@ -1,0 +1,92 @@
+<h2 *ngIf="!data.editMode" mat-dialog-title>Create event</h2>
+<h2 *ngIf="data.editMode" mat-dialog-title>Edit event</h2>
+<mat-dialog-content>
+  <mat-form-field appearance="fill">
+    <mat-label>Enter title</mat-label>
+    <input matInput [formControl]="title">
+    <mat-error *ngIf="title.hasError('required')">
+      Title is <strong>required</strong>
+    </mat-error>
+    <mat-error *ngIf="title.hasError('emptyText')">
+      Title can't be <strong>only</strong> spaces
+    </mat-error>
+  </mat-form-field>
+
+  <div>
+    <p>
+      <mat-form-field appearance="fill">
+        <mat-label>Enter a date range</mat-label>
+        <mat-date-range-input [formGroup]="range" [rangePicker]="picker">
+          <input matStartDate formControlName="startDate" placeholder="Start date">
+          <input matEndDate formControlName="endDate" placeholder="End date">
+        </mat-date-range-input>
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-date-range-picker #picker>
+          <mat-date-range-picker-actions>
+            <button mat-button matDateRangePickerCancel>Cancel</button>
+            <button mat-raised-button color="primary" matDateRangePickerApply (click)="checkDate()">Apply</button>
+          </mat-date-range-picker-actions>
+        </mat-date-range-picker>
+
+        <mat-error *ngIf="range.controls.startDate.hasError('required')">Start date is <strong>required</strong></mat-error>
+        <mat-error *ngIf="range.controls.startDate.hasError('wrongDate')">Start date is in the <strong>past</strong></mat-error>
+        <mat-error *ngIf="range.controls.endDate.hasError('required')">End date is <strong>required</strong></mat-error>
+      </mat-form-field>
+
+
+      <mat-checkbox [(ngModel)]="checked">Add specific time?</mat-checkbox>
+    </p>
+
+    <p *ngIf="checked">
+      <mat-form-field appearance="fill">
+        <mat-label>Start time</mat-label>
+        <input matInput
+               [formControl]="startTime"
+               name="selected_time_A"
+               [format]="12"
+               [ngxMatTimepicker]="startTimePicker"
+               readonly/>
+        <ngx-mat-timepicker #startTimePicker [hoursOnly]="true" (closed)="checkTimes()"></ngx-mat-timepicker>
+        <mat-icon matSuffix
+                  (click)="startTimePicker.open()">
+          watch_later
+        </mat-icon>
+        <mat-error *ngIf="startTime.hasError('required')">Start time is <strong>required</strong></mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="fill">
+        <mat-label>End time</mat-label>
+        <input matInput
+               [formControl]="endTime"
+               name="selected_time_B"
+               [format]="12"
+               [ngxMatTimepicker]="endTimePicker"
+               readonly />
+        <ngx-mat-timepicker #endTimePicker [hoursOnly]="true" (closed)="checkTimes()"></ngx-mat-timepicker>
+        <mat-icon matSuffix
+                  (click)="endTimePicker.open()">
+          watch_later
+        </mat-icon>
+        <mat-error *ngIf="endTime.hasError('required')">End time is <strong>required</strong></mat-error>
+        <mat-error *ngIf="endTime.hasError('wrongTime')">End time is <strong>earlier</strong> than start time</mat-error>
+      </mat-form-field>
+    </p>
+
+  </div>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Enter description</mat-label>
+    <input matInput [(ngModel)]="description">
+  </mat-form-field>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Enter location</mat-label>
+    <input matInput [(ngModel)]="location">
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions class="mat-dialog-actions">
+  <button mat-button *ngIf="data.editMode" color="warn" [mat-dialog-close]="remove">Remove</button>
+  <button mat-button [mat-dialog-close]="false">Cancel</button>
+  <button mat-button *ngIf="data.editMode" (click)="checkFields()">Update</button>
+  <button mat-button *ngIf="!data.editMode" (click)="checkFields()">Create</button>
+</mat-dialog-actions>
