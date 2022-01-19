@@ -38,6 +38,7 @@
     <mat-card-actions>
       <button mat-button>Subscribe/ Unsubscribe; Attend/ Leave</button>
       <button mat-button *ngIf="e.host === username" (click)="openDialog(e, true)">Edit</button>
+      <button mat-button *ngIf="e.host === username && e.members.length > 0" (click)="showMembers()">Show Members</button>
     </mat-card-actions>
   </mat-card>
 </div>

@@ -12,6 +12,7 @@ export const GET_EVENTS = gql`
       description
       startDate
       endDate
+      members
     }
   }
 `
@@ -23,10 +24,35 @@ export const CREATE_EVENT = gql`
         title
         host
         location
+        members
         description
         startDate
         endDate
       }
+    }
+  `;
+
+export const EDIT_EVENT = gql`
+    mutation editEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!) {
+      editEvent(edit: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location})
+    }
+  `;
+
+export const SUBSCRIBE_EVENT = gql`
+    mutation subscribeEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!) {
+      subscribeEvent(subscribe: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location})
+    }
+  `;
+
+export const ATTEND_EVENT = gql`
+    mutation attendEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!) {
+      attendEvent(attend: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location})
+    }
+  `;
+
+export const REMOVE_EVENT = gql`
+    mutation removeEvent($remove: String!) {
+      removeEvent(remove: $remove)
     }
   `;
 

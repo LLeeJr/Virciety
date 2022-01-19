@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase} from "apollo-angular";
 import {HttpLink} from "apollo-angular/http";
 import {InMemoryCache} from "@apollo/client/core";
-import {CREATE_EVENT, GET_EVENTS} from "./gql-request-strings";
+import {CREATE_EVENT, GET_EVENTS, REMOVE_EVENT} from "./gql-request-strings";
 
 @Injectable({
   providedIn: 'root'
@@ -46,5 +46,16 @@ export class GQLService {
     return this.apollo.watchQuery({
       query: GET_EVENTS
     }).valueChanges
+  }
+
+  removeEvent(eventID: string) {
+    return this.apollo.mutate(
+      {
+        mutation: REMOVE_EVENT,
+        variables: {
+          remove: eventID,
+        }
+      }
+    )
   }
 }

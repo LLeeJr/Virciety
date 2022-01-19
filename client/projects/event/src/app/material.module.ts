@@ -11,6 +11,7 @@ import {NgxMatTimepickerModule} from "ngx-mat-timepicker";
 import {MatDialogModule} from "@angular/material/dialog";
 import {MatButtonModule} from "@angular/material/button";
 import {MatToolbarModule} from "@angular/material/toolbar";
+import {MatListModule} from "@angular/material/list";
 
 @NgModule({
   imports: [
@@ -25,7 +26,8 @@ import {MatToolbarModule} from "@angular/material/toolbar";
     NgxMatTimepickerModule,
     MatDialogModule,
     MatButtonModule,
-    MatToolbarModule
+    MatToolbarModule,
+    MatListModule
   ],
   exports: [
     MatCardModule,
@@ -39,7 +41,8 @@ import {MatToolbarModule} from "@angular/material/toolbar";
     NgxMatTimepickerModule,
     MatDialogModule,
     MatButtonModule,
-    MatToolbarModule
+    MatToolbarModule,
+    MatListModule
   ],
   providers: [
     MatDatepickerModule

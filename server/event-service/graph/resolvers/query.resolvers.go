@@ -10,6 +10,11 @@ import (
 )
 
 func (r *queryResolver) GetEvents(ctx context.Context) ([]*model.Event, error) {
+	// sort events in backend in three different lists?
+	// upcoming events, ongoing events and old events?
+	// log.Printf(time.Now().Format("Monday, January 2, 2006"))
+	// log.Printf(time.Now().Format("1/2/06, 3:04 PM"))
+
 	return r.repo.GetEvents()
 }
 

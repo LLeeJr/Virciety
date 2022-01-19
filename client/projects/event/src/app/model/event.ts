@@ -6,6 +6,7 @@ export class Event {
   private _location: string;
   private _startDate: string;
   private _title: string;
+  private readonly _members: string[];
   private _startTime: string | null;
   private _endTime: string | null;
 
@@ -17,6 +18,7 @@ export class Event {
     this._location = data.location;
     this._startDate = data.startDate;
     this._endDate = data.endDate;
+    this._members = data.members;
 
     if (data.startDate.endsWith('M') && data.endDate.endsWith('M')) {
       this._startTime = data.startDate.split(',')[1].trim();
@@ -58,6 +60,10 @@ export class Event {
 
   get endTime(): string | null {
     return this._endTime;
+  }
+
+  get members(): string[] {
+    return this._members;
   }
 
   set description(value: string) {

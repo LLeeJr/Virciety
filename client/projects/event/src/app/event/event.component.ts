@@ -1,9 +1,9 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, Inject, OnInit} from '@angular/core';
 import {KeycloakService} from "keycloak-angular";
 import {GQLService} from "../service/gql.service";
 import {Event} from "../model/event";
-import {MatDialog} from "@angular/material/dialog";
-import {CreateEventComponent} from "../create-event/create-event.component";
+import {MAT_DIALOG_DATA, MatDialog} from "@angular/material/dialog";
+import {CreateEventComponent, OutputData} from "../create-event/create-event.component";
 
 @Component({
   selector: 'app-event',
@@ -35,7 +35,7 @@ export class EventComponent implements OnInit {
               unsorted.push(event);
             }
 
-            this.events = unsorted.sort((a, b) => +new Date(b.startDate) - +new Date(a.startDate))
+            this.events = unsorted.sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
           }, (error: any) => {
             console.error('there was an error sending the getEvents-query', error);
           });
@@ -95,8 +95,48 @@ export class EventComponent implements OnInit {
       }
     })
 
-    dialogRef.afterClosed().subscribe(data => {
+    dialogRef.afterClosed().subscribe((data: OutputData) => {
       console.log(data);
+      if (data === undefined) {
+        return;
+      }
+
+      // remove event
+      if (data.remove && editMode) {
+        this.removeEvent(data.event);
+      } else if (!data.remove && editMode) {
+
+      }
     })
   }
+
+  showMembers() {
+    this.dialog.open(DialogMembersComponent)
+  }
+
+  removeEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string; endTime: string; title: string } | null) {
+    if (event instanceof Event) {
+      this.gqlService.removeEvent(event.id).subscribe(({data}: any) => {
+        if (data.removeEvent === "success") {
+          this.events = this.events.filter(e => e.id !== event.id);
+        }
+      })
+    } else {
+      console.log(event, 'is not instance of event')
+    }
+  }
+}
+
+@Component({
+  selector: 'dialog-members',
+  template: `
+    <h1 mat-dialog-title>Members</h1>
+    <div mat-dialog-content>
+        <mat-list>
+            <mat-list-item role="listitem" *ngFor="let username of data">{{username}}</mat-list-item>
+        </mat-list>
+    </div>`,
+})
+export class DialogMembersComponent {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: string[]) {}
 }

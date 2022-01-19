@@ -10,7 +10,15 @@ export interface DialogData {
 }
 
 export interface OutputData {
-  event: Event | any | null;
+  event: Event | {
+    description: string,
+    location: string,
+    startDate: string,
+    endDate: string,
+    startTime: string,
+    endTime: string,
+    title: string,
+  } | null;
   remove: boolean;
 }
 

@@ -31,23 +31,3 @@ type Event struct {
 	Members     []string `json:"members"`
 	Host        string   `json:"host"`
 }
-
-type JoinEventRequest struct {
-	EventID     string   `json:"eventID"`
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	NewMembers  []string `json:"newMembers"`
-	StartDate   string   `json:"startDate"`
-	EndDate     string   `json:"endDate"`
-	Location    string   `json:"location"`
-}
-
-type LeaveEventRequest struct {
-	EventID     string   `json:"eventID"`
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	NewMembers  []string `json:"newMembers"`
-	StartDate   string   `json:"startDate"`
-	EndDate     string   `json:"endDate"`
-	Location    string   `json:"location"`
-}

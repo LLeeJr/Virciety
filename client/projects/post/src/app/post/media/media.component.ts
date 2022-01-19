@@ -31,7 +31,13 @@ export class MediaComponent implements OnInit {
 
 @Component({
   selector: 'dialog-liked-by',
-  templateUrl: './dialog-liked-by.html',
+  template: `
+    <h1 mat-dialog-title>Liked by</h1>
+    <div mat-dialog-content>
+        <mat-list>
+            <mat-list-item role="listitem" *ngFor="let username of data">{{username}}</mat-list-item>
+        </mat-list>
+    </div>`,
 })
 export class DialogLikedBy {
   constructor(@Inject(MAT_DIALOG_DATA) public data: string[]) {}
