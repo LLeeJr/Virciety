@@ -4,6 +4,12 @@ import {GQLService} from "../service/gql.service";
 import {Event} from "../model/event";
 import {MAT_DIALOG_DATA, MatDialog} from "@angular/material/dialog";
 import {CreateEventComponent, OutputData} from "../create-event/create-event.component";
+import {formatDate} from "@angular/common";
+
+export interface EventDate {
+  startDate: string;
+  endDate: string;
+}
 
 @Component({
   selector: 'app-event',
@@ -61,28 +67,6 @@ export class EventComponent implements OnInit {
     });*/
   }
 
-  createEvent() {
-    /*let startDate = formatDate(this.range.controls.start.value, 'fullDate', 'en-GB');
-    let endDate = formatDate(this.range.controls.end.value, 'fullDate', 'en-GB');
-    if (this.checked) {
-      let shortDate = formatDate(startDate, 'short', 'en-GB');
-      let split = shortDate.split(',', 1);
-      startDate = split[0] + ', ' + this.startTime.value;
-
-      shortDate = formatDate(endDate, 'short', 'en-GB');
-      split = shortDate.split(',', 1);
-      endDate = split[0] + ', ' + this.endTime.value;
-    }
-
-
-    this.gqlService
-      .createEvent(this.title.value, this.username, startDate, endDate, this.location, this.description)
-      .subscribe(({data}: any) => {
-        console.log(data);
-        this.events = [...this.events, data.createEvent].sort((a, b) => +new Date(b.startDate) - +new Date(a.startDate))
-      });*/
-  }
-
   gotToMaps(location: string) {
     window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location))
   }
@@ -95,17 +79,21 @@ export class EventComponent implements OnInit {
       }
     })
 
-    dialogRef.afterClosed().subscribe((data: OutputData) => {
-      console.log(data);
-      if (data === undefined) {
+    dialogRef.afterClosed().subscribe((data: OutputData | false) => {
+      // console.log(data);
+      if (data === undefined || data === false) {
         return;
       }
 
       // remove event
       if (data.remove && editMode) {
         this.removeEvent(data.event);
+      // edit event
       } else if (!data.remove && editMode) {
-
+        this.editEvent(data.event);
+      // create event
+      } else if (!data.remove && !editMode) {
+        this.createEvent(data.event);
       }
     })
   }
@@ -114,16 +102,62 @@ export class EventComponent implements OnInit {
     this.dialog.open(DialogMembersComponent)
   }
 
-  removeEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string; endTime: string; title: string } | null) {
-    if (event instanceof Event) {
+  createEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string | null; endTime: string | null; title: string } | null) {
+    console.log(event)
+
+    if (event && !(event instanceof Event)) {
+      const eventDate = EventComponent.formatEventDate(event);
+
+      this.gqlService
+        .createEvent(event.title, this.username, eventDate.startDate, eventDate.endDate, event.location, event.description)
+        .subscribe(({data}: any) => {
+          // console.log(data);
+          this.events = [...this.events, new Event(data.createEvent)].sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
+        });
+    } else {
+      console.error('CreateEvent \'event\' is instance of event or null')
+    }
+  }
+
+  private removeEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string | null; endTime: string | null; title: string } | null) {
+    if (event && event instanceof Event) {
       this.gqlService.removeEvent(event.id).subscribe(({data}: any) => {
         if (data.removeEvent === "success") {
           this.events = this.events.filter(e => e.id !== event.id);
         }
       })
     } else {
-      console.log(event, 'is not instance of event')
+      console.error('RemoveEvent \'event\' is not instance of event or null');
     }
+  }
+
+  private editEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string | null; endTime: string | null; title: string } | null) {
+    if (event && event instanceof Event) {
+      const eventDate = EventComponent.formatEventDate(event);
+      this.gqlService.editEvent(event, eventDate).subscribe(({data}: any) => {
+        if (data.removeEvent === "success") {
+          this.events = this.events.filter(e => e.id !== event.id);
+        }
+      })
+    } else {
+      console.error('EditEvent \'event\' is not instance of event or null')
+    }
+  }
+
+  private static formatEventDate(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string | null; endTime: string | null; title: string }): EventDate {
+    let startDate = formatDate(event.startDate, 'fullDate', 'en-GB');
+    let endDate = formatDate(event.endDate, 'fullDate', 'en-GB');
+    if (event.startTime && event.endTime) {
+      let shortDate = formatDate(startDate, 'short', 'en-GB');
+      let split = shortDate.split(',', 1);
+      startDate = split[0] + ', ' + event.startTime;
+
+      shortDate = formatDate(endDate, 'short', 'en-GB');
+      split = shortDate.split(',', 1);
+      endDate = split[0] + ', ' + event.endTime;
+    }
+
+    return {startDate: startDate, endDate: endDate}
   }
 }
 

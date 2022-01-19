@@ -15,8 +15,8 @@ export interface OutputData {
     location: string,
     startDate: string,
     endDate: string,
-    startTime: string,
-    endTime: string,
+    startTime: string | null,
+    endTime: string | null,
     title: string,
   } | null;
   remove: boolean;
@@ -110,6 +110,9 @@ export class CreateEventComponent implements OnInit {
         if (this.checked) {
           this.data.event.startTime = this.startTime.value;
           this.data.event.endTime = this.endTime.value;
+        } else {
+          this.data.event.startTime = null;
+          this.data.event.endTime = null;
         }
       }
 
@@ -127,8 +130,8 @@ export class CreateEventComponent implements OnInit {
           location: this.location,
           startDate: this.range.controls.startDate.value,
           endDate: this.range.controls.endDate.value,
-          startTime: this.startTime.value,
-          endTime: this.endTime.value,
+          startTime: this.startTime.value === '' ? null : this.startTime.value,
+          endTime: this.endTime.value === '' ? null : this.endTime.value,
           title: this.title.value,
         },
         remove: false

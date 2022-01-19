@@ -23,6 +23,9 @@ export class Event {
     if (data.startDate.endsWith('M') && data.endDate.endsWith('M')) {
       this._startTime = data.startDate.split(',')[1].trim();
       this._endTime = data.endDate.split(',')[1].trim();
+    } else {
+      this._startTime = null;
+      this._endTime = null;
     }
   }
 
