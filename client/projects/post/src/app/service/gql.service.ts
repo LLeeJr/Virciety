@@ -114,6 +114,7 @@ export class GQLService {
     this.lastPostID = '';
     GQLService._oldestPostReached = false;
     this.getPostQuery = undefined;
+    this.webSocketClient.close(true);
   }
 
   // Getter + Setter end
