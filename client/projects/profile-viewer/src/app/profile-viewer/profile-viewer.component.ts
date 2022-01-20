@@ -3,6 +3,8 @@ import {AuthLibService, User} from "auth-lib";
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog";
 import {ActivatedRoute, Router} from "@angular/router";
 import {KeycloakService} from "keycloak-angular";
+import {take} from "rxjs/operators";
+import {pipe} from "rxjs";
 
 @Component({
   selector: 'app-profile-viewer',
@@ -23,7 +25,21 @@ export class ProfileViewerComponent implements OnInit {
               private auth: AuthLibService,
               private keycloak: KeycloakService,
               private route: ActivatedRoute,
-              private router: Router) { }
+              private router: Router) {
+    this.route.queryParams.subscribe(({username}) => {
+      this.pickedUser = username;
+
+      // take only 1 element from this subscription for closing it after receive
+      this.auth.getUserByName(this.pickedUser)
+        .pipe(take(1))
+        .subscribe(value => {
+          if (value && value.data && value.data.getUserByName) {
+            this.activeUser = value.data.getUserByName;
+            this.getProfilePicture(this.activeUser.profilePictureId);
+          }
+        });
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     await this.keycloak.isLoggedIn().then(() => {
@@ -34,16 +50,6 @@ export class ProfileViewerComponent implements OnInit {
             this.user = value.data.getUserByName;
           }
         });
-
-        this.route.queryParams.subscribe(({username}) => {
-          this.pickedUser = username;
-          this.auth.getUserByName(username).subscribe(value => {
-            if (value && value.data && value.data.getUserByName) {
-              this.activeUser = value.data.getUserByName;
-              this.getProfilePicture(this.activeUser.profilePictureId);
-            }
-          });
-        })
         this.auth._activeId.subscribe(id => {
           this.id = id;
         });
@@ -87,16 +93,23 @@ export class ProfileViewerComponent implements OnInit {
   }
 
   isFollowedByUser() {
+    if (!this.loggedInUser) {
+      return false
+    }
     return this.loggedInUser !== this.activeUser.username && this.user.follows.includes(this.activeUser.username);
   }
 
   unfollow() {
-    this.auth.removeFollow(this.user.id, this.user.username, this.activeUser.username).subscribe(value => {
-      if (value && value.data && value.data.removeFollow) {
-        this.user = value.data.removeFollow;
-        this.auth.getUserByID(this.activeUser.id).subscribe(value => {
-          if (value && value.data && value.data.getUserByID) {
-            this.activeUser = value.data.getUserByID;
+    this.auth.removeFollow(this.user.id, this.user.username, this.activeUser.username)
+      .pipe(take(1))
+      .subscribe(remove => {
+      if (remove && remove.data && remove.data.removeFollow) {
+        this.user = remove.data.removeFollow;
+        this.auth.getUserByID(this.activeUser.id)
+          .pipe(take(1))
+          .subscribe(user => {
+          if (user && user.data && user.data.getUserByID) {
+            this.activeUser = user.data.getUserByID;
           }
         });
       }
@@ -104,12 +117,16 @@ export class ProfileViewerComponent implements OnInit {
   }
 
   follow() {
-    this.auth.addFollow(this.user.id, this.user.username, this.activeUser.username).subscribe(value => {
-      if (value && value.data && value.data.addFollow) {
-        this.user = value.data.addFollow;
-        this.auth.getUserByID(this.activeUser.id).subscribe(value => {
-          if (value && value.data && value.data.getUserByID) {
-            this.activeUser = value.data.getUserByID;
+    this.auth.addFollow(this.user.id, this.user.username, this.activeUser.username)
+      .pipe(take(1))
+      .subscribe(add => {
+      if (add && add.data && add.data.addFollow) {
+        this.user = add.data.addFollow;
+        this.auth.getUserByID(this.activeUser.id)
+          .pipe(take(1))
+          .subscribe(user => {
+          if (user && user.data && user.data.getUserByID) {
+            this.activeUser = user.data.getUserByID;
           }
         });
       }
