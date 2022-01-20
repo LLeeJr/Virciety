@@ -16,6 +16,11 @@ type Comment struct {
 	Event     string `json:"event"`
 }
 
+type CommentsWithProfileIds struct {
+	Comments  []*Comment   `json:"comments"`
+	UserIDMap []*UserIDMap `json:"userIdMap"`
+}
+
 type CreatePostRequest struct {
 	Username    string `json:"username"`
 	Description string `json:"description"`
@@ -55,4 +60,9 @@ type Post struct {
 type RemovePostRequest struct {
 	ID     string `json:"id"`
 	FileID string `json:"fileID"`
+}
+
+type UserIDMap struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }

@@ -20,6 +20,7 @@ import {
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
 import {SubscriptionClient} from "subscriptions-transport-ws";
+import {Subject} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -37,6 +38,7 @@ export class GQLService {
   private _fetchLimit: number = 5;
   static _oldestPostReached: boolean = false;
   private filter: string | null;
+  userProfilePictureIds: Subject<Map<string, string>> = new Subject<Map<string, string>>();
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink,
@@ -76,6 +78,7 @@ export class GQLService {
 
                     if (incoming.length === 0) {
                       GQLService._oldestPostReached = true;
+                      return existing;
                     }
 
                     if (args && (args['id'] === 'remove' || args['id'] === 'create')) {
@@ -109,7 +112,6 @@ export class GQLService {
   }
 
   resetService() {
-    // console.log("reset service");
     this.dataService.posts = [];
     this.lastPostID = '';
     GQLService._oldestPostReached = false;
@@ -206,9 +208,16 @@ export class GQLService {
 
       const commentList: Comment[] = [];
 
-      for (let getPostComment of data.getPostComments) {
+      for (let getPostComment of data.getPostComments.comments) {
         commentList.push(new Comment(getPostComment));
       }
+
+      let userProfilePictureIdMap = new Map<string, string>()
+      for (let entry of data.getPostComments.userIdMap) {
+        userProfilePictureIdMap.set(entry.key, entry.value);
+      }
+
+      this.userProfilePictureIds.next(userProfilePictureIdMap);
 
       post.comments = commentList;
 
@@ -296,7 +305,7 @@ export class GQLService {
         likedBy: post.likedBy,
         comments: post.comments,
       }
-    }).subscribe(({data}) => {
+    }).subscribe(({data}: any) => {
       // console.log('EditPostData: ', data)
     }, (error: any) => {
       console.error('there was an error sending the editPost-mutation', error);

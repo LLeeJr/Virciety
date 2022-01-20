@@ -45,10 +45,20 @@ type Post {
     comments: [String!]!
 }
 
+type CommentsWithProfileIds {
+    comments: [Comment!]!
+    userIdMap: [UserIdMap]
+}
+
 type Comment {
     id: String!
     postID: String!
     comment: String!
     createdBy: String!
     event: String!
+}
+
+type UserIdMap {
+    key: String! # username
+    value: String! #id
 }

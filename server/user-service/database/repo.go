@@ -28,6 +28,7 @@ type Repository interface {
 	InsertFile(base64 string) (*model.File, error)
 	GetProfilePicture(ctx context.Context, fileID *string) (string, error)
 	RemoveProfilePicture(ctx context.Context, profilePictureEvent ProfilePictureEvent) (string, error)
+	GetProfilePictureIdByUsername(username string) (string, error)
 }
 
 type repo struct {
@@ -36,6 +37,14 @@ type repo struct {
 	chunksCollection         *mongo.Collection
 	profilePictureCollection *mongo.Collection
 	bucket                   *gridfs.Bucket
+}
+
+func (r repo) GetProfilePictureIdByUsername(username string) (string, error) {
+	user, err := r.GetUserByName(nil, &username)
+	if err != nil {
+		return "", err
+	}
+	return user.ProfilePictureID, nil
 }
 
 func (r repo) RemoveProfilePicture(ctx context.Context, profilePictureEvent ProfilePictureEvent) (string, error) {
