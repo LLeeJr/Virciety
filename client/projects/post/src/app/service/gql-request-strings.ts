@@ -27,10 +27,16 @@ export const GET_DATA = gql`
 export const GET_POST_COMMENTS = gql`
     query getPostComments($id: String!) {
       getPostComments(id: $id) {
-        id
-        postID
-        comment
-        createdBy
+        comments{
+          id
+          postID
+          comment
+          createdBy
+        },
+        userIdMap{
+          key,
+          value
+        },
       }
     }
   `;

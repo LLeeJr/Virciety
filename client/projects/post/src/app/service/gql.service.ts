@@ -20,6 +20,7 @@ import {
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
 import {SubscriptionClient} from "subscriptions-transport-ws";
+import {Subject} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -36,6 +37,7 @@ export class GQLService {
   private lastPostID: string = '';
   private _fetchLimit: number = 5;
   static _oldestPostReached: boolean = false;
+  userProfilePictureIds: Subject<Map<string, string>> = new Subject<Map<string, string>>();
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink,
@@ -199,13 +201,19 @@ export class GQLService {
         id: post.id
       },
     }).valueChanges.subscribe(({data}: any) => {
-      // console.log('GetPostComments-data: ', data);
 
       const commentList: Comment[] = [];
 
-      for (let getPostComment of data.getPostComments) {
+      for (let getPostComment of data.getPostComments.comments) {
         commentList.push(new Comment(getPostComment));
       }
+
+      let userProfilePictureIdMap = new Map<string, string>()
+      for (let entry of data.getPostComments.userIdMap) {
+        userProfilePictureIdMap.set(entry.key, entry.value);
+      }
+
+      this.userProfilePictureIds.next(userProfilePictureIdMap);
 
       post.comments = commentList;
 
