@@ -47,17 +47,18 @@ func main() {
 	messagequeue.FailOnError(err, "Failed to connect to DB")
 
 	responses := map[string]chan []*model.Comment{}
+	userResponses := map[string]chan map[string]string{}
 
 	producerQueue, _ := messagequeue.NewPublisher()
 	go producerQueue.InitPublisher(ch)
 
-	consumerQueue, _ := messagequeue.NewConsumer(repo, responses)
+	consumerQueue, _ := messagequeue.NewConsumer(repo, responses, userResponses)
 	go consumerQueue.InitConsumer(ch)
 
 	// graphql init
-	// srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
+	//srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue, responses, userResponses)}))
 
-	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue, responses)}))
+	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue, responses, userResponses)}))
 
 	srv.AddTransport(transport.POST{})
 	srv.AddTransport(transport.Websocket{

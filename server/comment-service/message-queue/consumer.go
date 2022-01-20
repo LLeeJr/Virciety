@@ -65,23 +65,34 @@ func (channel *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 			log.Printf("Received a query message with messageID %s : %s\n", data.MessageId, data.Body)
 			log.Printf("ReplyTo: %s, CorrelationID: %s\n", data.ReplyTo, data.CorrelationId)
 			if data.MessageId == "Post-Service" {
-				comments, err := channel.Repo.GetCommentsByPostId(string(data.Body))
-				FailOnError(err, "Failed getting comments from db")
+				type Body struct {
+					Id      string      `json:"id"`
+					Payload []string    `json:"payload"`
+				}
+				var b *Body
+				err := json.Unmarshal(data.Body, &b)
+				if err != nil {
+					FailOnError(err, "Failed unmarshalling data body")
+				}
+				if b.Payload == nil {
+					comments, err := channel.Repo.GetCommentsByPostId(b.Id)
+					FailOnError(err, "Failed getting comments from db")
 
-				body, err := json.Marshal(comments)
+					body, err := json.Marshal(comments)
 
-				err = ch.Publish(
-					data.ReplyTo,
-					"",
-					false,
-					false,
-					amqp.Publishing{
-						ContentType: 	"text/plain",
-						CorrelationId: 	data.CorrelationId,
-						MessageId: 		"Comment-Service",
-						Body: 			body,
-					})
-				FailOnError(err, "Failed to publish a message")
+					err = ch.Publish(
+						data.ReplyTo,
+						"",
+						false,
+						false,
+						amqp.Publishing{
+							ContentType: 	"text/plain",
+							CorrelationId: 	data.CorrelationId,
+							MessageId: 		"Comment-Service",
+							Body: 			body,
+						})
+					FailOnError(err, "Failed to publish a message")
+				}
 			}
 		}
 	}()

@@ -1,5 +1,5 @@
 type Query {
     getPosts(id: String!, fetchLimit: Int!, filter: String): [Post!]!
     getData(fileID: String!): String!
-    getPostComments(id: String!): [Comment!]!
+    getPostComments(id: String!): CommentsWithProfileIds!
 }

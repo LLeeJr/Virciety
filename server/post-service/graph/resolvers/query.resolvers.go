@@ -8,6 +8,7 @@ import (
 	"log"
 	"post-service/graph/generated"
 	"post-service/graph/model"
+	"post-service/util"
 
 	"github.com/google/uuid"
 )
@@ -36,7 +37,7 @@ func (r *queryResolver) GetData(ctx context.Context, fileID string) (string, err
 	return data, nil
 }
 
-func (r *queryResolver) GetPostComments(ctx context.Context, id string) ([]*model.Comment, error) {
+func (r *queryResolver) GetPostComments(ctx context.Context, id string) (*model.CommentsWithProfileIds, error) {
 	requestID := uuid.NewString()
 
 	go func() {
@@ -54,7 +55,35 @@ func (r *queryResolver) GetPostComments(ctx context.Context, id string) ([]*mode
 
 	comments := <-r.responses[requestID]
 
-	return comments, nil
+	users := make([]string, 0)
+	for _, comment := range comments {
+		if !util.Contains(users, comment.CreatedBy) {
+			users = append(users, comment.CreatedBy)
+		}
+	}
+
+	r.mu.Lock()
+	r.userResponses[requestID] = make(chan map[string]string, 1)
+	r.mu.Unlock()
+
+	r.producerQueue.ProfilePictureIdQuery(id, requestID, users)
+
+	userIdMap := <-r.userResponses[requestID]
+	m := make([]*model.UserIDMap, 0)
+	for user, pictureId := range userIdMap {
+		log.Printf(user, pictureId)
+		m = append(m, &model.UserIDMap{
+			Key:   user,
+			Value: pictureId,
+		})
+	}
+
+	commentIdMap := &model.CommentsWithProfileIds{
+		Comments:  comments,
+		UserIDMap: m,
+	}
+
+	return commentIdMap, nil
 }
 
 // Query returns generated.QueryResolver implementation.
