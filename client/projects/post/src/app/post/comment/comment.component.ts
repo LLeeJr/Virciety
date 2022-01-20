@@ -11,6 +11,7 @@ import {AuthLibService} from "auth-lib";
 export class CommentComponent implements OnInit {
 
   @Input() post: Post;
+  @Input() user: string;
   @Output() newCommentEvent = new EventEmitter<string>()
   comment: string = "";
   nameSourceMap: Map<string, any> = new Map<string, any>();
@@ -49,6 +50,20 @@ export class CommentComponent implements OnInit {
   }
 
   addComment() {
+    if (!this.nameSourceMap.has(this.user)) {
+      this.auth.getUserByName(this.user).subscribe(value => {
+        if (value && value.data && value.data.getUserByName) {
+          let {profilePictureId} = value.data.getUserByName;
+          if (profilePictureId && profilePictureId !== '') {
+            this.auth.getProfilePicture(profilePictureId).subscribe(picture => {
+              if (picture && picture.data && picture.data.getProfilePicture) {
+                this.nameSourceMap.set(this.user, picture.data.getProfilePicture);
+              }
+            })
+          }
+        }
+      });
+    }
     this.newCommentEvent.emit(this.comment);
     this.comment = "";
   }
