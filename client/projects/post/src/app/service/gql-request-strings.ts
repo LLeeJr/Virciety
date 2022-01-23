@@ -3,8 +3,8 @@ import {gql} from "apollo-angular";
 // ------------------------- Queries, Mutations and Subscriptions
 
 export const GET_POSTS = gql`
-    query getPosts($id: String!, $fetchLimit: Int!) {
-      getPosts(id: $id, fetchLimit: $fetchLimit) {
+    query getPosts($id: String!, $fetchLimit: Int!, $filter: String) {
+      getPosts(id: $id, fetchLimit: $fetchLimit, filter: $filter) {
         id
         data {
           name
@@ -27,10 +27,16 @@ export const GET_DATA = gql`
 export const GET_POST_COMMENTS = gql`
     query getPostComments($id: String!) {
       getPostComments(id: $id) {
-        id
-        postID
-        comment
-        createdBy
+        comments{
+          id
+          postID
+          comment
+          createdBy
+        },
+        userIdMap{
+          key,
+          value
+        },
       }
     }
   `;

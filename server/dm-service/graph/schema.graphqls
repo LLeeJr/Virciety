@@ -2,16 +2,17 @@
 #
 # https://gqlgen.com/getting-started/
 
-type Query {
-  getRoom(name:String!): Chatroom
-  getRoomsByUser(userName: String!): [Chatroom]
-  getMessagesFromRoom(roomId: String!): [Dm]
+input CreateRoom {
+  member: [String!]!
+  name: String!
+  owner: String!
 }
 
 type Chatroom {
-  _id: String!
+  id: ID!
   member: [String!]!
   name: String!
+  owner: String!
 }
 
 type Dm {
@@ -22,19 +23,26 @@ type Dm {
   msg: String!
 }
 
+type Chat {
+  withUser: String!
+  preview: String!
+}
+
 scalar Time
 
 type Subscription {
   dmAdded(roomName: String!): Dm!
 }
 
-type Chat {
-  withUser: String!
-  preview: String!
+type Query {
+  getRoom(roomName:String!): Chatroom
+  getRoomsByUser(userName: String!): [Chatroom]
+  getMessagesFromRoom(roomId: String!): [Dm]
 }
 
 type Mutation {
   createDm(msg: String!, userName: String!, roomName: String!): Dm!
+  createRoom(input: CreateRoom!): Chatroom
 }
 
 directive @user(username: String!) on SUBSCRIPTION

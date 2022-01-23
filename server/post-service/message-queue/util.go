@@ -3,8 +3,8 @@ package message_queue
 import (
 	"github.com/streadway/amqp"
 	"log"
-	"posts-service/database"
-	"posts-service/graph/model"
+	"post-service/database"
+	"post-service/graph/model"
 )
 
 type RabbitMsg struct {
@@ -14,6 +14,7 @@ type RabbitMsg struct {
 	PostID    string             `json:"postID"`
 	CorrID    string             `json:"corrID"`
 	ReplyTo   string			 `json:"replyTo"`
+	Payload   []string           `json:"payload"`
 }
 
 func initExchange(queueName string, ch *amqp.Channel) {

@@ -3,18 +3,22 @@ import { Post } from "../model/post";
 import {GQLService} from "../service/gql.service";
 import {Observable} from "rxjs";
 import {KeycloakService} from "keycloak-angular";
+import {ActivatedRoute} from "@angular/router";
 
 @Component({
   selector: 'app-post',
   templateUrl: './post.component.html',
-  styleUrls: ['./post.component.scss']
+  styleUrls: ['./post.component.scss'],
+  exportAs: 'PostComponent'
 })
 export class PostComponent implements OnInit, OnDestroy {
   posts: Observable<Post[]> | undefined;
-  username: string
+  username: string;
+  filter: string | null;
 
   constructor(private gqlService: GQLService,
-              private keycloak: KeycloakService) {
+              private keycloak: KeycloakService,
+              private route: ActivatedRoute) {
   }
 
   async ngOnInit(): Promise<void> {
@@ -22,8 +26,14 @@ export class PostComponent implements OnInit, OnDestroy {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
-          this.posts = this.gqlService.getPosts();
-          this.gqlService.getPostCreated();
+          this.route.queryParams.subscribe(({username}) => {
+            if (this.filter && username !== this.filter) {
+              this.gqlService.resetService();
+            }
+            this.filter = username;
+            this.posts = this.gqlService.getPosts(this.filter);
+            this.gqlService.getPostCreated();
+          });
         })
       } else {
         this.keycloak.login();
@@ -35,21 +45,16 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    GQLService._oldestPostReached = false;
+    this.gqlService.resetService();
   }
 
   get oldestPostReached(): boolean {
-    // TODO when changing components and coming back to this one
-    // check whether it is necessary to refetch newer posts than the newest this client has
-    // ideas: send newest post id to server and ask whether new posts are there
-    // subscription notification maybe?
-    //
     return GQLService._oldestPostReached;
   }
 
   onScroll() {
     if (!this.oldestPostReached) {
-      this.gqlService.refreshPosts();
+      this.gqlService.refreshPosts(this.filter);
     }
   }
 
@@ -57,7 +62,7 @@ export class PostComponent implements OnInit, OnDestroy {
     const addCommentRequest = {
       postID: post.id,
       comment: newComment,
-      createdBy: 'user3', //this.authService.username
+      createdBy: this.username
     };
 
     this.gqlService.addComment(post, addCommentRequest);
@@ -76,8 +81,7 @@ export class PostComponent implements OnInit, OnDestroy {
   }
 
   likePost(post: Post) {
-    // TODO uncomment this
-    const username: string = /*this.authService.userName*/ 'user4';
+    const username: string = this.username;
     let liked: boolean = true;
 
     // check if it's a like or unlike

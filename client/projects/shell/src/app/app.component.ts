@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {KeycloakService} from "keycloak-angular";
+import {AuthLibService} from "auth-lib";
 
 @Component({
   selector: 'app-root',
@@ -11,7 +12,10 @@ export class AppComponent implements OnInit {
   isLoggedIn: boolean = false;
   username: string
 
+  searchMode: boolean = false;
+
   constructor(
+    private auth: AuthLibService,
     private keycloak: KeycloakService,
   ) {
     this.keycloak.isLoggedIn().then((loggedIn) => {
@@ -30,5 +34,13 @@ export class AppComponent implements OnInit {
         });
       }
     })
+  }
+
+  openSearch() {
+    this.searchMode = !this.searchMode;
+  }
+
+  closeSearch() {
+    this.searchMode = !this.searchMode;
   }
 }

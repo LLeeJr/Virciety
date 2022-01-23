@@ -1,9 +1,9 @@
 package resolvers
 
 import (
-	"posts-service/database"
-	"posts-service/graph/model"
-	messagequeue "posts-service/message-queue"
+	"post-service/database"
+	"post-service/graph/model"
+	messagequeue "post-service/message-queue"
 	"sync"
 )
 
@@ -17,13 +17,15 @@ type Resolver struct {
 	observers     map[string]chan *model.Post
 	mu            sync.Mutex
 	responses     map[string]chan []*model.Comment
+	userResponses map[string]chan map[string]string
 }
 
-func NewResolver(repo database.Repository, producerQueue messagequeue.Publisher, responses map[string]chan []*model.Comment) *Resolver {
+func NewResolver(repo database.Repository, producerQueue messagequeue.Publisher, responses map[string]chan []*model.Comment, userResponses map[string]chan map[string]string) *Resolver {
 	return &Resolver{
 		repo:          repo,
 		producerQueue: producerQueue,
 		observers:     map[string]chan *model.Post{},
 		responses: 	   responses,
+		userResponses: userResponses,
 	}
 }

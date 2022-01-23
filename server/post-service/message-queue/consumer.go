@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"github.com/streadway/amqp"
 	"log"
-	"posts-service/database"
-	"posts-service/graph/model"
+	"post-service/database"
+	"post-service/graph/model"
 )
 
 const QueryQueue = "post-service-query"
@@ -17,14 +17,16 @@ type Consumer interface {
 }
 
 type ConsumerConfig struct {
-	Repo		database.Repository
-	Responses	map[string]chan []*model.Comment
+	Repo          database.Repository
+	Responses     map[string]chan []*model.Comment
+	UserResponses map[string]chan map[string]string
 }
 
-func NewConsumer(repo database.Repository, responses map[string]chan []*model.Comment) (Consumer, error) {
+func NewConsumer(repo database.Repository, responses map[string]chan []*model.Comment, userResponses map[string]chan map[string]string) (Consumer, error) {
 	return &ConsumerConfig{
-		Repo: 		repo,
-		Responses: 	responses,
+		Repo: 		   repo,
+		Responses: 	   responses,
+		UserResponses: userResponses,
 	}, nil
 }
 
@@ -76,6 +78,14 @@ func (consumer *ConsumerConfig) InitConsumer(ch *amqp.Channel) {
 				}
 
 				consumer.Responses[data.CorrelationId] <- comments
+			}
+			if data.MessageId == "User-Service" {
+				var userIdMap map[string]string
+				err := json.Unmarshal(data.Body, &userIdMap)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				consumer.UserResponses[data.CorrelationId] <- userIdMap
 			}
 		}
 	}()

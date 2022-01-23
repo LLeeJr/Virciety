@@ -1,0 +1,50 @@
+.profile-card {
+  display: flex;
+  margin: 0 20px 0 0;
+  max-width: 26em;
+  min-width: 26em;
+}
+
+.profile-info {
+  margin-left: 1em;
+  display: grid;
+  align-content: center;
+}
+
+.profile-image {
+  border-radius: 50%;
+  max-height: 150px;
+  max-width: 150px;
+  min-width: 150px;
+  min-height: 150px;
+  cursor: pointer;
+  border: 1px solid white;
+}
+
+.foreign-profile {
+  border-radius: 50%;
+  max-height: 150px;
+  max-width: 150px;
+  min-width: 150px;
+  min-height: 150px;
+  border: 1px solid white;
+}
+
+.dialog-button {
+  width: 100% !important;
+  min-width: 100% !important;
+}
+
+.material-icons {
+  font-size: 150px;
+}
+
+.mat-icon-button {
+  margin-left: 1em;
+}
+
+.profile-title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}

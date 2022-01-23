@@ -14,7 +14,7 @@ type UniqueUser struct {
 }
 
 type Repository interface {
-	GetRoom(ctx context.Context, name string) (*model.Chatroom, error)
+	GetRoom(ctx context.Context, roomName string) (*model.Chatroom, error)
 	GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error)
 	CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error)
 	CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.Chatroom, error)
@@ -90,13 +90,14 @@ func (r repo) CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.C
 		return nil, err
 	}
 
-	room := &model.Chatroom{
+	modelRoom := &model.Chatroom{
 		ID:       insertedId,
 		Member:   roomEvent.Member,
 		Name:     roomEvent.Name,
+		Owner:    roomEvent.Owner,
 	}
 
-	return room, nil
+	return modelRoom, nil
 }
 
 func (r repo) InsertRoomEvent(ctx context.Context, room ChatroomEvent) (string, error) {
@@ -118,28 +119,28 @@ func (r repo) InsertDmEvent(ctx context.Context, dmEvent DmEvent) (string, error
 }
 
 type Chatroom struct {
+	EventType string             `bson:"eventtype"`
 	ID        primitive.ObjectID `bson:"_id"`
 	Member    []string           `bson:"member"`
 	Name      string             `bson:"name"`
-	EventType string             `bson:"eventtype"`
+	Owner     string             `bson:"owner"`
 }
 
-func (r repo) GetRoom(ctx context.Context, name string) (*model.Chatroom, error) {
+func (r repo) GetRoom(ctx context.Context, roomName string) (*model.Chatroom, error) {
 
 	var result *Chatroom
 	if err := r.roomCollection.FindOne(ctx, bson.D{
-		{"name", name},
+		{"name", roomName},
 	}).Decode(&result); err != nil {
 		return nil, err
 	}
 
-	room := &model.Chatroom{
+	return &model.Chatroom{
 		ID:     result.ID.Hex(),
 		Member: result.Member,
 		Name:   result.Name,
-	}
-
-	return room, nil
+		Owner:  result.Owner,
+	}, nil
 }
 
 func (r repo) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error) {
@@ -163,6 +164,7 @@ func (r repo) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Cha
 			ID:     chatroom.ID.Hex(),
 			Member: chatroom.Member,
 			Name:   chatroom.Name,
+			Owner:  chatroom.Owner,
 		})
 	}
 
