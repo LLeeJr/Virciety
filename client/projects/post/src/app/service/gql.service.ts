@@ -78,7 +78,6 @@ export class GQLService {
 
                     if (incoming.length === 0) {
                       GQLService._oldestPostReached = true;
-                      return existing;
                     }
 
                     if (args && (args['id'] === 'remove' || args['id'] === 'create')) {
