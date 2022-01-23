@@ -19,20 +19,26 @@ import {
 } from "./gql-request-strings";
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
+import {SubscriptionClient} from "subscriptions-transport-ws";
+import {Subject} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
 })
 export class GQLService {
   private apollo: ApolloBase;
+  private readonly webSocketClient: SubscriptionClient;
   private getPostQuery: QueryRef<any, {
     id: string;
     fetchLimit: number;
+    filter: string | null;
   }> | undefined;
 
-  private lastPostID: string = "";
+  private lastPostID: string = '';
   private _fetchLimit: number = 5;
   static _oldestPostReached: boolean = false;
+  private filter: string | null;
+  userProfilePictureIds: Subject<Map<string, string>> = new Subject<Map<string, string>>();
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink,
@@ -41,9 +47,10 @@ export class GQLService {
       uri: 'http://localhost:8083/query',
     });
 
-    const ws = new WebSocketLink({
-      uri: `ws://localhost:8083/query`,
-    })
+    this.webSocketClient = new SubscriptionClient('ws://localhost:8083/query', {
+      reconnect: true,
+    });
+    const ws = new WebSocketLink(this.webSocketClient);
 
     const link = split(
       ({query}) => {
@@ -64,17 +71,20 @@ export class GQLService {
               fields: {
                 getPosts: {
                   keyArgs: [],
-                  merge(existing = [], incoming, { args}) {
+                  merge(existing = [], incoming, { args }) {
                     // console.log('Existing: ', existing);
                     // console.log('Incoming: ', incoming);
                     // console.log('Args: ', args);
 
                     if (incoming.length === 0) {
                       GQLService._oldestPostReached = true;
-                      return existing;
                     }
 
                     if (args && (args['id'] === 'remove' || args['id'] === 'create')) {
+                      return incoming
+                    }
+
+                    if (args && args['id'] === '') {
                       return incoming
                     }
 
@@ -89,9 +99,9 @@ export class GQLService {
       });
     } catch (e) {
       console.error('Error when creating apollo client \'post\'', e);
+    } finally {
+      this.apollo = this.apolloProvider.use('post');
     }
-
-    this.apollo = this.apolloProvider.use('post');
   }
 
   // Getter + Setter
@@ -100,16 +110,27 @@ export class GQLService {
     return this._fetchLimit;
   }
 
+  resetService() {
+    this.dataService.posts = [];
+    this.lastPostID = '';
+    GQLService._oldestPostReached = false;
+    this.getPostQuery = undefined;
+    this.webSocketClient.close(true);
+  }
+
   // Getter + Setter end
 
-  getPosts(): any {
+  getPosts(filter: string | null = null): any {
+    this.filter = filter;
     if (!this.getPostQuery) {
       this.getPostQuery = this.apollo
         .watchQuery({
           query: GET_POSTS,
+          fetchPolicy: "network-only",
           variables: {
             id: this.lastPostID,
-            fetchLimit: this.fetchLimit
+            fetchLimit: this.fetchLimit,
+            filter: filter
           },
         });
     }
@@ -118,6 +139,10 @@ export class GQLService {
       // console.log('GetPostData: ', data);
 
       const posts = this.dataService.posts;
+
+      if (data.getPosts.length < this.fetchLimit) {
+        GQLService._oldestPostReached = true;
+      }
 
       for (let getPost of data.getPosts) {
         if (posts.some(p => p.id === getPost.id)) {
@@ -138,12 +163,13 @@ export class GQLService {
     }));
   }
 
-  refreshPosts() {
+  refreshPosts(filter: string | null) {
     if (this.getPostQuery) {
       this.getPostQuery.fetchMore({
         variables: {
           id: this.lastPostID,
           fetchLimit: this.fetchLimit,
+          filter: filter
         }
       }).then(() => {
         // console.log('getPost fetchMore success!');
@@ -181,9 +207,16 @@ export class GQLService {
 
       const commentList: Comment[] = [];
 
-      for (let getPostComment of data.getPostComments) {
+      for (let getPostComment of data.getPostComments.comments) {
         commentList.push(new Comment(getPostComment));
       }
+
+      let userProfilePictureIdMap = new Map<string, string>()
+      for (let entry of data.getPostComments.userIdMap) {
+        userProfilePictureIdMap.set(entry.key, entry.value);
+      }
+
+      this.userProfilePictureIds.next(userProfilePictureIdMap);
 
       post.comments = commentList;
 
@@ -204,35 +237,36 @@ export class GQLService {
         data: fileBase64
       },
       update: (cache, {data}: any) => {
-        const existingPosts: any = cache.readQuery({
-          query: GET_POSTS
-        });
+        if (!this.filter || this.filter === username) {
+          const existingPosts: any = cache.readQuery({
+            query: GET_POSTS
+          });
 
-        const post = new Post(data.createPost);
+          const post = new Post(data.createPost);
 
-        if (this.dataService.posts.some(p => p.id === post.id)) {
-          // console.log('post already exists');
-          return;
+          if (this.dataService.posts.some(p => p.id === post.id)) {
+            return;
+          }
+
+          post.data.content = fileBase64;
+          this.dataService.addNewPost(post);
+
+          let newPosts;
+
+          if (existingPosts) {
+            newPosts = [data.createPost, ...existingPosts.getPosts];
+          } else {
+            newPosts = [data.createPost];
+          }
+
+          cache.writeQuery({
+            query: GET_POSTS,
+            variables: {
+              id: 'create',
+            },
+            data: {getPosts: newPosts}
+          });
         }
-
-        post.data.content = fileBase64;
-        this.dataService.addNewPost(post);
-
-        let newPosts;
-
-        if (existingPosts) {
-          newPosts = [data.createPost, ...existingPosts.getPosts];
-        } else {
-          newPosts = [data.createPost];
-        }
-
-        cache.writeQuery({
-          query: GET_POSTS,
-          variables: {
-            id: 'create',
-          },
-          data: { getPosts : newPosts }
-        });
       },
       /*context: {
         useMultipart: true,
@@ -270,7 +304,7 @@ export class GQLService {
         likedBy: post.likedBy,
         comments: post.comments,
       }
-    }).subscribe(({data}) => {
+    }).subscribe(({data}: any) => {
       // console.log('EditPostData: ', data)
     }, (error: any) => {
       console.error('there was an error sending the editPost-mutation', error);
@@ -312,38 +346,38 @@ export class GQLService {
       query: NEW_POST_CREATED,
     }).subscribe(({data}: any) => {
       // console.log('NewPostCreated: ', data);
+      if (!this.filter || this.filter === data.newPostCreated.username) {
+        const post = new Post(data.newPostCreated);
 
-      const post = new Post(data.newPostCreated);
+        if (this.dataService.posts.some(p => p.id === post.id)) {
+          return;
+        }
 
-      if (this.dataService.posts.some(p => p.id === post.id)) {
-        // console.log('post already exists');
-        return;
+        this.dataService.addNewPost(post);
+        this.getData(post);
+
+        const cache = this.apollo.client.cache;
+
+        const existingPosts: any = cache.readQuery({
+          query: GET_POSTS,
+        });
+
+        let newPosts;
+
+        if (existingPosts) {
+          newPosts = [data.newPostCreated, ...existingPosts.getPosts];
+        } else {
+          newPosts = [data.newPostCreated];
+        }
+
+        cache.writeQuery({
+          query: GET_POSTS,
+          variables: {
+            id: 'create',
+          },
+          data: {getPosts: newPosts}
+        });
       }
-
-      this.dataService.addNewPost(post);
-      this.getData(post);
-
-      const cache = this.apollo.client.cache;
-
-      const existingPosts: any = cache.readQuery({
-        query: GET_POSTS,
-      });
-
-      let newPosts;
-
-      if (existingPosts) {
-        newPosts = [data.newPostCreated, ...existingPosts.getPosts];
-      } else {
-        newPosts = [data.newPostCreated];
-      }
-
-      cache.writeQuery({
-        query: GET_POSTS,
-        variables: {
-          id: 'create',
-        },
-        data: { getPosts : newPosts }
-      });
     }, (error: any) => {
       console.error('there was an error sending the newPostCreated-subscription', error)
     })

@@ -17,6 +17,7 @@ type Publisher interface {
 	AddMessageToQuery(postID string, requestID string)
 	AddMessageToCommand(comment model.Comment)
 	AddMessageToEvent(postEvent database.PostEvent)
+	ProfilePictureIdQuery(postId string, requestID string, users []string)
 }
 
 type PublisherConfig struct {
@@ -31,6 +32,16 @@ func NewPublisher() (Publisher, error) {
 		CommandChan: make(chan RabbitMsg, 10),
 		EventChan:   make(chan RabbitMsg, 10),
 	}, nil
+}
+
+func (publisher *PublisherConfig) ProfilePictureIdQuery(postId string, requestID string, users []string) {
+	publisher.QueryChan <- RabbitMsg{
+		QueueName: QueryExchange,
+		PostID:    postId,
+		CorrID:    requestID,
+		ReplyTo:   QueryExchange,
+		Payload:   users,
+	}
 }
 
 func (publisher *PublisherConfig) AddMessageToQuery(postID string, requestID string) {
@@ -73,13 +84,29 @@ func (publisher *PublisherConfig) InitPublisher(ch *amqp.Channel) {
 	}
 }
 
+type Body struct {
+	Id      string      `json:"id"`
+	Payload []string    `json:"payload"`
+}
+
 func (publisher *PublisherConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 	var body []byte
 	var err error
 	var corrID = ""
 	if msg.QueueName == QueryExchange {
 		corrID = msg.CorrID
-		body, err = json.Marshal(msg.PostID)
+		if len(msg.Payload) != 0 {
+			b := Body{
+				Id: msg.PostID,
+				Payload: msg.Payload,
+			}
+			body, err = json.Marshal(b)
+		} else {
+			b := Body{
+				Id: msg.PostID,
+			}
+			body, err = json.Marshal(b)
+		}
 	} else if msg.QueueName == CommandExchange {
 		body, err = json.Marshal(msg.Comment)
 	} else {

@@ -18,6 +18,17 @@
   height: 100%;
 }
 
-.mat-drawer-container {
-  height: 100%;
+.mat-drawer-container,
+.mat-drawer-content {
+  height: calc(100% - 32px);
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow-y: hidden;
+}
+
+.search-container {
+  display: flex;
+  flex-direction: row;
+  align-content: center;
+  align-items: center;
 }

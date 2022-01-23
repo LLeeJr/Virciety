@@ -1,0 +1,56 @@
+
+<mat-card class="profile-card" *ngIf="activeUser">
+  <div *ngIf="this.activeUser.profilePictureId !== ''; else placeholder">
+    <img *ngIf="isCurrentUser(); else foreignProfile" src="{{this.source}}"
+         alt="{{this.activeUser.username}}-profile-picture"
+         class="profile-image" (click)="openDialog()">
+  </div>
+  <div class="profile-info">
+    <mat-card-title class="profile-title">
+      {{this.activeUser.username}}
+      <div *ngIf="!isCurrentUser()">
+        <button mat-icon-button (click)="openChat()">
+          <mat-icon style="font-size: 40px">message</mat-icon>
+        </button>
+        <button mat-icon-button *ngIf="isFollowedByUser(); else followIcon" (click)="unfollow()">
+          <mat-icon style="font-size: 40px">person_remove</mat-icon>
+        </button>
+      </div>
+    </mat-card-title>
+    <mat-card-subtitle>{{this.activeUser.firstName}} {{this.activeUser.lastName}}</mat-card-subtitle>
+    <div>
+      <span style="font-weight: bold">{{this.activeUser.followers.length}}</span>
+      Follower
+      <span style="margin-left: 1em; font-weight: bold">{{this.activeUser.follows.length}}</span>
+      Subscribed
+    </div>
+  </div>
+</mat-card>
+
+<ng-template #foreignProfile>
+  <img src="{{this.source}}"
+       alt="{{this.activeUser.username}}-profile-picture"
+       class="foreign-profile">
+</ng-template>
+
+<ng-template #placeholder>
+  <div class="profile-image" *ngIf="isCurrentUser(); else foreignPlaceholder">
+    <span class="material-icons" (click)="openDialog()">
+    account_circle
+  </span>
+  </div>
+</ng-template>
+
+<ng-template #foreignPlaceholder>
+  <div class="foreign-profile" >
+    <span class="material-icons">
+    account_circle
+  </span>
+  </div>
+</ng-template>
+
+<ng-template #followIcon>
+  <button mat-icon-button (click)="follow()">
+    <mat-icon style="font-size: 40px">person_add</mat-icon>
+  </button>
+</ng-template>

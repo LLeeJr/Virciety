@@ -1,16 +1,66 @@
-.message-card {
+:host {
+  width: 100%;
+  overflow-y: auto;
+}
+
+.chatroom-title {
+  position: fixed;
+  font: 500 20px/32px;
+  font-size: 20px;
+  letter-spacing: normal;
+}
+
+.chat-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.message-container {
+  display: contents;
+}
+
+.user-message-card, .friend-message-card {
   display: inline-block;
   margin-bottom: 1em;
 }
 
+.user-message-card {
+  justify-self: right;
+}
+
 .friend-message-card {
-  background: blueviolet;
+  width: fit-content;
+  background: #e91e63;
 }
 
 .chat {
+  width: 70%;
+  display: grid;
+  padding-top: 3em;
+  padding-bottom: 4em;
+}
+
+.chat-input {
+  bottom: 0;
+  width: 100%;
+  position: fixed;
   display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  overflow: auto;
+  justify-content: center;
+  flex-direction: row;
+}
+
+.message-form-field {
+  width: 70%;
+}
+
+::ng-deep .mat-form-field-wrapper{
+  margin-bottom: -1.25em;
+}
+
+::ng-deep {
+  .mat-form-field .mat-form-field-flex{
+    background-color: rgb(33, 33, 33);
+  }
 }

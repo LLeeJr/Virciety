@@ -11,11 +11,15 @@ import {MatFormFieldModule} from "@angular/material/form-field";
 import {MatInputModule} from "@angular/material/input";
 import {MatListModule} from "@angular/material/list";
 import {MatCardModule} from "@angular/material/card";
+import {MatIconModule} from "@angular/material/icon";
 
+const EXPORTS = [
+  UserComponent,
+];
 
 @NgModule({
   declarations: [
-    UserComponent
+    ...EXPORTS,
   ],
   imports: [
     CommonModule,
@@ -27,7 +31,11 @@ import {MatCardModule} from "@angular/material/card";
     MatFormFieldModule,
     MatInputModule,
     MatListModule,
-    MatCardModule
-  ]
+    MatCardModule,
+    MatIconModule
+  ],
+  exports: [...EXPORTS],
 })
-export class UserModule { }
+export class UserModule {
+  static exports = EXPORTS;
+}

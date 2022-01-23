@@ -1,14 +1,17 @@
 package database
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strings"
 	"time"
 	"user-service/graph/model"
 )
@@ -21,11 +24,170 @@ type Repository interface {
 	AddFollow(ctx context.Context, id *string, username *string, add *string) (*model.User, error)
 	RemoveFollow(ctx context.Context, id *string, username *string, remove *string) (*model.User, error)
 	FindUsersWithName(ctx context.Context, name *string) ([]*model.User, error)
+	AddProfilePicture(ctx context.Context, profilePictureEvent ProfilePictureEvent, input model.AddProfilePicture) (string, error)
+	InsertFile(base64 string) (*model.File, error)
+	GetProfilePicture(ctx context.Context, fileID *string) (string, error)
+	RemoveProfilePicture(ctx context.Context, profilePictureEvent ProfilePictureEvent) (string, error)
+	GetProfilePictureIdByUsername(username string) (string, error)
 }
 
 type repo struct {
-	userCollection *mongo.Collection
-	bucket *gridfs.Bucket
+	userCollection           *mongo.Collection
+	fileCollection           *mongo.Collection
+	chunksCollection         *mongo.Collection
+	profilePictureCollection *mongo.Collection
+	bucket                   *gridfs.Bucket
+}
+
+func (r repo) GetProfilePictureIdByUsername(username string) (string, error) {
+	user, err := r.GetUserByName(nil, &username)
+	if err != nil {
+		return "", err
+	}
+	return user.ProfilePictureID, nil
+}
+
+func (r repo) RemoveProfilePicture(ctx context.Context, profilePictureEvent ProfilePictureEvent) (string, error) {
+
+	type file struct {
+		ID         primitive.ObjectID `bson:"_id"`
+		FileName   string             `bson:"filename"`
+	}
+
+	var result *file
+	if err := r.fileCollection.FindOne(ctx, bson.D{
+		{"filename", profilePictureEvent.FileId},
+	}).Decode(&result); err != nil {
+		return "error during finding profile picture entry", err
+	}
+
+	_, err := r.chunksCollection.DeleteMany(ctx, bson.D{
+		{"files_id", result.ID},
+	})
+	if err != nil {
+		return "error during deleting file chunks", err
+	}
+
+	_, err = r.fileCollection.DeleteOne(ctx, bson.D{
+		{"filename", profilePictureEvent.FileId},
+	})
+	if err != nil {
+		return "error during deleting profile picture", err
+	}
+
+	_, err = r.profilePictureCollection.DeleteOne(ctx, bson.D{
+		{"fileid", profilePictureEvent.FileId},
+	})
+	if err != nil {
+		return "error during deleting profile picture event", err
+	}
+
+	user, err := r.GetUserByName(ctx, &profilePictureEvent.Username)
+	if err != nil {
+		return "error while retrieving user profile", err
+	}
+
+	objectID, err := primitive.ObjectIDFromHex(user.ID)
+	query := bson.M{
+		"_id": objectID,
+	}
+
+	update := bson.D{
+		{"$set", bson.D{{"fileId", ""}}},
+	}
+
+	_, err = r.userCollection.UpdateOne(ctx,
+		query,
+		update,
+	)
+
+	return "removed profile picture successfully", err
+}
+
+func (r repo) GetProfilePicture(ctx context.Context, fileID *string) (string, error) {
+	var buf bytes.Buffer
+	_, err := r.bucket.DownloadToStreamByName(*fileID, &buf)
+	if err != nil {
+		return "", err
+	}
+
+	return string(buf.Bytes()), nil
+}
+
+func (r repo) InsertFile(base64 string) (*model.File, error) {
+	fileName := uuid.NewString()
+
+	properties := strings.Split(base64, ";base64,")
+	contentType := strings.Split(properties[0], ":")
+
+	uploadOpts := options.GridFSUpload().
+		SetMetadata(bson.D{{"contentType", contentType[1]}})
+
+	uploadStream, err := r.bucket.OpenUploadStream(fileName, uploadOpts)
+	if err != nil {
+		return nil, err
+	}
+	defer uploadStream.Close()
+
+	_, err = uploadStream.Write([]byte(base64))
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.File{
+		Name:        fileName,
+		Content:     base64,
+		ContentType: contentType[1],
+	}, nil
+}
+
+
+func (r repo) AddProfilePicture(ctx context.Context, profilePictureEvent ProfilePictureEvent, input model.AddProfilePicture) (string, error) {
+	user, err := r.GetUserByName(ctx, &input.Username)
+	if err != nil {
+		return "error while retrieving user profile", err
+	}
+
+	if user.ProfilePictureID != "" {
+		// profile picture already exists in db, which is why it needs to be deleted at first
+		profilePictureEvent.FileId = user.ProfilePictureID
+		_, err = r.RemoveProfilePicture(ctx, profilePictureEvent)
+		if err != nil {
+			return "error during removing old profile picture", err
+		}
+	}
+
+	file, err := r.InsertFile(input.Data)
+	if err != nil {
+		return "error while inserting file in db", err
+	}
+
+	profilePictureEvent.FileId = file.Name
+
+	_, err = r.InsertProfilePictureEvent(ctx, profilePictureEvent)
+	if err != nil {
+		return "error while inserting file related data in db", err
+	}
+
+	objectID, err := primitive.ObjectIDFromHex(user.ID)
+	query := bson.M{
+		"_id": objectID,
+	}
+
+	update := bson.D{
+		{"$set", bson.D{{"fileId", file.Name}}},
+	}
+
+	_, err = r.userCollection.UpdateOne(ctx,
+		query,
+		update,
+	)
+	if err != nil {
+		return "error during updating user profile", err
+	}
+
+	return file.Name, nil
+
 }
 
 func (r repo) RemoveFollow(ctx context.Context, id *string, username *string, remove *string) (*model.User, error) {
@@ -164,6 +326,7 @@ type UserByName struct {
 	ID        primitive.ObjectID `bson:"_id"`
 	LastName  string             `bson:"lastname"`
 	Username  string             `bson:"username"`
+	FileId    string             `bson:"fileId"`
 }
 
 func (r repo) GetUserByName(ctx context.Context, name *string) (*model.User, error) {
@@ -182,6 +345,7 @@ func (r repo) GetUserByName(ctx context.Context, name *string) (*model.User, err
 		LastName:  result.LastName,
 		Follows:   result.Follows,
 		Followers: result.Followers,
+		ProfilePictureID: result.FileId,
 	}
 
 	return user, nil
@@ -215,6 +379,7 @@ func (r repo) FindUsersWithName(ctx context.Context, name *string) ([]*model.Use
 			LastName:  userResult.LastName,
 			Follows:   userResult.Follows,
 			Followers: userResult.Followers,
+			ProfilePictureID: userResult.FileId,
 		}
 
 		users = append(users, user)
@@ -243,6 +408,7 @@ func (r repo) GetUserByID(ctx context.Context, id *string) (*model.User, error) 
 		LastName:  result.LastName,
 		Follows:   result.Follows,
 		Followers: result.Followers,
+		ProfilePictureID: result.FileId,
 	}
 
 	return user, nil
@@ -269,6 +435,7 @@ func (r repo) CreateUser(ctx context.Context, userEvent UserEvent) (*model.User,
 		LastName:  userEvent.LastName,
 		Follows:   userEvent.Follows,
 		Followers: userEvent.Followers,
+		ProfilePictureID: "",
 	}
 
 	return user, nil
@@ -281,6 +448,15 @@ func (r repo) InsertUserEvent(ctx context.Context, userEvent UserEvent) (string,
 	}
 
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
+}
+
+func (r repo) InsertProfilePictureEvent(ctx context.Context, profilePictureEvent ProfilePictureEvent) (string, error) {
+	inserted, err := r.profilePictureCollection.InsertOne(ctx, profilePictureEvent)
+	if err != nil {
+		return "error while inserting profile picture related data into db", err
+	}
+
+	return inserted.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
 func NewRepo() (Repository, error) {
@@ -296,7 +472,10 @@ func NewRepo() (Repository, error) {
 	}
 
 	return &repo{
-		userCollection: db.Collection("user-events"),
-		bucket:         bucket,
+		userCollection:   db.Collection("user-events"),
+		profilePictureCollection: db.Collection("profile-picture-events"),
+		fileCollection:   bucket.GetFilesCollection(),
+		chunksCollection: bucket.GetChunksCollection(),
+		bucket:           bucket,
 	}, nil
 }

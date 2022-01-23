@@ -18,7 +18,7 @@ export class ApiService {
 
   messages: any[] = [];
   chatMembers: string[] = [];
-  selectedRoom: Room;
+  selectedRoom: any;
 
   private query: QueryRef<any> | undefined;
   private apollo!: ApolloBase;
@@ -88,11 +88,11 @@ export class ApiService {
     });
   }
 
-  subscribeToChat(): Observable<any> {
+  subscribeToChat(roomName: string): Observable<any> {
     return this.apollo.subscribe({
       query: this.chatSubGql.document,
       variables: {
-        roomName: this.selectedRoom.name
+        roomName: roomName
       }
     })
   }
@@ -101,7 +101,7 @@ export class ApiService {
     this.webSocketClient.close(true);
   }
 
-  getMessagesFromRoom(): Observable<any> {
+  getMessagesFromRoom(roomId: string): Observable<any> {
     const query = gql`
     query getMessagesFromRoom($roomId: String!){
       getMessagesFromRoom(roomId: $roomId)
@@ -118,7 +118,7 @@ export class ApiService {
       fetchPolicy: 'network-only',
       query: query,
       variables: {
-        roomId: this.selectedRoom._id,
+        roomId: roomId,
       },
     });
 
@@ -130,14 +130,16 @@ export class ApiService {
     query getRoomsByUser($userName: String!) {
       getRoomsByUser(userName: $userName)
       {
-        name,
+        id,
         member,
-        _id
+        name,
+        owner
       }
     }`;
 
     this.query = this.apollo.watchQuery<any>({
       query: query,
+      fetchPolicy: "network-only",
       variables: {
         userName: user
       }
@@ -148,25 +150,50 @@ export class ApiService {
 
   getRoom(roomName: string): Observable<any> {
     const query = gql`
-    query getRoom($name: String!) {
-      getRoom(name: $name)
+    query getRoom($roomName: String!) {
+      getRoom(roomName: $roomName)
       {
-        name,
+        id,
         member,
-        messages{
-          msg
-        },
+        name,
+        owner
       }
     }`;
 
     this.query = this.apollo.watchQuery<any>({
       query: query,
       variables: {
-        name: roomName
+        roomName: roomName,
       }
     });
 
     return this.query.valueChanges;
   }
 
+  createRoom(member: string[], name: string, owner: string) {
+    const mutation = gql`
+    mutation createRoom($input: CreateRoom!){
+      createRoom(input: $input)
+      {
+        id,
+        member,
+        name,
+        owner
+      }
+    }
+    `;
+
+    const input = {
+      member: member,
+      name: name,
+      owner: owner,
+    }
+
+    return this.apollo.mutate<any>({
+      mutation: mutation,
+      variables: {
+        input: input,
+      },
+    });
+  }
 }

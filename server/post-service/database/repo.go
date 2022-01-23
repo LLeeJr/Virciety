@@ -18,7 +18,7 @@ type Repository interface {
 	InsertPostEvent(post PostEvent) (string, error)
 	InsertFile(base64File string) (*model.File, error)
 	CreatePost(postEvent PostEvent, base64File string) (*model.Post, error)
-	GetPosts(id string, fetchLimit int) ([]*model.Post, error)
+	GetPosts(id string, fetchLimit int, filter *string) ([]*model.Post, error)
 	RemovePost(postEvent PostEvent) (string, error)
 	EditPost(postEvent PostEvent) (string, error)
 	LikePost(postEvent PostEvent) error
@@ -113,7 +113,7 @@ func (repo *Repo) CreatePost(postEvent PostEvent, base64File string) (*model.Pos
 	return post, nil
 }
 
-func (repo *Repo) GetPosts(id string, fetchLimit int) ([]*model.Post, error) {
+func (repo *Repo) GetPosts(id string, fetchLimit int, filter *string) ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
 	limit := int64(fetchLimit)
 
@@ -152,11 +152,19 @@ func (repo *Repo) GetPosts(id string, fetchLimit int) ([]*model.Post, error) {
 		key = "$gt"
 	}
 
-	// get all post events with event_type = "CreatePost" sorted by event_time
-	cursor, err := repo.postCollection.Find(ctx, bson.D{
+	find := bson.D{
 		{"event_type", "CreatePost"},
-		{"event_time", bson.D{{key, lastFetchedEventTime}}},
-	}, opts)
+		{"event_time", bson.D{{key, lastFetchedEventTime}}}}
+
+	if filter != nil {
+		find = bson.D{
+			{"event_type", "CreatePost"},
+			{"event_time", bson.D{{key, lastFetchedEventTime}}},
+			{"username", filter}}
+	}
+
+	// get all post events with event_type = "CreatePost" sorted by event_time
+	cursor, err := repo.postCollection.Find(ctx, find, opts)
 	if err != nil {
 		return nil, err
 	}

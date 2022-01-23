@@ -33,6 +33,7 @@ module.exports = {
         library: { type: "var", name: "post" },
         exposes: {
           './PostModule': './projects/post/src/app/post/post.module.ts',
+          PostModule: './projects/post/src/app/post/post.module.ts',
           CreatePostModule: './projects/post/src/app/create-post/create-post.module.ts',
         },
 

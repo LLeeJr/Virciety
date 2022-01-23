@@ -12,9 +12,16 @@ type Chat struct {
 }
 
 type Chatroom struct {
-	ID     string   `json:"_id"`
+	ID     string   `json:"id"`
 	Member []string `json:"member"`
 	Name   string   `json:"name"`
+	Owner  string   `json:"owner"`
+}
+
+type CreateRoom struct {
+	Member []string `json:"member"`
+	Name   string   `json:"name"`
+	Owner  string   `json:"owner"`
 }
 
 type Dm struct {

@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"encoding/json"
 	"github.com/streadway/amqp"
 	"log"
 	"user-service/database"
@@ -73,6 +74,42 @@ func (c *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 	go func() {
 		for data := range queries {
 			log.Printf("Received a message with messageID %s : %s", data.MessageId, data.Body)
+			log.Printf("ReplyTo: %s, CorrelationID: %s\n", data.ReplyTo, data.CorrelationId)
+			if data.MessageId == "Post-Service" {
+				type Body struct {
+					Id      string      `json:"id"`
+					Payload []string    `json:"payload"`
+				}
+				var b *Body
+				err := json.Unmarshal(data.Body, &b)
+				if err != nil {
+					FailOnError(err, "Failed unmarshalling data body")
+				}
+				if b.Payload != nil {
+					userIdMap := make(map[string]string)
+					for _, username := range b.Payload {
+						id, err := c.Repo.GetProfilePictureIdByUsername(username)
+						FailOnError(err, "Failed retrieving profile picture id")
+						userIdMap[username] = id
+					}
+					FailOnError(err, "Failed getting comments from db")
+
+					body, err := json.Marshal(userIdMap)
+
+					err = ch.Publish(
+						data.ReplyTo,
+						"",
+						false,
+						false,
+						amqp.Publishing{
+							ContentType: 	"text/plain",
+							CorrelationId: 	data.CorrelationId,
+							MessageId: 		"User-Service",
+							Body: 			body,
+						})
+					FailOnError(err, "Failed to publish a message")
+				}
+			}
 		}
 	}()
 

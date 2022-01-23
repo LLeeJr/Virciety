@@ -43,25 +43,35 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	File struct {
+		Content     func(childComplexity int) int
+		ContentType func(childComplexity int) int
+		Name        func(childComplexity int) int
+	}
+
 	Mutation struct {
-		AddFollow    func(childComplexity int, id *string, username *string, toAdd *string) int
-		CreateUser   func(childComplexity int, input model.UserData) int
-		RemoveFollow func(childComplexity int, id *string, username *string, toRemove *string) int
+		AddFollow            func(childComplexity int, id *string, username *string, toAdd *string) int
+		AddProfilePicture    func(childComplexity int, input model.AddProfilePicture) int
+		CreateUser           func(childComplexity int, input model.UserData) int
+		RemoveFollow         func(childComplexity int, id *string, username *string, toRemove *string) int
+		RemoveProfilePicture func(childComplexity int, remove model.RemoveProfilePicture) int
 	}
 
 	Query struct {
 		FindUsersWithName func(childComplexity int, name *string) int
+		GetProfilePicture func(childComplexity int, fileID *string) int
 		GetUserByID       func(childComplexity int, id *string) int
 		GetUserByName     func(childComplexity int, name *string) int
 	}
 
 	User struct {
-		FirstName func(childComplexity int) int
-		Followers func(childComplexity int) int
-		Follows   func(childComplexity int) int
-		ID        func(childComplexity int) int
-		LastName  func(childComplexity int) int
-		Username  func(childComplexity int) int
+		FirstName        func(childComplexity int) int
+		Followers        func(childComplexity int) int
+		Follows          func(childComplexity int) int
+		ID               func(childComplexity int) int
+		LastName         func(childComplexity int) int
+		ProfilePictureID func(childComplexity int) int
+		Username         func(childComplexity int) int
 	}
 }
 
@@ -69,10 +79,13 @@ type MutationResolver interface {
 	CreateUser(ctx context.Context, input model.UserData) (*model.User, error)
 	AddFollow(ctx context.Context, id *string, username *string, toAdd *string) (*model.User, error)
 	RemoveFollow(ctx context.Context, id *string, username *string, toRemove *string) (*model.User, error)
+	AddProfilePicture(ctx context.Context, input model.AddProfilePicture) (string, error)
+	RemoveProfilePicture(ctx context.Context, remove model.RemoveProfilePicture) (string, error)
 }
 type QueryResolver interface {
 	GetUserByID(ctx context.Context, id *string) (*model.User, error)
 	GetUserByName(ctx context.Context, name *string) (*model.User, error)
+	GetProfilePicture(ctx context.Context, fileID *string) (string, error)
 	FindUsersWithName(ctx context.Context, name *string) ([]*model.User, error)
 }
 
@@ -91,6 +104,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "File.content":
+		if e.complexity.File.Content == nil {
+			break
+		}
+
+		return e.complexity.File.Content(childComplexity), true
+
+	case "File.contentType":
+		if e.complexity.File.ContentType == nil {
+			break
+		}
+
+		return e.complexity.File.ContentType(childComplexity), true
+
+	case "File.name":
+		if e.complexity.File.Name == nil {
+			break
+		}
+
+		return e.complexity.File.Name(childComplexity), true
+
 	case "Mutation.addFollow":
 		if e.complexity.Mutation.AddFollow == nil {
 			break
@@ -102,6 +136,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.AddFollow(childComplexity, args["id"].(*string), args["username"].(*string), args["toAdd"].(*string)), true
+
+	case "Mutation.addProfilePicture":
+		if e.complexity.Mutation.AddProfilePicture == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_addProfilePicture_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AddProfilePicture(childComplexity, args["input"].(model.AddProfilePicture)), true
 
 	case "Mutation.createUser":
 		if e.complexity.Mutation.CreateUser == nil {
@@ -127,6 +173,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.RemoveFollow(childComplexity, args["id"].(*string), args["username"].(*string), args["toRemove"].(*string)), true
 
+	case "Mutation.removeProfilePicture":
+		if e.complexity.Mutation.RemoveProfilePicture == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_removeProfilePicture_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RemoveProfilePicture(childComplexity, args["remove"].(model.RemoveProfilePicture)), true
+
 	case "Query.findUsersWithName":
 		if e.complexity.Query.FindUsersWithName == nil {
 			break
@@ -138,6 +196,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.FindUsersWithName(childComplexity, args["name"].(*string)), true
+
+	case "Query.getProfilePicture":
+		if e.complexity.Query.GetProfilePicture == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getProfilePicture_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetProfilePicture(childComplexity, args["fileID"].(*string)), true
 
 	case "Query.getUserByID":
 		if e.complexity.Query.GetUserByID == nil {
@@ -197,6 +267,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.LastName(childComplexity), true
+
+	case "User.profilePictureId":
+		if e.complexity.User.ProfilePictureID == nil {
+			break
+		}
+
+		return e.complexity.User.ProfilePictureID(childComplexity), true
 
 	case "User.username":
 		if e.complexity.User.Username == nil {
@@ -273,6 +350,12 @@ var sources = []*ast.Source{
 #
 # https://gqlgen.com/getting-started/
 
+type File {
+  name: String!
+  content: String!
+  contentType: String!
+}
+
 type User {
   id: ID!
   username: String!
@@ -280,11 +363,13 @@ type User {
   lastName: String!
   follows: [String!]
   followers: [String!]
+  profilePictureId: String!
 }
 
 type Query {
   getUserByID(id: ID): User!
   getUserByName(name: String): User!
+  getProfilePicture(fileID: String): String!
   findUsersWithName(name: String): [User!]!
 }
 
@@ -294,10 +379,22 @@ input UserData {
   lastName: String!
 }
 
+input AddProfilePicture {
+  username: String!
+  data: String!
+}
+
+input RemoveProfilePicture {
+  username: String!
+  fileID: String!
+}
+
 type Mutation {
   createUser(input: UserData!): User!
   addFollow(id: ID, username: String, toAdd: String): User!
   removeFollow(id: ID, username: String, toRemove: String): User!
+  addProfilePicture(input: AddProfilePicture!): String!
+  removeProfilePicture(remove: RemoveProfilePicture!): String!
 }
 `, BuiltIn: false},
 }
@@ -337,6 +434,21 @@ func (ec *executionContext) field_Mutation_addFollow_args(ctx context.Context, r
 		}
 	}
 	args["toAdd"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_addProfilePicture_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.AddProfilePicture
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNAddProfilePicture2userᚑserviceᚋgraphᚋmodelᚐAddProfilePicture(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -388,6 +500,21 @@ func (ec *executionContext) field_Mutation_removeFollow_args(ctx context.Context
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_removeProfilePicture_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.RemoveProfilePicture
+	if tmp, ok := rawArgs["remove"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("remove"))
+		arg0, err = ec.unmarshalNRemoveProfilePicture2userᚑserviceᚋgraphᚋmodelᚐRemoveProfilePicture(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["remove"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -415,6 +542,21 @@ func (ec *executionContext) field_Query_findUsersWithName_args(ctx context.Conte
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getProfilePicture_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["fileID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileID"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["fileID"] = arg0
 	return args, nil
 }
 
@@ -485,6 +627,111 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _File_name(ctx context.Context, field graphql.CollectedField, obj *model.File) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "File",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _File_content(ctx context.Context, field graphql.CollectedField, obj *model.File) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "File",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Content, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _File_contentType(ctx context.Context, field graphql.CollectedField, obj *model.File) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "File",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContentType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _Mutation_createUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
@@ -612,6 +859,90 @@ func (ec *executionContext) _Mutation_removeFollow(ctx context.Context, field gr
 	return ec.marshalNUser2ᚖuserᚑserviceᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_addProfilePicture(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_addProfilePicture_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().AddProfilePicture(rctx, args["input"].(model.AddProfilePicture))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_removeProfilePicture(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_removeProfilePicture_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RemoveProfilePicture(rctx, args["remove"].(model.RemoveProfilePicture))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_getUserByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -694,6 +1025,48 @@ func (ec *executionContext) _Query_getUserByName(ctx context.Context, field grap
 	res := resTmp.(*model.User)
 	fc.Result = res
 	return ec.marshalNUser2ᚖuserᚑserviceᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getProfilePicture(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getProfilePicture_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetProfilePicture(rctx, args["fileID"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_findUsersWithName(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1011,6 +1384,41 @@ func (ec *executionContext) _User_followers(ctx context.Context, field graphql.C
 	res := resTmp.([]string)
 	fc.Result = res
 	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_profilePictureId(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProfilePictureID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2135,6 +2543,68 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputAddProfilePicture(ctx context.Context, obj interface{}) (model.AddProfilePicture, error) {
+	var it model.AddProfilePicture
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "username":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "data":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
+			it.Data, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputRemoveProfilePicture(ctx context.Context, obj interface{}) (model.RemoveProfilePicture, error) {
+	var it model.RemoveProfilePicture
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "username":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "fileID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileID"))
+			it.FileID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputUserData(ctx context.Context, obj interface{}) (model.UserData, error) {
 	var it model.UserData
 	asMap := map[string]interface{}{}
@@ -2182,6 +2652,43 @@ func (ec *executionContext) unmarshalInputUserData(ctx context.Context, obj inte
 
 // region    **************************** object.gotpl ****************************
 
+var fileImplementors = []string{"File"}
+
+func (ec *executionContext) _File(ctx context.Context, sel ast.SelectionSet, obj *model.File) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, fileImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("File")
+		case "name":
+			out.Values[i] = ec._File_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "content":
+			out.Values[i] = ec._File_content(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "contentType":
+			out.Values[i] = ec._File_contentType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -2209,6 +2716,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "removeFollow":
 			out.Values[i] = ec._Mutation_removeFollow(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "addProfilePicture":
+			out.Values[i] = ec._Mutation_addProfilePicture(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "removeProfilePicture":
+			out.Values[i] = ec._Mutation_removeProfilePicture(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2261,6 +2778,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getUserByName(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "getProfilePicture":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getProfilePicture(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -2330,6 +2861,11 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			out.Values[i] = ec._User_follows(ctx, field, obj)
 		case "followers":
 			out.Values[i] = ec._User_followers(ctx, field, obj)
+		case "profilePictureId":
+			out.Values[i] = ec._User_profilePictureId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2591,6 +3127,11 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
+func (ec *executionContext) unmarshalNAddProfilePicture2userᚑserviceᚋgraphᚋmodelᚐAddProfilePicture(ctx context.Context, v interface{}) (model.AddProfilePicture, error) {
+	res, err := ec.unmarshalInputAddProfilePicture(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2619,6 +3160,11 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNRemoveProfilePicture2userᚑserviceᚋgraphᚋmodelᚐRemoveProfilePicture(ctx context.Context, v interface{}) (model.RemoveProfilePicture, error) {
+	res, err := ec.unmarshalInputRemoveProfilePicture(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {

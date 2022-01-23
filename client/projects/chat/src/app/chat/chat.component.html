@@ -1,6 +1,9 @@
-<div *ngIf="chatrooms.length > 0">
-  <h3>Recent Chats</h3>
-  <div *ngFor="let room of chatrooms">
+<div *ngIf="chatrooms.length > 0" class="chat-rooms">
+  <div class="chat-title">Recent Chats</div>
+  <button mat-icon-button class="addButton" (click)="openDialog()">
+    <mat-icon style="font-size: 40px">add_circle_outline</mat-icon>
+  </button>
+  <div *ngFor="let room of chatrooms" class="room-card">
     <mat-card (click)="setChatPartner(room)">
       <mat-card-title>
         Chatroom: {{room.name}}

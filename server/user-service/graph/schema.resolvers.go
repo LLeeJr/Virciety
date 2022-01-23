@@ -22,6 +22,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserData)
 		LastName:  input.LastName,
 		Follows:   make([]string, 0),
 		Followers: make([]string, 0),
+		FileId:    "",
 	}
 
 	user, err := r.repo.CreateUser(ctx, userEvent)
@@ -57,6 +58,38 @@ func (r *mutationResolver) RemoveFollow(ctx context.Context, id *string, usernam
 	return user, nil
 }
 
+func (r *mutationResolver) AddProfilePicture(ctx context.Context, input model.AddProfilePicture) (string, error) {
+	profilePictureEvent := database.ProfilePictureEvent{
+		EventType: "AddProfilePicture",
+		EventTime: time.Now(),
+		Username:  input.Username,
+		FileId:    "",
+	}
+
+	response, err := r.repo.AddProfilePicture(ctx, profilePictureEvent, input)
+	if err != nil {
+		return "error while adding profile picture", err
+	}
+
+	return response, nil
+}
+
+func (r *mutationResolver) RemoveProfilePicture(ctx context.Context, remove model.RemoveProfilePicture) (string, error) {
+	profilePictureEvent := database.ProfilePictureEvent{
+		EventType: "RemoveProfilePicture",
+		EventTime: time.Now(),
+		Username:  remove.Username,
+		FileId:    remove.FileID,
+	}
+
+	response, err := r.repo.RemoveProfilePicture(ctx, profilePictureEvent)
+	if err != nil {
+		return "error while removing profile picture", err
+	}
+
+	return response, nil
+}
+
 func (r *queryResolver) GetUserByID(ctx context.Context, id *string) (*model.User, error) {
 	user, err := r.repo.GetUserByID(ctx, id)
 
@@ -75,6 +108,15 @@ func (r *queryResolver) GetUserByName(ctx context.Context, name *string) (*model
 	}
 
 	return user, nil
+}
+
+func (r *queryResolver) GetProfilePicture(ctx context.Context, fileID *string) (string, error) {
+	data, err := r.repo.GetProfilePicture(ctx, fileID)
+	if err != nil {
+		return "error while retrieving profile picture", err
+	}
+
+	return data, nil
 }
 
 func (r *queryResolver) FindUsersWithName(ctx context.Context, name *string) ([]*model.User, error) {
