@@ -37,7 +37,8 @@ export class OpenChatComponent implements OnInit, OnDestroy {
 
         this.route.params.subscribe((params: Params) => {
           let roomName = params['name'];
-          this.api.getRoom(roomName, this.api.selectedRoom.id).subscribe(value => {
+          let id = this.api.selectedRoom ? this.api.selectedRoom.id : '';
+          this.api.getRoom(roomName, id).subscribe(value => {
             if (value && value.data && value.data.getRoom) {
               this.api.selectedRoom = value.data.getRoom;
               let id = value.data.getRoom.id;
