@@ -8,7 +8,7 @@ input CreateRoom {
   owner: String!
 }
 
-input DeleteRoom {
+input RemoveRoom {
   id: String!
   roomName: String!
   userName: String!
@@ -49,7 +49,7 @@ type Query {
 type Mutation {
   createDm(msg: String!, userName: String!, roomName: String!, roomID: String!): Dm!
   createRoom(input: CreateRoom!): Chatroom
-  deleteRoom(delete: DeleteRoom!): String!
+  deleteRoom(remove: RemoveRoom!): String!
 }
 
 directive @user(username: String!) on SUBSCRIPTION

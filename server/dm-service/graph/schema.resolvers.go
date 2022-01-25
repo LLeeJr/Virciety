@@ -166,19 +166,19 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 	}, nil
 }
 
-func (r *mutationResolver) DeleteRoom(ctx context.Context, delete model.DeleteRoom) (string, error) {
+func (r *mutationResolver) DeleteRoom(ctx context.Context, remove model.RemoveRoom) (string, error) {
 	r.mu.Lock()
-	room := r.Rooms[delete.RoomName]
+	room := r.Rooms[remove.RoomName]
 
 	// if room does not exist in cache look for the room in db
-	if r.Rooms[delete.RoomName] == nil {
+	if r.Rooms[remove.RoomName] == nil {
 		r.mu.Unlock()
-		chatroom, err := r.repo.GetRoom(ctx, delete.RoomName, delete.ID)
+		chatroom, err := r.repo.GetRoom(ctx, remove.RoomName, remove.ID)
 		if err != nil {
 			// room does not exist in db
 			return "", err
 		}
-		if chatroom.Owner != delete.UserName {
+		if chatroom.Owner != remove.UserName {
 			err = errors.New("given user is no owner of the requested room")
 			return "", err
 		}
@@ -190,7 +190,7 @@ func (r *mutationResolver) DeleteRoom(ctx context.Context, delete model.DeleteRo
 	}
 
 	// room does exist in server cache
-	if room.Owner != delete.UserName {
+	if room.Owner != remove.UserName {
 		r.mu.Unlock()
 		err := errors.New("given user is no owner of the requested room")
 		return "", err
@@ -202,7 +202,7 @@ func (r *mutationResolver) DeleteRoom(ctx context.Context, delete model.DeleteRo
 		return "", err
 	}
 
-	r.Rooms[room.Name] = nil
+	delete(r.Rooms, room.Name)
 	r.mu.Unlock()
 
 	return msg, err
