@@ -65,10 +65,11 @@ export class ApiService {
   writeDm(msg: string): Observable<any> {
     const userName = this.auth.userName;
     const roomName = this.selectedRoom.name;
+    const roomId = this.selectedRoom.id;
 
     const mutation = gql`
-    mutation createDm($msg: String!, $userName: String!, $roomName: String!){
-      createDm(msg: $msg, userName: $userName, roomName: $roomName)
+    mutation createDm($msg: String!, $userName: String!, $roomName: String!, $roomID: String!){
+      createDm(msg: $msg, userName: $userName, roomName: $roomName, roomID: $roomID)
       {
         chatroomId,
         createdAt,
@@ -84,6 +85,7 @@ export class ApiService {
         msg: msg,
         userName: userName,
         roomName: roomName,
+        roomID: roomId,
       },
     });
   }
@@ -148,10 +150,10 @@ export class ApiService {
     return this.query.valueChanges;
   }
 
-  getRoom(roomName: string): Observable<any> {
+  getRoom(roomName: string, roomId: string): Observable<any> {
     const query = gql`
-    query getRoom($roomName: String!) {
-      getRoom(roomName: $roomName)
+    query getRoom($roomName: String!, $roomID: String!) {
+      getRoom(roomName: $roomName, roomID: $roomID)
       {
         id,
         member,
@@ -164,6 +166,7 @@ export class ApiService {
       query: query,
       variables: {
         roomName: roomName,
+        roomID: roomId,
       }
     });
 
