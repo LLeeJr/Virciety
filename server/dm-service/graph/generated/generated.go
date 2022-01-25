@@ -67,13 +67,14 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateDm   func(childComplexity int, msg string, userName string, roomName string) int
+		CreateDm   func(childComplexity int, msg string, userName string, roomName string, roomID string) int
 		CreateRoom func(childComplexity int, input model.CreateRoom) int
+		DeleteRoom func(childComplexity int, delete model.DeleteRoom) int
 	}
 
 	Query struct {
 		GetMessagesFromRoom func(childComplexity int, roomID string) int
-		GetRoom             func(childComplexity int, roomName string) int
+		GetRoom             func(childComplexity int, roomName string, roomID string) int
 		GetRoomsByUser      func(childComplexity int, userName string) int
 	}
 
@@ -83,11 +84,12 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreateDm(ctx context.Context, msg string, userName string, roomName string) (*model.Dm, error)
+	CreateDm(ctx context.Context, msg string, userName string, roomName string, roomID string) (*model.Dm, error)
 	CreateRoom(ctx context.Context, input model.CreateRoom) (*model.Chatroom, error)
+	DeleteRoom(ctx context.Context, delete model.DeleteRoom) (string, error)
 }
 type QueryResolver interface {
-	GetRoom(ctx context.Context, roomName string) (*model.Chatroom, error)
+	GetRoom(ctx context.Context, roomName string, roomID string) (*model.Chatroom, error)
 	GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error)
 	GetMessagesFromRoom(ctx context.Context, roomID string) ([]*model.Dm, error)
 }
@@ -197,7 +199,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateDm(childComplexity, args["msg"].(string), args["userName"].(string), args["roomName"].(string)), true
+		return e.complexity.Mutation.CreateDm(childComplexity, args["msg"].(string), args["userName"].(string), args["roomName"].(string), args["roomID"].(string)), true
 
 	case "Mutation.createRoom":
 		if e.complexity.Mutation.CreateRoom == nil {
@@ -210,6 +212,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.CreateRoom(childComplexity, args["input"].(model.CreateRoom)), true
+
+	case "Mutation.deleteRoom":
+		if e.complexity.Mutation.DeleteRoom == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteRoom_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteRoom(childComplexity, args["delete"].(model.DeleteRoom)), true
 
 	case "Query.getMessagesFromRoom":
 		if e.complexity.Query.GetMessagesFromRoom == nil {
@@ -233,7 +247,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.GetRoom(childComplexity, args["roomName"].(string)), true
+		return e.complexity.Query.GetRoom(childComplexity, args["roomName"].(string), args["roomID"].(string)), true
 
 	case "Query.getRoomsByUser":
 		if e.complexity.Query.GetRoomsByUser == nil {
@@ -352,6 +366,12 @@ input CreateRoom {
   owner: String!
 }
 
+input DeleteRoom {
+  id: String!
+  roomName: String!
+  userName: String!
+}
+
 type Chatroom {
   id: ID!
   member: [String!]!
@@ -375,18 +395,19 @@ type Chat {
 scalar Time
 
 type Subscription {
-dmAdded(roomName: String!): Dm!
+  dmAdded(roomName: String!): Dm!
 }
 
 type Query {
-  getRoom(roomName:String!): Chatroom
+  getRoom(roomName: String!, roomID: String!): Chatroom
   getRoomsByUser(userName: String!): [Chatroom]
   getMessagesFromRoom(roomId: String!): [Dm]
 }
 
 type Mutation {
-  createDm(msg: String!, userName: String!, roomName: String!): Dm!
+  createDm(msg: String!, userName: String!, roomName: String!, roomID: String!): Dm!
   createRoom(input: CreateRoom!): Chatroom
+  deleteRoom(delete: DeleteRoom!): String!
 }
 
 directive @user(username: String!) on SUBSCRIPTION`, BuiltIn: false},
@@ -442,6 +463,15 @@ func (ec *executionContext) field_Mutation_createDm_args(ctx context.Context, ra
 		}
 	}
 	args["roomName"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["roomID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomID"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["roomID"] = arg3
 	return args, nil
 }
 
@@ -457,6 +487,21 @@ func (ec *executionContext) field_Mutation_createRoom_args(ctx context.Context, 
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.DeleteRoom
+	if tmp, ok := rawArgs["delete"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("delete"))
+		arg0, err = ec.unmarshalNDeleteRoom2dmᚑserviceᚋgraphᚋmodelᚐDeleteRoom(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["delete"] = arg0
 	return args, nil
 }
 
@@ -502,6 +547,15 @@ func (ec *executionContext) field_Query_getRoom_args(ctx context.Context, rawArg
 		}
 	}
 	args["roomName"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["roomID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomID"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["roomID"] = arg1
 	return args, nil
 }
 
@@ -1020,7 +1074,7 @@ func (ec *executionContext) _Mutation_createDm(ctx context.Context, field graphq
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateDm(rctx, args["msg"].(string), args["userName"].(string), args["roomName"].(string))
+		return ec.resolvers.Mutation().CreateDm(rctx, args["msg"].(string), args["userName"].(string), args["roomName"].(string), args["roomID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1076,6 +1130,48 @@ func (ec *executionContext) _Mutation_createRoom(ctx context.Context, field grap
 	return ec.marshalOChatroom2ᚖdmᚑserviceᚋgraphᚋmodelᚐChatroom(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_deleteRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_deleteRoom_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteRoom(rctx, args["delete"].(model.DeleteRoom))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_getRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1101,7 +1197,7 @@ func (ec *executionContext) _Query_getRoom(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetRoom(rctx, args["roomName"].(string))
+		return ec.resolvers.Query().GetRoom(rctx, args["roomName"].(string), args["roomID"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2477,6 +2573,45 @@ func (ec *executionContext) unmarshalInputCreateRoom(ctx context.Context, obj in
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDeleteRoom(ctx context.Context, obj interface{}) (model.DeleteRoom, error) {
+	var it model.DeleteRoom
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "id":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			it.ID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "roomName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomName"))
+			it.RoomName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "userName":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userName"))
+			it.UserName, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2628,6 +2763,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "createRoom":
 			out.Values[i] = ec._Mutation_createRoom(ctx, field)
+		case "deleteRoom":
+			out.Values[i] = ec._Mutation_deleteRoom(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2989,6 +3129,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 
 func (ec *executionContext) unmarshalNCreateRoom2dmᚑserviceᚋgraphᚋmodelᚐCreateRoom(ctx context.Context, v interface{}) (model.CreateRoom, error) {
 	res, err := ec.unmarshalInputCreateRoom(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNDeleteRoom2dmᚑserviceᚋgraphᚋmodelᚐDeleteRoom(ctx context.Context, v interface{}) (model.DeleteRoom, error) {
+	res, err := ec.unmarshalInputDeleteRoom(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

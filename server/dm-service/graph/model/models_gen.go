@@ -24,6 +24,12 @@ type CreateRoom struct {
 	Owner  string   `json:"owner"`
 }
 
+type DeleteRoom struct {
+	ID       string `json:"id"`
+	RoomName string `json:"roomName"`
+	UserName string `json:"userName"`
+}
+
 type Dm struct {
 	ChatroomID string    `json:"chatroomId"`
 	CreatedAt  time.Time `json:"createdAt"`

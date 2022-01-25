@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"dm-service/graph/model"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,7 +15,7 @@ type UniqueUser struct {
 }
 
 type Repository interface {
-	GetRoom(ctx context.Context, roomName string) (*model.Chatroom, error)
+	GetRoom(ctx context.Context, roomName string, id string) (*model.Chatroom, error)
 	GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error)
 	CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error)
 	CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.Chatroom, error)
@@ -22,12 +23,27 @@ type Repository interface {
 	InsertDmEvent(ctx context.Context, dmEvent DmEvent) (string, error)
 	InsertRoomEvent(ctx context.Context, roomEvent ChatroomEvent) (string, error)
 	GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, error)
+	DeleteRoom(ctx context.Context, id string) (string, error)
 }
 
 type repo struct {
 	dmCollection   *mongo.Collection
 	roomCollection *mongo.Collection
 	bucket         *gridfs.Bucket
+}
+
+func (r repo) DeleteRoom(ctx context.Context, id string) (string, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+
+	result, err := r.roomCollection.DeleteOne(ctx, bson.D{
+		{"_id", objID},
+	})
+	if err != nil {
+		return "", err
+	}
+	msg := fmt.Sprintf("Deleted %v room!", result.DeletedCount)
+
+	return msg, err
 }
 
 func (r repo) GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, error) {
@@ -126,12 +142,16 @@ type Chatroom struct {
 	Owner     string             `bson:"owner"`
 }
 
-func (r repo) GetRoom(ctx context.Context, roomName string) (*model.Chatroom, error) {
+func (r repo) GetRoom(ctx context.Context, roomName string, id string) (*model.Chatroom, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	query := bson.D{{"_id",objID},{"name",roomName}}
 
 	var result *Chatroom
-	if err := r.roomCollection.FindOne(ctx, bson.D{
-		{"name", roomName},
-	}).Decode(&result); err != nil {
+	if err = r.roomCollection.FindOne(ctx, query).Decode(&result); err != nil {
 		return nil, err
 	}
 

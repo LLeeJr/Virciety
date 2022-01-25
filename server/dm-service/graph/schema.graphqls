@@ -8,6 +8,12 @@ input CreateRoom {
   owner: String!
 }
 
+input DeleteRoom {
+  id: String!
+  roomName: String!
+  userName: String!
+}
+
 type Chatroom {
   id: ID!
   member: [String!]!
@@ -35,14 +41,15 @@ type Subscription {
 }
 
 type Query {
-  getRoom(roomName:String!): Chatroom
+  getRoom(roomName: String!, roomID: String!): Chatroom
   getRoomsByUser(userName: String!): [Chatroom]
   getMessagesFromRoom(roomId: String!): [Dm]
 }
 
 type Mutation {
-  createDm(msg: String!, userName: String!, roomName: String!): Dm!
+  createDm(msg: String!, userName: String!, roomName: String!, roomID: String!): Dm!
   createRoom(input: CreateRoom!): Chatroom
+  deleteRoom(delete: DeleteRoom!): String!
 }
 
 directive @user(username: String!) on SUBSCRIPTION

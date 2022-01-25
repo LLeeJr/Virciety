@@ -9,18 +9,19 @@ import (
 	"dm-service/graph/generated"
 	"dm-service/graph/model"
 	"dm-service/util"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName string, roomName string) (*model.Dm, error) {
+func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName string, roomName string, roomID string) (*model.Dm, error) {
 	r.mu.Lock()
 	room := r.Rooms[roomName]
 
 	// if no room was found in current server session, try retrieving from db
 	if room == nil {
-		chatroom, err := r.repo.GetRoom(ctx, roomName)
+		chatroom, err := r.repo.GetRoom(ctx, roomName, roomID)
 		if err != nil {
 			// room does not exist in db
 			r.mu.Unlock()
@@ -115,7 +116,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 
 	// if no room was found in current server session, try retrieving from db
 	if r.Rooms[input.Name] == nil {
-		chatroom, err := r.repo.GetRoom(ctx, input.Name)
+		chatroom, err := r.repo.GetRoom(ctx, input.Name, "")
 		if err != nil {
 			// no room was found in db, so create one
 			roomEvent := database.ChatroomEvent{
@@ -165,13 +166,55 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 	}, nil
 }
 
-func (r *queryResolver) GetRoom(ctx context.Context, roomName string) (*model.Chatroom, error) {
+func (r *mutationResolver) DeleteRoom(ctx context.Context, delete model.DeleteRoom) (string, error) {
+	r.mu.Lock()
+	room := r.Rooms[delete.RoomName]
+
+	// if room does not exist in cache look for the room in db
+	if r.Rooms[delete.RoomName] == nil {
+		r.mu.Unlock()
+		chatroom, err := r.repo.GetRoom(ctx, delete.RoomName, delete.ID)
+		if err != nil {
+			// room does not exist in db
+			return "", err
+		}
+		if chatroom.Owner != delete.UserName {
+			err = errors.New("given user is no owner of the requested room")
+			return "", err
+		}
+		msg, err := r.repo.DeleteRoom(ctx, chatroom.ID)
+		if err != nil {
+			return "", err
+		}
+		return msg, err
+	}
+
+	// room does exist in server cache
+	if room.Owner != delete.UserName {
+		r.mu.Unlock()
+		err := errors.New("given user is no owner of the requested room")
+		return "", err
+	}
+
+	msg, err := r.repo.DeleteRoom(ctx, room.Id)
+	if err != nil {
+		r.mu.Unlock()
+		return "", err
+	}
+
+	r.Rooms[room.Name] = nil
+	r.mu.Unlock()
+
+	return msg, err
+}
+
+func (r *queryResolver) GetRoom(ctx context.Context, roomName string, roomID string) (*model.Chatroom, error) {
 	r.mu.Lock()
 	room := r.Rooms[roomName]
 
 	// if room does not exist in cache look for the room in db
 	if r.Rooms[roomName] == nil {
-		chatroom, err := r.repo.GetRoom(ctx, roomName)
+		chatroom, err := r.repo.GetRoom(ctx, roomName, roomID)
 		if err != nil {
 			// room does not exist in db
 			r.mu.Unlock()
