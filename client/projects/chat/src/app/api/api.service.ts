@@ -199,4 +199,25 @@ export class ApiService {
       },
     });
   }
+
+  deleteRoom(roomName: string, roomId: string, owner: string) {
+    const mutation = gql`
+    mutation deleteRoom($remove: RemoveRoom!){
+      deleteRoom(remove: $remove)
+    }
+    `;
+
+    const remove = {
+      id: roomId,
+      roomName: roomName,
+      userName: owner
+    }
+
+    return this.apollo.mutate<any>({
+      mutation: mutation,
+      variables: {
+        remove: remove,
+      }
+    })
+  }
 }

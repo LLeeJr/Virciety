@@ -57,6 +57,24 @@ export class ChatComponent implements OnInit {
       }
     });
   }
+
+  removeRoom(room: Room) {
+    this.api.deleteRoom(room.name, room.id, room.owner).subscribe(value => {
+      if (value && value.data) {
+        let rooms = [];
+        for (let chatroom of this.chatrooms) {
+          if (chatroom.id !== room.id) {
+            rooms.push(chatroom);
+          }
+        }
+        this.chatrooms = [...rooms];
+      }
+    });
+  }
+
+  isOwner(room: Room) {
+    return room.owner == this.username;
+  }
 }
 
 @Component({

@@ -5,9 +5,14 @@
   </button>
   <div *ngFor="let room of chatrooms" class="room-card">
     <mat-card (click)="setChatPartner(room)">
-      <mat-card-title>
-        Chatroom: {{room.name}}
-      </mat-card-title>
+      <div class="card-header">
+        <mat-card-title>
+          Chatroom: {{room.name}}
+        </mat-card-title>
+        <button mat-icon-button (click)="$event.stopPropagation(); removeRoom(room)" *ngIf="isOwner(room)">
+          <mat-icon style="font-size: 24px">delete</mat-icon>
+        </button>
+      </div>
       <small *ngFor="let m of room.member">{{m}} {{room.member.indexOf(m) === room.member.length-1 ? '' : ','}} </small>
     </mat-card>
   </div>

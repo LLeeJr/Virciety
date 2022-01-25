@@ -1,13 +1,15 @@
 export class Room {
   __typename: string;
-  _id: string;
+  id: string;
   name: string;
   member: string[];
+  owner: string;
 
-  constructor(typename: string, id: string, name: string, member: string[]) {
+  constructor(typename: string, id: string, name: string, member: string[], owner: string) {
     this.__typename = typename;
-    this._id = id;
+    this.id = id;
     this.name = name;
     this.member = member;
+    this.owner = owner;
   }
 }
