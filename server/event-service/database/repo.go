@@ -6,12 +6,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"strings"
+	"time"
 )
 
 type Repository interface {
 	InsertEvent(event Event) (string, error)
 	CreateEvent(event Event) (*model.Event, error)
-	GetEvents() ([]*model.Event, error)
+	GetEvents() ([]*model.Event, []*model.Event, []*model.Event, error)
 	RemoveEvent(event Event) (string, error)
 	EditEvent(event Event) (string, error)
 	AddedMember(event Event) (string, error)
@@ -66,8 +68,9 @@ func (repo *Repo) CreateEvent(event Event) (*model.Event, error) {
 	return eventModel, nil
 }
 
-func (repo *Repo) GetEvents() ([]*model.Event, error) {
-	events := make([]*model.Event, 0)
+func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, error) {
+	events, upcomingEvents, ongoingEvents, pastEvents := make([]*model.Event, 0), make([]*model.Event, 0), make([]*model.Event, 0), make([]*model.Event, 0)
+	currentTime := time.Now().UTC()
 
 	// sort eventModel-events by descending eventModel-time (the newest first) and set fetch limit
 	opts := options.Find()
@@ -78,13 +81,13 @@ func (repo *Repo) GetEvents() ([]*model.Event, error) {
 		{"event_type", "CreateEvent"},
 	}, opts)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	for cursor.Next(ctx) {
 		var event Event
 		if err = cursor.Decode(&event); err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 
 		// add new eventModel to output for getEvents
@@ -111,13 +114,13 @@ func (repo *Repo) GetEvents() ([]*model.Event, error) {
 			}},
 		}, opts)
 		if err != nil {
-			return nil, err
+			return nil, nil, nil, err
 		}
 
 		for cursor.Next(ctx) {
 			var event Event
 			if err = cursor.Decode(&event); err != nil {
-				return nil, err
+				return nil, nil, nil, err
 			}
 
 			// Add editable data
@@ -128,9 +131,48 @@ func (repo *Repo) GetEvents() ([]*model.Event, error) {
 			eventModel.StartDate = event.StartDate
 			eventModel.Location = event.Location
 		}
+
+		// Add to correct list in relation to the start and endDate of event
+		var startTime, endTime time.Time
+		var err error
+		var onlyCheckDate bool
+
+		if strings.HasSuffix(eventModel.StartDate, "M") && strings.HasSuffix(eventModel.EndDate, "M") {
+			onlyCheckDate = false
+			startTime, err = time.Parse("1/2/06, 3:04 PM", eventModel.StartDate)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+
+			endTime, err = time.Parse("1/2/06, 3:04 PM", eventModel.EndDate)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+		} else {
+			onlyCheckDate = true
+			startTime, err = time.Parse("Monday, January 2, 2006", eventModel.StartDate)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+
+			endTime, err = time.Parse("Monday, January 2, 2006", eventModel.EndDate)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+
+			endTime = endTime.Add(time.Hour * 24)
+		}
+
+		if !onlyCheckDate && currentTime.Before(endTime) && currentTime.After(startTime) || onlyCheckDate && currentTime.After(startTime) && currentTime.Before(endTime) {
+			ongoingEvents = append(ongoingEvents, eventModel)
+		} else if currentTime.After(endTime) {
+			pastEvents = append(pastEvents, eventModel)
+		} else if currentTime.Before(startTime) {
+			upcomingEvents = append(upcomingEvents, eventModel)
+		}
 	}
 
-	return events, nil
+	return upcomingEvents, ongoingEvents, pastEvents, nil
 }
 
 func (repo *Repo) RemoveEvent(event Event) (string, error) {
