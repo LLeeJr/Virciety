@@ -40,7 +40,7 @@ export class EventComponent implements OnInit {
           this.gqlService.getEvents().subscribe(({data}: any) => {
             this.data = data;
             console.log(data);
-            this.upcomingEvents = this.sortEvents(data.getEvents.upcomingEvents);
+            this.upcomingEvents = EventComponent.sortEvents(data.getEvents.upcomingEvents, (a, b) => +new Date(a.startDate) - +new Date(b.startDate));
             this.selectedEvents = this.upcomingEvents;
           }, (error: any) => {
             console.error('there was an error sending the getEvents-query', error);
@@ -67,7 +67,7 @@ export class EventComponent implements OnInit {
     });*/
   }
 
-  private sortEvents(events: any): Event[] {
+  private static sortEvents(events: any, sortBy: (a: Event, b: Event) => number): Event[] {
     const unsorted: Event[] = [];
 
     for (let getEvent of events) {
@@ -75,7 +75,7 @@ export class EventComponent implements OnInit {
       unsorted.push(event);
     }
 
-    return unsorted.sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate));
+    return unsorted.sort(sortBy);
   }
 
   gotToMaps(location: string) {
@@ -118,12 +118,12 @@ export class EventComponent implements OnInit {
       this.selectedEvents = this.upcomingEvents;
     } else if (this.selectedList === 'Ongoing events') {
       if (!this.ongoingEvents) {
-        this.ongoingEvents = this.sortEvents(this.data.getEvents.ongoingEvents);
+        this.ongoingEvents = EventComponent.sortEvents(this.data.getEvents.ongoingEvents, (a, b) => +new Date(a.startDate) - +new Date(b.startDate));
       }
       this.selectedEvents = this.ongoingEvents;
     } else {
       if (!this.pastEvents) {
-        this.pastEvents = this.sortEvents(this.data.getEvents.pastEvents);
+        this.pastEvents = EventComponent.sortEvents(this.data.getEvents.pastEvents, (a, b) => +new Date(b.startDate) - +new Date(a.startDate));
       }
       this.selectedEvents = this.pastEvents;
     }

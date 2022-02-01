@@ -12,7 +12,7 @@
             [(ngModel)]="selectedList"
             (change)="radioChange()">
             <mat-radio-button class="filter-radio-button" *ngFor="let list of lists" [value]="list">
-              list
+              {{list}}
             </mat-radio-button>
           </mat-radio-group>
         </mat-menu>
