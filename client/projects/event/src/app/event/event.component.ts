@@ -22,8 +22,11 @@ export class EventComponent implements OnInit {
   upcomingEvents: Event[];
   ongoingEvents: Event[];
   pastEvents: Event[];
+  selectedEvents: Event[];
 
   username: string;
+  selectedList: string = 'Upcoming events';
+  lists: string[] = ['Upcoming events', 'Ongoing events', 'Past events'];
 
   constructor(private keycloak: KeycloakService,
               private gqlService: GQLService,
@@ -37,16 +40,8 @@ export class EventComponent implements OnInit {
           this.gqlService.getEvents().subscribe(({data}: any) => {
             this.data = data;
             console.log(data);
-
-            const unsorted: Event[] = [];
-
-            for (let getEvent of data.getEvents.upcomingEvents) {
-              const event: Event = new Event(getEvent);
-
-              unsorted.push(event);
-            }
-
-            this.upcomingEvents = unsorted.sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
+            this.upcomingEvents = this.sortEvents(data.getEvents.upcomingEvents);
+            this.selectedEvents = this.upcomingEvents;
           }, (error: any) => {
             console.error('there was an error sending the getEvents-query', error);
           });
@@ -70,6 +65,17 @@ export class EventComponent implements OnInit {
     }, (error: any) => {
       console.error('there was an error sending the getEvents-query', error);
     });*/
+  }
+
+  private sortEvents(events: any): Event[] {
+    const unsorted: Event[] = [];
+
+    for (let getEvent of events) {
+      const event: Event = new Event(getEvent);
+      unsorted.push(event);
+    }
+
+    return unsorted.sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate));
   }
 
   gotToMaps(location: string) {
@@ -105,6 +111,22 @@ export class EventComponent implements OnInit {
 
   showMembers() {
     this.dialog.open(DialogMembersComponent);
+  }
+
+  radioChange() {
+    if (this.selectedList === 'Upcoming events') {
+      this.selectedEvents = this.upcomingEvents;
+    } else if (this.selectedList === 'Ongoing events') {
+      if (!this.ongoingEvents) {
+        this.ongoingEvents = this.sortEvents(this.data.getEvents.ongoingEvents);
+      }
+      this.selectedEvents = this.ongoingEvents;
+    } else {
+      if (!this.pastEvents) {
+        this.pastEvents = this.sortEvents(this.data.getEvents.pastEvents);
+      }
+      this.selectedEvents = this.pastEvents;
+    }
   }
 
   createEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string | null; endTime: string | null; title: string } | null) {

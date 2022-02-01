@@ -1,10 +1,21 @@
 <div class="container">
   <div>
     <mat-toolbar class="event-toolbar">
-      <span>Upcoming events</span>
+      <span>{{this.selectedList}}</span>
       <span class="spacer"></span>
-      <button mat-icon-button>
+<!--      Here is an error talk with fabs about it-->
+      <button mat-icon-button [matMenuTriggerFor]="menu">
         <mat-icon>filter_list</mat-icon>
+        <mat-menu #menu="matMenu">
+          <mat-radio-group
+            class="filter-radio-group"
+            [(ngModel)]="selectedList"
+            (change)="radioChange()">
+            <mat-radio-button class="filter-radio-button" *ngFor="let list of lists" [value]="list">
+              list
+            </mat-radio-button>
+          </mat-radio-group>
+        </mat-menu>
       </button>
       <button mat-icon-button (click)="openDialog(null, false)">
         <mat-icon>add_circle</mat-icon>
@@ -12,8 +23,8 @@
     </mat-toolbar>
   </div>
 
-  <div *ngFor="let e of upcomingEvents" class="all-events">
-    <mat-divider *ngIf="upcomingEvents.indexOf(e) > 0" class="divider"></mat-divider>
+  <div *ngFor="let e of selectedEvents" class="all-events">
+    <mat-divider *ngIf="selectedEvents.indexOf(e) > 0" class="divider"></mat-divider>
     <mat-card class="event-card">
       <mat-card-header class="event-header">
         {{e.startDate | date:'fullDate'}} - {{e.endDate | date:'fullDate'}}
@@ -37,7 +48,8 @@
         {{e.description}}
       </mat-card-content>
       <mat-card-actions>
-        <button mat-button>Subscribe/ Unsubscribe; Attend/ Leave</button>
+        <button mat-button *ngIf="selectedList === 'Ongoing events'">Attend/ Leave</button>
+        <button mat-button *ngIf="selectedList === 'Upcoming events'">{{e.members.indexOf(username) < 0 ? 'Subscribe' : 'Unsubscribe'}}</button>
         <button mat-button *ngIf="e.host === username" (click)="openDialog(e, true)">Edit</button>
         <button mat-button *ngIf="e.host === username && e.members.length > 0" (click)="showMembers()">Show Members</button>
       </mat-card-actions>

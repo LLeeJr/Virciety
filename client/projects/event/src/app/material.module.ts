@@ -12,6 +12,8 @@ import {MatDialogModule} from "@angular/material/dialog";
 import {MatButtonModule} from "@angular/material/button";
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {MatListModule} from "@angular/material/list";
+import {MatMenuModule} from "@angular/material/menu";
+import {MatRadioModule} from "@angular/material/radio";
 
 @NgModule({
   imports: [
@@ -27,7 +29,9 @@ import {MatListModule} from "@angular/material/list";
     MatDialogModule,
     MatButtonModule,
     MatToolbarModule,
-    MatListModule
+    MatListModule,
+    MatMenuModule,
+    MatRadioModule
   ],
   exports: [
     MatCardModule,
@@ -42,7 +46,9 @@ import {MatListModule} from "@angular/material/list";
     MatDialogModule,
     MatButtonModule,
     MatToolbarModule,
-    MatListModule
+    MatListModule,
+    MatMenuModule,
+    MatRadioModule
   ],
   providers: [
     MatDatepickerModule
