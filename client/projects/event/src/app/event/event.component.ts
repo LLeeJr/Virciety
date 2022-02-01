@@ -18,7 +18,10 @@ export interface EventDate {
 })
 export class EventComponent implements OnInit {
 
-  events: Event[] = [];
+  data: any;
+  upcomingEvents: Event[];
+  ongoingEvents: Event[];
+  pastEvents: Event[];
 
   username: string;
 
@@ -32,16 +35,18 @@ export class EventComponent implements OnInit {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
           this.gqlService.getEvents().subscribe(({data}: any) => {
+            this.data = data;
             console.log(data);
+
             const unsorted: Event[] = [];
 
-            for (let getEvent of data.getEvents) {
+            for (let getEvent of data.getEvents.upcomingEvents) {
               const event: Event = new Event(getEvent);
 
               unsorted.push(event);
             }
 
-            this.events = unsorted.sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
+            this.upcomingEvents = unsorted.sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
           }, (error: any) => {
             console.error('there was an error sending the getEvents-query', error);
           });
@@ -95,11 +100,11 @@ export class EventComponent implements OnInit {
       } else if (!data.remove && !editMode) {
         this.createEvent(data.event);
       }
-    })
+    });
   }
 
   showMembers() {
-    this.dialog.open(DialogMembersComponent)
+    this.dialog.open(DialogMembersComponent);
   }
 
   createEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string | null; endTime: string | null; title: string } | null) {
@@ -112,7 +117,7 @@ export class EventComponent implements OnInit {
         .createEvent(event.title, this.username, eventDate.startDate, eventDate.endDate, event.location, event.description)
         .subscribe(({data}: any) => {
           // console.log(data);
-          this.events = [...this.events, new Event(data.createEvent)].sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
+          this.upcomingEvents = [...this.upcomingEvents, new Event(data.createEvent)].sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
         });
     } else {
       console.error('CreateEvent \'event\' is instance of event or null')
@@ -123,7 +128,7 @@ export class EventComponent implements OnInit {
     if (event && event instanceof Event) {
       this.gqlService.removeEvent(event.id).subscribe(({data}: any) => {
         if (data.removeEvent === "success") {
-          this.events = this.events.filter(e => e.id !== event.id);
+          this.upcomingEvents = this.upcomingEvents.filter(e => e.id !== event.id);
         }
       })
     } else {
@@ -136,7 +141,7 @@ export class EventComponent implements OnInit {
       const eventDate = EventComponent.formatEventDate(event);
       this.gqlService.editEvent(event, eventDate).subscribe(({data}: any) => {
         if (data.removeEvent === "success") {
-          this.events = this.events.filter(e => e.id !== event.id);
+          this.upcomingEvents = this.upcomingEvents.filter(e => e.id !== event.id);
         }
       })
     } else {

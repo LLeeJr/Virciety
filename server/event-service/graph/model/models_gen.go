@@ -31,3 +31,9 @@ type Event struct {
 	Members     []string `json:"members"`
 	Host        string   `json:"host"`
 }
+
+type GetEventsResponse struct {
+	UpcomingEvents []*Event `json:"upcomingEvents"`
+	OngoingEvents  []*Event `json:"ongoingEvents"`
+	PastEvents     []*Event `json:"pastEvents"`
+}

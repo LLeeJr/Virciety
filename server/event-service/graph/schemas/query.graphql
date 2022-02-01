@@ -1,3 +1,3 @@
 type Query {
-    getEvents: [Event!]!
+    getEvents: GetEventsResponse
 }

@@ -24,6 +24,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, newEvent model.Creat
 		StartDate:   newEvent.StartDate,
 		EndDate:     newEvent.EndDate,
 		Location:    newEvent.Location,
+		Members:     make([]string, 0),
 	}
 
 	// save event in database
@@ -75,18 +76,18 @@ func (r *mutationResolver) RemoveEvent(ctx context.Context, remove string) (stri
 	return ok, nil
 }
 
-func (r *mutationResolver) JoinEvent(ctx context.Context, joinEvent model.JoinEventRequest) (string, error) {
+func (r *mutationResolver) JoinEvent(ctx context.Context, join model.EditEventRequest) (string, error) {
 	// process the data and create new event
 	event := database.Event{
-		EventID:     joinEvent.EventID,
+		EventID:     join.EventID,
 		EventTime:   time.Now(),
 		EventType:   "AddedMember",
-		Title:       joinEvent.Title,
-		Members:     joinEvent.NewMembers,
-		Description: joinEvent.Description,
-		StartDate:   joinEvent.StartDate,
-		EndDate:     joinEvent.EndDate,
-		Location:    joinEvent.Location,
+		Title:       join.Title,
+		Members:     join.Members,
+		Description: join.Description,
+		StartDate:   join.StartDate,
+		EndDate:     join.EndDate,
+		Location:    join.Location,
 	}
 
 	// save event in database
@@ -98,18 +99,18 @@ func (r *mutationResolver) JoinEvent(ctx context.Context, joinEvent model.JoinEv
 	return ok, nil
 }
 
-func (r *mutationResolver) LeaveEvent(ctx context.Context, leaveEvent model.LeaveEventRequest) (string, error) {
+func (r *mutationResolver) LeaveEvent(ctx context.Context, leave model.EditEventRequest) (string, error) {
 	// process the data and create new event
 	event := database.Event{
-		EventID:     leaveEvent.EventID,
+		EventID:     leave.EventID,
 		EventTime:   time.Now(),
 		EventType:   "RemoveMember",
-		Title:       leaveEvent.Title,
-		Members:     leaveEvent.NewMembers,
-		Description: leaveEvent.Description,
-		StartDate:   leaveEvent.StartDate,
-		EndDate:     leaveEvent.EndDate,
-		Location:    leaveEvent.Location,
+		Title:       leave.Title,
+		Members:     leave.Members,
+		Description: leave.Description,
+		StartDate:   leave.StartDate,
+		EndDate:     leave.EndDate,
+		Location:    leave.Location,
 	}
 
 	// save event in database

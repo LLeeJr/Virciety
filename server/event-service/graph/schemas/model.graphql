@@ -7,28 +7,6 @@ input CreateEventRequest {
     location:       String!
 }
 
-scalar Time
-
-input JoinEventRequest {
-    eventID: String!
-    title: String!
-    description: String!
-    newMembers: [String!]!
-    startDate: String!
-    endDate: String!
-    location: String!
-}
-
-input LeaveEventRequest {
-    eventID: String!
-    title: String!
-    description: String!
-    newMembers: [String!]!
-    startDate: String!
-    endDate: String!
-    location: String!
-}
-
 input EditEventRequest {
     eventID: String!
     title: String!
@@ -48,4 +26,10 @@ type Event {
     description: String!
     members: [String!]!
     host: String!
+}
+
+type GetEventsResponse {
+    upcomingEvents: [Event!]!
+    ongoingEvents: [Event!]!
+    pastEvents: [Event!]!
 }

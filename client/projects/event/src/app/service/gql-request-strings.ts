@@ -5,14 +5,36 @@ import {gql} from "apollo-angular";
 export const GET_EVENTS = gql`
   query getEvents {
     getEvents {
-      id
-      title
-      host
-      location
-      description
-      startDate
-      endDate
-      members
+      upcomingEvents {
+        id
+        title
+        host
+        location
+        description
+        startDate
+        endDate
+        members
+      }
+      ongoingEvents {
+        id
+        title
+        host
+        location
+        description
+        startDate
+        endDate
+        members
+      }
+      pastEvents {
+        id
+        title
+        host
+        location
+        description
+        startDate
+        endDate
+        members
+      }
     }
   }
 `
