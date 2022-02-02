@@ -126,7 +126,7 @@ func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, e
 		cursor, err = repo.eventCollection.Find(ctx, bson.D{
 			{"id", eventModel.ID},
 			{"event_type", bson.D{
-				{"$in", bson.A{"EditEvent", "AddedMember", "RemoveMember"}},
+				{"$in", bson.A{"EditEvent", "SubscribeEvent"}},
 			}},
 		}, opts)
 		if err != nil {

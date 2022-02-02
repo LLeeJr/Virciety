@@ -10,7 +10,7 @@
           <mat-radio-group
             class="filter-radio-group"
             [(ngModel)]="selectedList"
-            (change)="radioChange()">
+            (change)="changeList()">
             <mat-radio-button class="filter-radio-button" *ngFor="let list of lists" [value]="list">
               {{list}}
             </mat-radio-button>
@@ -49,9 +49,10 @@
       </mat-card-content>
       <mat-card-actions>
         <button mat-button *ngIf="selectedList === 'Ongoing events'">Attend/ Leave</button>
-        <button mat-button *ngIf="selectedList === 'Upcoming events'">{{e.members.indexOf(username) < 0 ? 'Subscribe' : 'Unsubscribe'}}</button>
-        <button mat-button *ngIf="e.host === username" (click)="openDialog(e, true)">Edit</button>
-        <button mat-button *ngIf="e.host === username && e.members.length > 0" (click)="showMembers()">Show Members</button>
+        <button mat-button *ngIf="e.host !== username && selectedList === 'Upcoming events'" (click)="subscribeEvent(e)">{{e.members.indexOf(username) < 0 ? 'Subscribe' : 'Unsubscribe'}}</button>
+        <button mat-button *ngIf="e.host === username && selectedList !== 'Past events'" (click)="openDialog(e, true)">Edit</button>
+        <button mat-button *ngIf="e.host === username && selectedList === 'Past events'" color="warn" (click)="removeEvent(e)">Remove</button>
+        <button mat-button *ngIf="e.host === username && e.members.length > 0" (click)="showMembers(e.members)">Show Members</button>
       </mat-card-actions>
     </mat-card>
   </div>

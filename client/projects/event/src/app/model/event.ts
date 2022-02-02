@@ -6,7 +6,7 @@ export class Event {
   private _location: string;
   private _startDate: string;
   private _title: string;
-  private readonly _members: string[];
+  private _members: string[];
   private _startTime: string | null;
   private _endTime: string | null;
 
@@ -71,6 +71,10 @@ export class Event {
 
   set description(value: string) {
     this._description = value;
+  }
+
+  set members(value: string[]) {
+    this._members = value;
   }
 
   set endDate(value: string) {

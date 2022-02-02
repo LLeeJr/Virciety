@@ -79,18 +79,18 @@ func (r *mutationResolver) RemoveEvent(ctx context.Context, remove string) (stri
 	return ok, nil
 }
 
-func (r *mutationResolver) JoinEvent(ctx context.Context, join model.EditEventRequest) (string, error) {
+func (r *mutationResolver) SubscribeEvent(ctx context.Context, subscribe model.EditEventRequest) (string, error) {
 	// process the data and create new event
 	event := database.Event{
-		EventID:     join.EventID,
+		EventID:     subscribe.EventID,
 		EventTime:   time.Now(),
-		EventType:   "AddedMember",
-		Title:       join.Title,
-		Members:     join.Members,
-		Description: join.Description,
-		StartDate:   join.StartDate,
-		EndDate:     join.EndDate,
-		Location:    join.Location,
+		EventType:   "SubscribeEvent",
+		Title:       subscribe.Title,
+		Members:     subscribe.Members,
+		Description: subscribe.Description,
+		StartDate:   subscribe.StartDate,
+		EndDate:     subscribe.EndDate,
+		Location:    subscribe.Location,
 	}
 
 	// save event in database

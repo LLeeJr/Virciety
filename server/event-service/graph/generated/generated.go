@@ -65,11 +65,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateEvent func(childComplexity int, newEvent model.CreateEventRequest) int
-		EditEvent   func(childComplexity int, edit model.EditEventRequest) int
-		JoinEvent   func(childComplexity int, join model.EditEventRequest) int
-		LeaveEvent  func(childComplexity int, leave model.EditEventRequest) int
-		RemoveEvent func(childComplexity int, remove string) int
+		CreateEvent    func(childComplexity int, newEvent model.CreateEventRequest) int
+		EditEvent      func(childComplexity int, edit model.EditEventRequest) int
+		LeaveEvent     func(childComplexity int, leave model.EditEventRequest) int
+		RemoveEvent    func(childComplexity int, remove string) int
+		SubscribeEvent func(childComplexity int, subscribe model.EditEventRequest) int
 	}
 
 	Query struct {
@@ -81,7 +81,7 @@ type MutationResolver interface {
 	CreateEvent(ctx context.Context, newEvent model.CreateEventRequest) (*model.CreateEventResponse, error)
 	EditEvent(ctx context.Context, edit model.EditEventRequest) (string, error)
 	RemoveEvent(ctx context.Context, remove string) (string, error)
-	JoinEvent(ctx context.Context, join model.EditEventRequest) (string, error)
+	SubscribeEvent(ctx context.Context, subscribe model.EditEventRequest) (string, error)
 	LeaveEvent(ctx context.Context, leave model.EditEventRequest) (string, error)
 }
 type QueryResolver interface {
@@ -218,18 +218,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.EditEvent(childComplexity, args["edit"].(model.EditEventRequest)), true
 
-	case "Mutation.joinEvent":
-		if e.complexity.Mutation.JoinEvent == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_joinEvent_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.JoinEvent(childComplexity, args["join"].(model.EditEventRequest)), true
-
 	case "Mutation.leaveEvent":
 		if e.complexity.Mutation.LeaveEvent == nil {
 			break
@@ -253,6 +241,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.RemoveEvent(childComplexity, args["remove"].(string)), true
+
+	case "Mutation.subscribeEvent":
+		if e.complexity.Mutation.SubscribeEvent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_subscribeEvent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SubscribeEvent(childComplexity, args["subscribe"].(model.EditEventRequest)), true
 
 	case "Query.getEvents":
 		if e.complexity.Query.GetEvents == nil {
@@ -369,7 +369,7 @@ type CreateEventResponse {
     createEvent(newEvent: CreateEventRequest!): CreateEventResponse!
     editEvent(edit: EditEventRequest!): String!
     removeEvent(remove: String!): String!
-    joinEvent(join: EditEventRequest!): String!
+    subscribeEvent(subscribe: EditEventRequest!): String!
     leaveEvent(leave: EditEventRequest!): String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
@@ -413,21 +413,6 @@ func (ec *executionContext) field_Mutation_editEvent_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_joinEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.EditEventRequest
-	if tmp, ok := rawArgs["join"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("join"))
-		arg0, err = ec.unmarshalNEditEventRequest2eventᚑserviceᚋgraphᚋmodelᚐEditEventRequest(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["join"] = arg0
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_leaveEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -455,6 +440,21 @@ func (ec *executionContext) field_Mutation_removeEvent_args(ctx context.Context,
 		}
 	}
 	args["remove"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_subscribeEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.EditEventRequest
+	if tmp, ok := rawArgs["subscribe"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subscribe"))
+		arg0, err = ec.unmarshalNEditEventRequest2eventᚑserviceᚋgraphᚋmodelᚐEditEventRequest(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["subscribe"] = arg0
 	return args, nil
 }
 
@@ -1092,7 +1092,7 @@ func (ec *executionContext) _Mutation_removeEvent(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_joinEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_subscribeEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1109,7 +1109,7 @@ func (ec *executionContext) _Mutation_joinEvent(ctx context.Context, field graph
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_joinEvent_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_subscribeEvent_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1117,7 +1117,7 @@ func (ec *executionContext) _Mutation_joinEvent(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().JoinEvent(rctx, args["join"].(model.EditEventRequest))
+		return ec.resolvers.Mutation().SubscribeEvent(rctx, args["subscribe"].(model.EditEventRequest))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2663,8 +2663,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "joinEvent":
-			out.Values[i] = ec._Mutation_joinEvent(ctx, field)
+		case "subscribeEvent":
+			out.Values[i] = ec._Mutation_subscribeEvent(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

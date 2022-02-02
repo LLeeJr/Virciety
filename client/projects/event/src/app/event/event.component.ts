@@ -41,8 +41,8 @@ export class EventComponent implements OnInit {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
           this.gqlService.getEvents().subscribe(({data}: any) => {
+            // console.log(data);
             this.data = data;
-            console.log(data);
             this.upcomingEvents = EventComponent.sortEvents(data.getEvents.upcomingEvents, this.asc);
             this.selectedEvents = this.upcomingEvents;
           }, (error: any) => {
@@ -112,11 +112,13 @@ export class EventComponent implements OnInit {
     });
   }
 
-  showMembers() {
-    this.dialog.open(DialogMembersComponent);
+  showMembers(members: string[]) {
+    this.dialog.open(DialogMembersComponent, {
+      data: members
+    });
   }
 
-  radioChange() {
+  changeList() {
     if (this.selectedList === 'Upcoming events') {
       this.selectedEvents = this.upcomingEvents;
     } else if (this.selectedList === 'Ongoing events') {
@@ -157,7 +159,7 @@ export class EventComponent implements OnInit {
     }
   }
 
-  private removeEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string | null; endTime: string | null; title: string } | null) {
+  removeEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string | null; endTime: string | null; title: string } | null) {
     if (event && event instanceof Event) {
       this.gqlService.removeEvent(event.id).subscribe(({data}: any) => {
         if (data.removeEvent === "success") {
@@ -202,6 +204,18 @@ export class EventComponent implements OnInit {
     }
 
     return {startDate: startDate, endDate: endDate}
+  }
+
+  subscribeEvent(event: Event) {
+    if (event.members.indexOf(this.username) < 0) {
+      event.members = [...event.members, this.username];
+    } else {
+      event.members = event.members.filter(member => member !== this.username);
+    }
+
+    this.gqlService.subscribeEvent(event).subscribe(({data}: any) => {
+      console.log(data);
+    });
   }
 }
 
