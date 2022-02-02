@@ -11,6 +11,11 @@ type CreateEventRequest struct {
 	Location    string `json:"location"`
 }
 
+type CreateEventResponse struct {
+	Event *Event `json:"event"`
+	Type  string `json:"type"`
+}
+
 type EditEventRequest struct {
 	EventID     string   `json:"eventID"`
 	Title       string   `json:"title"`

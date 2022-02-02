@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"event-service/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -12,7 +13,7 @@ import (
 
 type Repository interface {
 	InsertEvent(event Event) (string, error)
-	CreateEvent(event Event) (*model.Event, error)
+	CreateEvent(event Event) (*model.Event, string, error)
 	GetEvents() ([]*model.Event, []*model.Event, []*model.Event, error)
 	RemoveEvent(event Event) (string, error)
 	EditEvent(event Event) (string, error)
@@ -48,10 +49,12 @@ func (repo *Repo) InsertEvent(event Event) (string, error) {
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
-func (repo *Repo) CreateEvent(event Event) (*model.Event, error) {
+func (repo *Repo) CreateEvent(event Event) (*model.Event, string, error) {
+	currentTime := time.Now().UTC()
+
 	insertedID, err := repo.InsertEvent(event)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	eventModel := &model.Event{
@@ -65,7 +68,20 @@ func (repo *Repo) CreateEvent(event Event) (*model.Event, error) {
 		Members:     event.Members,
 	}
 
-	return eventModel, nil
+	startTime, endTime, onlyCheckDate, err := formatDate(eventModel.StartDate, eventModel.EndDate)
+	if err != nil {
+		return nil, "", err
+	}
+
+	if !onlyCheckDate && currentTime.Before(endTime) && currentTime.After(startTime) || onlyCheckDate && currentTime.After(startTime) && currentTime.Before(endTime) {
+		return eventModel, "ongoing", nil
+	} else if currentTime.After(endTime) {
+		return eventModel, "past", nil
+	} else if currentTime.Before(startTime) {
+		return eventModel, "upcoming", nil
+	}
+
+	return nil, "", errors.New("event is whether ongoing, upcoming nor in the past")
 }
 
 func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, error) {
@@ -133,34 +149,9 @@ func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, e
 		}
 
 		// Add to correct list in relation to the start and endDate of event
-		var startTime, endTime time.Time
-		var err error
-		var onlyCheckDate bool
-
-		if strings.HasSuffix(eventModel.StartDate, "M") && strings.HasSuffix(eventModel.EndDate, "M") {
-			onlyCheckDate = false
-			startTime, err = time.Parse("1/2/06, 3:04 PM", eventModel.StartDate)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-
-			endTime, err = time.Parse("1/2/06, 3:04 PM", eventModel.EndDate)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-		} else {
-			onlyCheckDate = true
-			startTime, err = time.Parse("Monday, January 2, 2006", eventModel.StartDate)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-
-			endTime, err = time.Parse("Monday, January 2, 2006", eventModel.EndDate)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-
-			endTime = endTime.Add(time.Hour * 24)
+		startTime, endTime, onlyCheckDate, err := formatDate(eventModel.StartDate, eventModel.EndDate)
+		if err != nil {
+			return nil, nil, nil, err
 		}
 
 		if !onlyCheckDate && currentTime.Before(endTime) && currentTime.After(startTime) || onlyCheckDate && currentTime.After(startTime) && currentTime.Before(endTime) {
@@ -173,6 +164,36 @@ func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, e
 	}
 
 	return upcomingEvents, ongoingEvents, pastEvents, nil
+}
+
+func formatDate(startDate string, endDate string) (time.Time, time.Time, bool, error) {
+	if strings.HasSuffix(startDate, "M") && strings.HasSuffix(endDate, "M") {
+		startTime, err := time.Parse("1/2/06, 3:04 PM", startDate)
+		if err != nil {
+			return time.Time{}, time.Time{}, false, err
+		}
+
+		endTime, err := time.Parse("1/2/06, 3:04 PM", endDate)
+		if err != nil {
+			return time.Time{}, time.Time{}, false, err
+		}
+
+		return startTime, endTime, false, nil
+	} else {
+		startTime, err := time.Parse("Monday, January 2, 2006", startDate)
+		if err != nil {
+			return time.Time{}, time.Time{}, false, err
+		}
+
+		endTime, err := time.Parse("Monday, January 2, 2006", endDate)
+		if err != nil {
+			return time.Time{}, time.Time{}, false, err
+		}
+
+		endTime = endTime.Add(time.Hour * 24)
+
+		return startTime, endTime, true, nil
+	}
 }
 
 func (repo *Repo) RemoveEvent(event Event) (string, error) {

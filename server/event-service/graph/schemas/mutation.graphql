@@ -1,5 +1,5 @@
 type Mutation {
-    createEvent(newEvent: CreateEventRequest!): Event!
+    createEvent(newEvent: CreateEventRequest!): CreateEventResponse!
     editEvent(edit: EditEventRequest!): String!
     removeEvent(remove: String!): String!
     joinEvent(join: EditEventRequest!): String!

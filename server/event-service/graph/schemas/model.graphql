@@ -33,3 +33,8 @@ type GetEventsResponse {
     ongoingEvents: [Event!]!
     pastEvents: [Event!]!
 }
+
+type CreateEventResponse {
+    event: Event!
+    type: String!
+}

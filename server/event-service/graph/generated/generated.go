@@ -42,6 +42,11 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	CreateEventResponse struct {
+		Event func(childComplexity int) int
+		Type  func(childComplexity int) int
+	}
+
 	Event struct {
 		Description func(childComplexity int) int
 		EndDate     func(childComplexity int) int
@@ -73,7 +78,7 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreateEvent(ctx context.Context, newEvent model.CreateEventRequest) (*model.Event, error)
+	CreateEvent(ctx context.Context, newEvent model.CreateEventRequest) (*model.CreateEventResponse, error)
 	EditEvent(ctx context.Context, edit model.EditEventRequest) (string, error)
 	RemoveEvent(ctx context.Context, remove string) (string, error)
 	JoinEvent(ctx context.Context, join model.EditEventRequest) (string, error)
@@ -97,6 +102,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "CreateEventResponse.event":
+		if e.complexity.CreateEventResponse.Event == nil {
+			break
+		}
+
+		return e.complexity.CreateEventResponse.Event(childComplexity), true
+
+	case "CreateEventResponse.type":
+		if e.complexity.CreateEventResponse.Type == nil {
+			break
+		}
+
+		return e.complexity.CreateEventResponse.Type(childComplexity), true
 
 	case "Event.description":
 		if e.complexity.Event.Description == nil {
@@ -340,9 +359,14 @@ type GetEventsResponse {
     upcomingEvents: [Event!]!
     ongoingEvents: [Event!]!
     pastEvents: [Event!]!
+}
+
+type CreateEventResponse {
+    event: Event!
+    type: String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation {
-    createEvent(newEvent: CreateEventRequest!): Event!
+    createEvent(newEvent: CreateEventRequest!): CreateEventResponse!
     editEvent(edit: EditEventRequest!): String!
     removeEvent(remove: String!): String!
     joinEvent(join: EditEventRequest!): String!
@@ -486,6 +510,76 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _CreateEventResponse_event(ctx context.Context, field graphql.CollectedField, obj *model.CreateEventResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "CreateEventResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Event, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Event)
+	fc.Result = res
+	return ec.marshalNEvent2ᚖeventᚑserviceᚋgraphᚋmodelᚐEvent(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _CreateEventResponse_type(ctx context.Context, field graphql.CollectedField, obj *model.CreateEventResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "CreateEventResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _Event_id(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
 	defer func() {
@@ -909,9 +1003,9 @@ func (ec *executionContext) _Mutation_createEvent(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Event)
+	res := resTmp.(*model.CreateEventResponse)
 	fc.Result = res
-	return ec.marshalNEvent2ᚖeventᚑserviceᚋgraphᚋmodelᚐEvent(ctx, field.Selections, res)
+	return ec.marshalNCreateEventResponse2ᚖeventᚑserviceᚋgraphᚋmodelᚐCreateEventResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_editEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2408,6 +2502,38 @@ func (ec *executionContext) unmarshalInputEditEventRequest(ctx context.Context, 
 
 // region    **************************** object.gotpl ****************************
 
+var createEventResponseImplementors = []string{"CreateEventResponse"}
+
+func (ec *executionContext) _CreateEventResponse(ctx context.Context, sel ast.SelectionSet, obj *model.CreateEventResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, createEventResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CreateEventResponse")
+		case "event":
+			out.Values[i] = ec._CreateEventResponse_event(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "type":
+			out.Values[i] = ec._CreateEventResponse_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var eventImplementors = []string{"Event"}
 
 func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, obj *model.Event) graphql.Marshaler {
@@ -2864,13 +2990,23 @@ func (ec *executionContext) unmarshalNCreateEventRequest2eventᚑserviceᚋgraph
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNCreateEventResponse2eventᚑserviceᚋgraphᚋmodelᚐCreateEventResponse(ctx context.Context, sel ast.SelectionSet, v model.CreateEventResponse) graphql.Marshaler {
+	return ec._CreateEventResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCreateEventResponse2ᚖeventᚑserviceᚋgraphᚋmodelᚐCreateEventResponse(ctx context.Context, sel ast.SelectionSet, v *model.CreateEventResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._CreateEventResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNEditEventRequest2eventᚑserviceᚋgraphᚋmodelᚐEditEventRequest(ctx context.Context, v interface{}) (model.EditEventRequest, error) {
 	res, err := ec.unmarshalInputEditEventRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNEvent2eventᚑserviceᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v model.Event) graphql.Marshaler {
-	return ec._Event(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNEvent2ᚕᚖeventᚑserviceᚋgraphᚋmodelᚐEventᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Event) graphql.Marshaler {

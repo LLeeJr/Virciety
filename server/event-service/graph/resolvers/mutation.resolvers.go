@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func (r *mutationResolver) CreateEvent(ctx context.Context, newEvent model.CreateEventRequest) (*model.Event, error) {
+func (r *mutationResolver) CreateEvent(ctx context.Context, newEvent model.CreateEventRequest) (*model.CreateEventResponse, error) {
 	created := time.Now()
 
 	event := database.Event{
@@ -28,12 +28,15 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, newEvent model.Creat
 	}
 
 	// save event in database
-	eventModel, err := r.repo.CreateEvent(event)
+	eventModel, timeType, err := r.repo.CreateEvent(event)
 	if err != nil {
 		return nil, err
 	}
 
-	return eventModel, nil
+	return &model.CreateEventResponse{
+		Event: eventModel,
+		Type:  timeType,
+	}, nil
 }
 
 func (r *mutationResolver) EditEvent(ctx context.Context, edit model.EditEventRequest) (string, error) {
