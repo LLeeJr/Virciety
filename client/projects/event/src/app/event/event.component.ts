@@ -28,6 +28,9 @@ export class EventComponent implements OnInit {
   selectedList: string = 'Upcoming events';
   lists: string[] = ['Upcoming events', 'Ongoing events', 'Past events'];
 
+  asc = (a: Event, b: Event) => +new Date(a.startDate) - +new Date(b.startDate);
+  desc = (a: Event, b: Event) => +new Date(a.startDate) + +new Date(b.startDate)
+
   constructor(private keycloak: KeycloakService,
               private gqlService: GQLService,
               private dialog: MatDialog) { }
@@ -40,7 +43,7 @@ export class EventComponent implements OnInit {
           this.gqlService.getEvents().subscribe(({data}: any) => {
             this.data = data;
             console.log(data);
-            this.upcomingEvents = EventComponent.sortEvents(data.getEvents.upcomingEvents, (a, b) => +new Date(a.startDate) - +new Date(b.startDate));
+            this.upcomingEvents = EventComponent.sortEvents(data.getEvents.upcomingEvents, this.asc);
             this.selectedEvents = this.upcomingEvents;
           }, (error: any) => {
             console.error('there was an error sending the getEvents-query', error);
@@ -79,7 +82,7 @@ export class EventComponent implements OnInit {
   }
 
   gotToMaps(location: string) {
-    window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location))
+    window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(location));
   }
 
   openDialog(event: Event | null, editMode: boolean) {
@@ -118,19 +121,19 @@ export class EventComponent implements OnInit {
       this.selectedEvents = this.upcomingEvents;
     } else if (this.selectedList === 'Ongoing events') {
       if (!this.ongoingEvents) {
-        this.ongoingEvents = EventComponent.sortEvents(this.data.getEvents.ongoingEvents, (a, b) => +new Date(a.startDate) - +new Date(b.startDate));
+        this.ongoingEvents = EventComponent.sortEvents(this.data.getEvents.ongoingEvents, this.asc);
       }
       this.selectedEvents = this.ongoingEvents;
     } else {
       if (!this.pastEvents) {
-        this.pastEvents = EventComponent.sortEvents(this.data.getEvents.pastEvents, (a, b) => +new Date(b.startDate) - +new Date(a.startDate));
+        this.pastEvents = EventComponent.sortEvents(this.data.getEvents.pastEvents, this.desc);
       }
       this.selectedEvents = this.pastEvents;
     }
   }
 
   createEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string | null; endTime: string | null; title: string } | null) {
-    console.log(event)
+    // console.log(event)
 
     if (event && !(event instanceof Event)) {
       const eventDate = EventComponent.formatEventDate(event);
@@ -139,7 +142,15 @@ export class EventComponent implements OnInit {
         .createEvent(event.title, this.username, eventDate.startDate, eventDate.endDate, event.location, event.description)
         .subscribe(({data}: any) => {
           // console.log(data);
-          this.upcomingEvents = [...this.upcomingEvents, new Event(data.createEvent)].sort((a, b) => +new Date(a.startDate) - +new Date(b.startDate))
+
+          if (this.selectedList.includes(data.createEvent.type)) {
+            if (data.createEvent.type === 'upcoming') {
+              this.upcomingEvents = [...this.upcomingEvents, new Event(data.createEvent.event)].sort(this.asc);
+            } else if (data.createEvent.type === 'ongoing') {
+              this.ongoingEvents = [...this.ongoingEvents, new Event(data.createEvent.event)].sort(this.asc);
+            }
+            this.selectedEvents = [...this.selectedEvents, new Event(data.createEvent.event)].sort(this.asc);
+          }
         });
     } else {
       console.error('CreateEvent \'event\' is instance of event or null')
@@ -150,7 +161,16 @@ export class EventComponent implements OnInit {
     if (event && event instanceof Event) {
       this.gqlService.removeEvent(event.id).subscribe(({data}: any) => {
         if (data.removeEvent === "success") {
-          this.upcomingEvents = this.upcomingEvents.filter(e => e.id !== event.id);
+          if (this.selectedList === 'Upcoming events') {
+            this.upcomingEvents = this.upcomingEvents.filter(e => e.id !== event.id);
+            this.selectedEvents = this.upcomingEvents;
+          } else if (this.selectedList === 'Ongoing events') {
+            this.ongoingEvents = this.ongoingEvents.filter(e => e.id !== event.id);
+            this.selectedEvents = this.ongoingEvents;
+          } else {
+            this.pastEvents = this.pastEvents.filter(e => e.id !== event.id);
+            this.selectedEvents = this.pastEvents;
+          }
         }
       })
     } else {
@@ -161,10 +181,7 @@ export class EventComponent implements OnInit {
   private editEvent(event: Event | { description: string; location: string; startDate: string; endDate: string; startTime: string | null; endTime: string | null; title: string } | null) {
     if (event && event instanceof Event) {
       const eventDate = EventComponent.formatEventDate(event);
-      this.gqlService.editEvent(event, eventDate).subscribe(({data}: any) => {
-        if (data.removeEvent === "success") {
-          this.upcomingEvents = this.upcomingEvents.filter(e => e.id !== event.id);
-        }
+      this.gqlService.editEvent(event, eventDate).subscribe(_ => {
       })
     } else {
       console.error('EditEvent \'event\' is not instance of event or null')

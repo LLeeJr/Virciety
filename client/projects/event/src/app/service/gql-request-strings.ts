@@ -42,14 +42,17 @@ export const GET_EVENTS = gql`
 export const CREATE_EVENT = gql`
     mutation createEvent($title: String!, $host: String!, $description: String!, $startDate: String!, $endDate: String!, $location: String!) {
       createEvent(newEvent: {title: $title, host: $host, description: $description, startDate: $startDate, endDate: $endDate, location: $location}) {
-        id
-        title
-        host
-        location
-        members
-        description
-        startDate
-        endDate
+        event {
+          id
+          title
+          host
+          location
+          members
+          description
+          startDate
+          endDate
+        }
+        type
       }
     }
   `;
