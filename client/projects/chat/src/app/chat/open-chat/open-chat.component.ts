@@ -37,26 +37,34 @@ export class OpenChatComponent implements OnInit, OnDestroy {
 
         this.route.params.subscribe((params: Params) => {
           let roomName = params['name'];
-          let id = this.api.selectedRoom ? this.api.selectedRoom.id : '';
-          this.api.getRoom(roomName, id).subscribe(value => {
-            if (value && value.data && value.data.getRoom) {
-              this.api.selectedRoom = value.data.getRoom;
-              let id = value.data.getRoom.id;
-
-              this.getMessagesAndSubscribe(id, roomName);
-            }
-          }, () => {
-            // no room exists with the given room name
-            let user = roomName.split('-')[1];
-            this.api.createRoom([this.username, user], roomName, this.username).subscribe(value => {
-              if (value && value.data && value.data.createRoom) {
-                this.api.selectedRoom = value.data.createRoom;
-                let id = value.data.createRoom.id;
-
+          let users = roomName.split('-');
+          if (this.api.selectedRoom && this.api.selectedRoom.id) {
+            this.api.getRoom().subscribe(value => {
+              if (value && value.data && value.data.getRoom) {
+                this.api.selectedRoom = value.data.getRoom;
+                let id = value.data.getRoom.id;
                 this.getMessagesAndSubscribe(id, roomName);
               }
             });
-          });
+          } else {
+            // id is empty, so request comes from a direct chat call
+            this.api.getDirectRoom(users[0], users[1]).subscribe(value => {
+              if (value && value.data && value.data.getDirectRoom) {
+                this.api.selectedRoom = value.data.getDirectRoom;
+                let id = value.data.getDirectRoom.id;
+                this.getMessagesAndSubscribe(id, roomName);
+              }
+            }, () => {
+              // room was not found, so a new one needs to be created
+              this.api.createRoom(users, roomName, this.username).subscribe(value => {
+                if (value && value.data && value.data.createRoom) {
+                  this.api.selectedRoom = value.data.createRoom;
+                  let id = value.data.createRoom.id;
+                  this.getMessagesAndSubscribe(id, roomName);
+                }
+              })
+            });
+          }
         });
       }
     });
