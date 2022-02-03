@@ -89,7 +89,7 @@ export class AddChatDialog {
   pickedUsers: string[] = [];
   friends = new FormControl([], [
     Validators.required,
-    Validators.minLength(1),
+    Validators.minLength(2),
   ]);
   nameInput = new FormControl('', [
     Validators.required,
@@ -131,6 +131,6 @@ export class AddChatDialog {
   }
 
   valid() {
-    return this.nameInput.valid && this.pickedUsers.length > 0;
+    return this.nameInput.valid && this.pickedUsers.length > 1;
   }
 }
