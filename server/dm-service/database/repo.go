@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"dm-service/graph/model"
+	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -24,12 +25,58 @@ type Repository interface {
 	InsertRoomEvent(ctx context.Context, roomEvent ChatroomEvent) (string, error)
 	GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, error)
 	DeleteRoom(ctx context.Context, id string) (string, error)
+	GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error)
 }
 
 type repo struct {
 	dmCollection   *mongo.Collection
 	roomCollection *mongo.Collection
 	bucket         *gridfs.Bucket
+}
+
+func (r repo) GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error) {
+	order1 := []string{user1, user2}
+	order2 := []string{user2, user1}
+	query := bson.M{
+		"$or": []interface{}{
+			bson.M{
+				"$and": []interface{}{
+					bson.M{"membersize": bson.M{"$eq": 2}},
+					bson.M{"member": order1},
+				},
+			},
+			bson.M{
+				"$and": []interface{}{
+					bson.M{"membersize": bson.M{"$eq": 2}},
+					bson.M{"member": order2},
+				},
+			},
+		},
+	}
+
+	var rooms []*Chatroom
+	cursor, err := r.roomCollection.Find(ctx, query)
+
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(ctx, &rooms)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rooms) != 0 {
+		chatroom := &model.Chatroom{
+			ID:     rooms[0].ID.Hex(),
+			Member: rooms[0].Member,
+			Name:   rooms[0].Name,
+			Owner:  rooms[0].Owner,
+		}
+
+		return chatroom, nil
+	}
+
+	return nil, errors.New("no room found")
 }
 
 func (r repo) DeleteRoom(ctx context.Context, id string) (string, error) {
@@ -42,6 +89,10 @@ func (r repo) DeleteRoom(ctx context.Context, id string) (string, error) {
 		return "", err
 	}
 	msg := fmt.Sprintf("Deleted %v room!", result.DeletedCount)
+
+	_, err = r.dmCollection.DeleteMany(ctx, bson.D{
+		{"chatroomid", id},
+	})
 
 	return msg, err
 }
@@ -86,7 +137,8 @@ func (r repo) UpdateRoom(ctx context.Context, room *model.Chatroom) (string, err
 
 	update := bson.M{
 		"$set": bson.M{
-			"member": room.Member,
+			"member":     room.Member,
+			"memberSize": len(room.Member),
 		},
 	}
 
@@ -143,15 +195,24 @@ type Chatroom struct {
 }
 
 func (r repo) GetRoom(ctx context.Context, roomName string, id string) (*model.Chatroom, error) {
-	objID, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return nil, err
+	var objID primitive.ObjectID
+	if id != "" {
+		var err error
+		objID, err = primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	query := bson.D{{"_id",objID},{"name",roomName}}
+	query := bson.M{
+		"$or": []interface{}{
+			bson.M{"_id": objID},
+			bson.M{"name": roomName},
+		},
+	}
 
 	var result *Chatroom
-	if err = r.roomCollection.FindOne(ctx, query).Decode(&result); err != nil {
+	if err := r.roomCollection.FindOne(ctx, query).Decode(&result); err != nil {
 		return nil, err
 	}
 

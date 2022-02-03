@@ -73,6 +73,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		GetDirectRoom       func(childComplexity int, user1 string, user2 string) int
 		GetMessagesFromRoom func(childComplexity int, roomID string) int
 		GetRoom             func(childComplexity int, roomName string, roomID string) int
 		GetRoomsByUser      func(childComplexity int, userName string) int
@@ -89,6 +90,7 @@ type MutationResolver interface {
 	DeleteRoom(ctx context.Context, remove model.RemoveRoom) (string, error)
 }
 type QueryResolver interface {
+	GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error)
 	GetRoom(ctx context.Context, roomName string, roomID string) (*model.Chatroom, error)
 	GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error)
 	GetMessagesFromRoom(ctx context.Context, roomID string) ([]*model.Dm, error)
@@ -224,6 +226,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteRoom(childComplexity, args["remove"].(model.RemoveRoom)), true
+
+	case "Query.getDirectRoom":
+		if e.complexity.Query.GetDirectRoom == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getDirectRoom_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetDirectRoom(childComplexity, args["user1"].(string), args["user2"].(string)), true
 
 	case "Query.getMessagesFromRoom":
 		if e.complexity.Query.GetMessagesFromRoom == nil {
@@ -399,6 +413,7 @@ type Subscription {
 }
 
 type Query {
+  getDirectRoom(user1: String!, user2: String!): Chatroom
   getRoom(roomName: String!, roomID: String!): Chatroom
   getRoomsByUser(userName: String!): [Chatroom]
   getMessagesFromRoom(roomId: String!): [Dm]
@@ -517,6 +532,30 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getDirectRoom_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["user1"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user1"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["user1"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["user2"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user2"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["user2"] = arg1
 	return args, nil
 }
 
@@ -1170,6 +1209,45 @@ func (ec *executionContext) _Mutation_deleteRoom(ctx context.Context, field grap
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getDirectRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getDirectRoom_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetDirectRoom(rctx, args["user1"].(string), args["user2"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Chatroom)
+	fc.Result = res
+	return ec.marshalOChatroom2ᚖdmᚑserviceᚋgraphᚋmodelᚐChatroom(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2794,6 +2872,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
+		case "getDirectRoom":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getDirectRoom(ctx, field)
+				return res
+			})
 		case "getRoom":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {

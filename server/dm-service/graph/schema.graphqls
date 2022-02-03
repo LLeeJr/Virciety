@@ -41,6 +41,7 @@ type Subscription {
 }
 
 type Query {
+  getDirectRoom(user1: String!, user2: String!): Chatroom
   getRoom(roomName: String!, roomID: String!): Chatroom
   getRoomsByUser(userName: String!): [Chatroom]
   getMessagesFromRoom(roomId: String!): [Dm]

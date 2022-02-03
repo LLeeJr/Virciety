@@ -41,44 +41,8 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName st
 			}
 			r.Rooms[roomName] = room
 		}
-		//else {
-		//	// room exists neither in db nor in server cache
-		//	room = &Chatroom{
-		//		Name:   roomName,
-		//		Member: []string{userName},
-		//		Observers: map[string]struct {
-		//			Username string
-		//			Message  chan *model.Dm
-		//		}{},
-		//	}
-		//	roomEvent := database.ChatroomEvent{
-		//		EventType: "CreateRoom",
-		//		Member:    room.Member,
-		//		Name:      room.Name,
-		//	}
-		//
-		//	createdRoom, err := r.repo.CreateRoom(ctx, roomEvent)
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//	// update repos room map since the current room now has an id
-		//	room.Id = createdRoom.ID
-		//}
 	}
 	r.mu.Unlock()
-
-	// if the user is no member of the chatroom yet, add the user as member
-	//if !util.Contains(room.Member, userName) {
-	//	room.Member = append(room.Member, userName)
-	//	_, err := r.repo.UpdateRoom(ctx, &model.Chatroom{
-	//		ID:     room.Id,
-	//		Member: room.Member,
-	//		Name:   room.Name,
-	//	})
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//}
 
 	dmEvent := database.DmEvent{
 		ChatroomId: room.Id,
@@ -120,10 +84,11 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 		if err != nil {
 			// no room was found in db, so create one
 			roomEvent := database.ChatroomEvent{
-				EventType: "CreateRoom",
-				Member:    input.Member,
-				Name:      input.Name,
-				Owner:     input.Owner,
+				EventType:  "CreateRoom",
+				Member:     input.Member,
+				MemberSize: len(input.Member),
+				Name:       input.Name,
+				Owner:      input.Owner,
 			}
 			createRoom, createRoomErr := r.repo.CreateRoom(ctx, roomEvent)
 			if createRoomErr != nil {
@@ -206,6 +171,29 @@ func (r *mutationResolver) DeleteRoom(ctx context.Context, remove model.RemoveRo
 	r.mu.Unlock()
 
 	return msg, err
+}
+
+func (r *queryResolver) GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error) {
+	room, err := r.repo.GetDirectRoom(ctx, user1, user2)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.Rooms[room.Name] == nil {
+		chatroom := &Chatroom{
+			Id:     room.ID,
+			Name:   room.Name,
+			Member: room.Member,
+			Owner:  room.Owner,
+			Observers: map[string]struct {
+				Username string
+				Message  chan *model.Dm
+			}{},
+		}
+		r.Rooms[room.Name] = chatroom
+	}
+
+	return room, nil
 }
 
 func (r *queryResolver) GetRoom(ctx context.Context, roomName string, roomID string) (*model.Chatroom, error) {
