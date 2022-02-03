@@ -173,6 +173,29 @@ func (r *mutationResolver) DeleteRoom(ctx context.Context, remove model.RemoveRo
 	return msg, err
 }
 
+func (r *mutationResolver) LeaveChat(ctx context.Context, roomID string, userName string, owner *string) (*model.Chatroom, error) {
+	room, err := r.repo.GetRoom(ctx, "", roomID)
+	if err != nil {
+		return nil, err
+	}
+
+	members := util.Remove(room.Member, userName)
+	room.Member = members
+
+	if owner != nil {
+		if util.Contains(members, *owner) {
+			room.Owner = *owner
+		}
+	}
+
+	_, err = r.repo.UpdateRoom(ctx, room)
+	if err != nil {
+		return nil, err
+	}
+
+	return room, nil
+}
+
 func (r *queryResolver) GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error) {
 	room, err := r.repo.GetDirectRoom(ctx, user1, user2)
 	if err != nil {

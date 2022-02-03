@@ -8,3 +8,13 @@ func Contains(list []string, target string) bool {
 	}
 	return false
 }
+
+func Remove(list []string, target string) []string {
+	var index int
+	for i, s := range list {
+		if s == target {
+			index = i
+		}
+	}
+	return append(list[:index], list[index+1:]...)
+}

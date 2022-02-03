@@ -70,6 +70,7 @@ type ComplexityRoot struct {
 		CreateDm   func(childComplexity int, msg string, userName string, roomName string, roomID string) int
 		CreateRoom func(childComplexity int, input model.CreateRoom) int
 		DeleteRoom func(childComplexity int, remove model.RemoveRoom) int
+		LeaveChat  func(childComplexity int, roomID string, userName string, owner *string) int
 	}
 
 	Query struct {
@@ -88,6 +89,7 @@ type MutationResolver interface {
 	CreateDm(ctx context.Context, msg string, userName string, roomName string, roomID string) (*model.Dm, error)
 	CreateRoom(ctx context.Context, input model.CreateRoom) (*model.Chatroom, error)
 	DeleteRoom(ctx context.Context, remove model.RemoveRoom) (string, error)
+	LeaveChat(ctx context.Context, roomID string, userName string, owner *string) (*model.Chatroom, error)
 }
 type QueryResolver interface {
 	GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error)
@@ -226,6 +228,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteRoom(childComplexity, args["remove"].(model.RemoveRoom)), true
+
+	case "Mutation.leaveChat":
+		if e.complexity.Mutation.LeaveChat == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_leaveChat_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LeaveChat(childComplexity, args["roomId"].(string), args["userName"].(string), args["owner"].(*string)), true
 
 	case "Query.getDirectRoom":
 		if e.complexity.Query.GetDirectRoom == nil {
@@ -423,6 +437,7 @@ type Mutation {
   createDm(msg: String!, userName: String!, roomName: String!, roomID: String!): Dm!
   createRoom(input: CreateRoom!): Chatroom
   deleteRoom(remove: RemoveRoom!): String!
+  leaveChat(roomId: String!, userName: String!, owner: String): Chatroom
 }
 
 directive @user(username: String!) on SUBSCRIPTION`, BuiltIn: false},
@@ -517,6 +532,39 @@ func (ec *executionContext) field_Mutation_deleteRoom_args(ctx context.Context, 
 		}
 	}
 	args["remove"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_leaveChat_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["roomId"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roomId"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["roomId"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["userName"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userName"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userName"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["owner"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("owner"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["owner"] = arg2
 	return args, nil
 }
 
@@ -1209,6 +1257,45 @@ func (ec *executionContext) _Mutation_deleteRoom(ctx context.Context, field grap
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_leaveChat(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_leaveChat_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LeaveChat(rctx, args["roomId"].(string), args["userName"].(string), args["owner"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Chatroom)
+	fc.Result = res
+	return ec.marshalOChatroom2ᚖdmᚑserviceᚋgraphᚋmodelᚐChatroom(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_getDirectRoom(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -2846,6 +2933,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "leaveChat":
+			out.Values[i] = ec._Mutation_leaveChat(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

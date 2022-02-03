@@ -138,7 +138,7 @@ func (r repo) UpdateRoom(ctx context.Context, room *model.Chatroom) (string, err
 	update := bson.M{
 		"$set": bson.M{
 			"member":     room.Member,
-			"memberSize": len(room.Member),
+			"membersize": len(room.Member),
 		},
 	}
 

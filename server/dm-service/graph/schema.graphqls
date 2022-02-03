@@ -51,6 +51,7 @@ type Mutation {
   createDm(msg: String!, userName: String!, roomName: String!, roomID: String!): Dm!
   createRoom(input: CreateRoom!): Chatroom
   deleteRoom(remove: RemoveRoom!): String!
+  leaveChat(roomId: String!, userName: String!, owner: String): Chatroom
 }
 
 directive @user(username: String!) on SUBSCRIPTION
