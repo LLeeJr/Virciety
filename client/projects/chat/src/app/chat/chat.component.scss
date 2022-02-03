@@ -34,9 +34,14 @@
   justify-content: center;
 }
 
-.card-header {
+.card-content {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  align-items: center;
+}
+
+.card-controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
 }

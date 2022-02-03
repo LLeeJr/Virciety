@@ -4,16 +4,21 @@
     <mat-icon style="font-size: 40px">add_circle_outline</mat-icon>
   </button>
   <div *ngFor="let room of chatrooms" class="room-card">
-    <mat-card (click)="setChatPartner(room)">
-      <div class="card-header">
+    <mat-card (click)="setChatPartner(room)" class="card-content">
+      <div>
         <mat-card-title>
           Chatroom: {{room.name}}
         </mat-card-title>
+        <small *ngFor="let m of room.member">{{m}} {{room.member.indexOf(m) === room.member.length-1 ? '' : ','}} </small>
+      </div>
+      <div class="card-controls">
+        <button mat-icon-button (click)="$event.stopPropagation(); handleLeaveChatroom(room)">
+          <mat-icon style="font-size: 24px">logout</mat-icon>
+        </button>
         <button mat-icon-button (click)="$event.stopPropagation(); removeRoom(room)" *ngIf="isOwner(room)">
           <mat-icon style="font-size: 24px">delete</mat-icon>
         </button>
       </div>
-      <small *ngFor="let m of room.member">{{m}} {{room.member.indexOf(m) === room.member.length-1 ? '' : ','}} </small>
     </mat-card>
   </div>
 </div>

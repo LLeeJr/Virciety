@@ -243,4 +243,23 @@ export class ApiService {
       }
     })
   }
+
+  leaveChat(roomId: string, username: string, owner: string | undefined): Observable<any> {
+    const mutation = gql`
+    mutation leaveChat($roomId: String!, $userName: String!, $owner: String) {
+      leaveChat(roomId: $roomId, userName: $userName, owner: $owner) {
+        id,
+      }
+    }
+    `;
+
+    return this.apollo.mutate<any>({
+      mutation: mutation,
+      variables: {
+        roomId: roomId,
+        userName: username,
+        owner: owner,
+      },
+    });
+  }
 }

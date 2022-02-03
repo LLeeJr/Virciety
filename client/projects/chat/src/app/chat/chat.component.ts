@@ -61,19 +61,57 @@ export class ChatComponent implements OnInit {
   removeRoom(room: Room) {
     this.api.deleteRoom(room.name, room.id, room.owner).subscribe(value => {
       if (value && value.data) {
-        let rooms = [];
-        for (let chatroom of this.chatrooms) {
-          if (chatroom.id !== room.id) {
-            rooms.push(chatroom);
-          }
-        }
-        this.chatrooms = [...rooms];
+        this.refreshRooms(room.id);
       }
     });
   }
 
+  refreshRooms(id: string) {
+    let rooms = [];
+    for (let chatroom of this.chatrooms) {
+      if (chatroom.id !== id) {
+        rooms.push(chatroom);
+      }
+    }
+    this.chatrooms = [...rooms];
+  }
+
   isOwner(room: Room) {
     return room.owner == this.username;
+  }
+
+  handleLeaveChatroom(room: Room) {
+    if (this.isOwner(room)) {
+      let members = [];
+      for (let member of room.member) {
+        if (member !== this.username) {
+          members.push(member)
+        }
+      }
+
+      let dialogRef = this.dialog.open(SelectOwnerDialog, {
+        disableClose: true,
+        data: members,
+      });
+
+      dialogRef.afterClosed().subscribe((pickedUser) => {
+        if (pickedUser) {
+          this.api.leaveChat(room.id, this.username, pickedUser).subscribe(value => {
+            if (value && value.data && value.data.leaveChat) {
+              let { id } = value.data.leaveChat;
+              this.refreshRooms(id);
+            }
+          });
+        }
+      })
+    } else {
+      this.api.leaveChat(room.id, this.username, undefined).subscribe(value => {
+        if (value && value.data && value.data.leaveChat) {
+          let { id } = value.data.leaveChat;
+          this.refreshRooms(id);
+        }
+      });
+    }
   }
 }
 
@@ -132,5 +170,25 @@ export class AddChatDialog {
 
   valid() {
     return this.nameInput.valid && this.pickedUsers.length > 1;
+  }
+}
+
+@Component({
+  selector: 'select-owner-dialog',
+  templateUrl: './select-owner-dialog.html',
+  styleUrls: ['./select-owner-dialog.scss']
+})
+export class SelectOwnerDialog {
+
+  members: string[] = [];
+  pickedUser: string;
+
+  constructor(@Inject(MAT_DIALOG_DATA) public data: any,
+              private dialogRef: MatDialogRef<SelectOwnerDialog>) {
+    this.members = data;
+  }
+
+  submit() {
+    this.dialogRef.close(this.pickedUser);
   }
 }

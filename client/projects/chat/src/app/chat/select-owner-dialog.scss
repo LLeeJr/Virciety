@@ -1,0 +1,28 @@
+
+.dialog {
+  width: 16em;
+}
+
+.dialog-title {
+  font: 500 20px/32px;
+  font-size: 20px;
+  letter-spacing: normal;
+  margin-bottom: 1em;
+}
+
+.user-radio-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-radio-button {
+  margin-top: .5em;
+  margin-bottom: .5em;
+}
+
+.dialog-footer {
+  margin-top: 1em;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
