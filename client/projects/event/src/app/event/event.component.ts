@@ -56,15 +56,9 @@ export class EventComponent implements OnInit {
 
     /*this.gqlService.getEvents().subscribe(({data}: any) => {
       // console.log(data);
-      const unsorted: Event[] = [];
-
-      for (let getEvent of data.getEvents) {
-        const event: Event = new Event(getEvent);
-
-        unsorted.push(event);
-      }
-
-      this.events = unsorted.sort((a, b) => +new Date(b.startDate) - +new Date(a.startDate))
+      this.data = data;
+      this.upcomingEvents = EventComponent.sortEvents(data.getEvents.upcomingEvents, this.asc);
+      this.selectedEvents = this.upcomingEvents;
     }, (error: any) => {
       console.error('there was an error sending the getEvents-query', error);
     });*/
@@ -145,12 +139,13 @@ export class EventComponent implements OnInit {
         .subscribe(({data}: any) => {
           // console.log(data);
 
-          if (this.selectedList.includes(data.createEvent.type)) {
-            if (data.createEvent.type === 'upcoming') {
-              this.upcomingEvents = [...this.upcomingEvents, new Event(data.createEvent.event)].sort(this.asc);
-            } else if (data.createEvent.type === 'ongoing') {
-              this.ongoingEvents = [...this.ongoingEvents, new Event(data.createEvent.event)].sort(this.asc);
-            }
+          if (data.createEvent.type === 'upcoming') {
+            this.upcomingEvents = [...this.upcomingEvents, new Event(data.createEvent.event)].sort(this.asc);
+          } else if (data.createEvent.type === 'ongoing') {
+            this.ongoingEvents = [...this.ongoingEvents, new Event(data.createEvent.event)].sort(this.asc);
+          }
+
+          if (this.selectedList.toLowerCase().includes(data.createEvent.type)) {
             this.selectedEvents = [...this.selectedEvents, new Event(data.createEvent.event)].sort(this.asc);
           }
         });
@@ -214,7 +209,7 @@ export class EventComponent implements OnInit {
     }
 
     this.gqlService.subscribeEvent(event).subscribe(({data}: any) => {
-      console.log(data);
+      // console.log(data);
     });
   }
 }
