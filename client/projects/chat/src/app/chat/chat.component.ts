@@ -134,6 +134,7 @@ export class AddChatDialog {
     Validators.minLength(2),
   ]);
   @Output() newRoom = new EventEmitter<any>();
+  checked = false;
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: any,
               private api: ApiService,
@@ -147,13 +148,15 @@ export class AddChatDialog {
       this.pickedUsers = value;
       if (this.pickedUsers.length == 1) {
         this.nameInput.setValue(`${this.data.username}-${this.pickedUsers[0]}`);
+      } else {
+        this.checked = false;
       }
     });
   }
 
-  createRoom(name: string, users: string[]) {
+  createRoom(name: string, users: string[], checked: boolean) {
     let member = [this.data.username, ...users];
-    this.api.createRoom(member, name, this.data.username, false).subscribe(value => {
+    this.api.createRoom(member, name, this.data.username, checked).subscribe(value => {
       if (value && value.data && value.data.createRoom) {
         this.newRoom.emit(value.data.createRoom);
         this.dialogRef.close();
