@@ -6,6 +6,7 @@ input CreateRoom {
   member: [String!]!
   name: String!
   owner: String!
+  isDirect: Boolean
 }
 
 input RemoveRoom {

@@ -56,7 +56,7 @@ export class OpenChatComponent implements OnInit, OnDestroy {
               }
             }, () => {
               // room was not found, so a new one needs to be created
-              this.api.createRoom(users, roomName, this.username).subscribe(value => {
+              this.api.createRoom(users, roomName, this.username, true).subscribe(value => {
                 if (value && value.data && value.data.createRoom) {
                   this.api.selectedRoom = value.data.createRoom;
                   let id = value.data.createRoom.id;

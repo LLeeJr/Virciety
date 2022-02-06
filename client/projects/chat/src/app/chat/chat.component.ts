@@ -148,7 +148,7 @@ export class AddChatDialog {
 
   createRoom(name: string, users: string[]) {
     let member = [this.data.username, ...users];
-    this.api.createRoom(member, name, this.data.username).subscribe(value => {
+    this.api.createRoom(member, name, this.data.username, false).subscribe(value => {
       if (value && value.data && value.data.createRoom) {
         this.newRoom.emit(value.data.createRoom);
         this.dialogRef.close();

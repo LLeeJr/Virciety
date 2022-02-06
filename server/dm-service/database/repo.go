@@ -43,12 +43,14 @@ func (r repo) GetDirectRoom(ctx context.Context, user1 string, user2 string) (*m
 				"$and": []interface{}{
 					bson.M{"membersize": bson.M{"$eq": 2}},
 					bson.M{"member": order1},
+					bson.M{"isdirect": true},
 				},
 			},
 			bson.M{
 				"$and": []interface{}{
 					bson.M{"membersize": bson.M{"$eq": 2}},
 					bson.M{"member": order2},
+					bson.M{"isdirect": true},
 				},
 			},
 		},

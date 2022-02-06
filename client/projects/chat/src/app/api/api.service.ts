@@ -196,7 +196,7 @@ export class ApiService {
     return this.query.valueChanges;
   }
 
-  createRoom(member: string[], name: string, owner: string) {
+  createRoom(member: string[], name: string, owner: string, isDirect: boolean) {
     const mutation = gql`
     mutation createRoom($input: CreateRoom!){
       createRoom(input: $input)
@@ -213,6 +213,7 @@ export class ApiService {
       member: member,
       name: name,
       owner: owner,
+      isDirect: isDirect,
     }
 
     return this.apollo.mutate<any>({

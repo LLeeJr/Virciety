@@ -17,5 +17,6 @@ type ChatroomEvent struct {
 	Member     []string `json:"member"`
 	Name       string   `json:"name"`
 	Owner      string   `json:"owner"`
-	MemberSize int		`json:"membersize"`
+	MemberSize int      `json:"membersize"`
+	IsDirect   *bool    `json:"isdirect"`
 }

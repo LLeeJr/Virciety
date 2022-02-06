@@ -392,6 +392,7 @@ input CreateRoom {
   member: [String!]!
   name: String!
   owner: String!
+  isDirect: Boolean
 }
 
 input RemoveRoom {
@@ -2729,6 +2730,14 @@ func (ec *executionContext) unmarshalInputCreateRoom(ctx context.Context, obj in
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("owner"))
 			it.Owner, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "isDirect":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isDirect"))
+			it.IsDirect, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
 				return it, err
 			}

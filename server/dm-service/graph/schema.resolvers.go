@@ -85,6 +85,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 			// no room was found in db, so create one
 			roomEvent := database.ChatroomEvent{
 				EventType:  "CreateRoom",
+				IsDirect:   input.IsDirect,
 				Member:     input.Member,
 				MemberSize: len(input.Member),
 				Name:       input.Name,
