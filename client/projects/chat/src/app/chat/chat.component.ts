@@ -127,7 +127,7 @@ export class AddChatDialog {
   pickedUsers: string[] = [];
   friends = new FormControl([], [
     Validators.required,
-    Validators.minLength(2),
+    Validators.minLength(1),
   ]);
   nameInput = new FormControl('', [
     Validators.required,
@@ -143,7 +143,12 @@ export class AddChatDialog {
       this.friendList = this.removeDuplicates(follows.concat(followers));
     }
 
-    this.friends.valueChanges.subscribe(value => this.pickedUsers = value);
+    this.friends.valueChanges.subscribe(value => {
+      this.pickedUsers = value;
+      if (this.pickedUsers.length == 1) {
+        this.nameInput.setValue(`${this.data.username}-${this.pickedUsers[0]}`);
+      }
+    });
   }
 
   createRoom(name: string, users: string[]) {
@@ -169,7 +174,7 @@ export class AddChatDialog {
   }
 
   valid() {
-    return this.nameInput.valid && this.pickedUsers.length > 1;
+    return this.nameInput.valid && this.pickedUsers.length > 0;
   }
 }
 

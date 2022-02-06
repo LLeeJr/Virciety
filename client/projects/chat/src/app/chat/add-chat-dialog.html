@@ -21,7 +21,7 @@
         <mat-select [formControl]="friends" multiple>
           <mat-option *ngFor="let friend of friendList" [value]="friend">{{friend}}</mat-option>
         </mat-select>
-        <mat-error *ngIf="this.pickedUsers.length < 2">Pick at least two persons!</mat-error>
+        <mat-error *ngIf="this.pickedUsers.length == 0">Pick at least one person!</mat-error>
       </mat-form-field>
     </div>
   </div>
