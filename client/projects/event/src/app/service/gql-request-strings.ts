@@ -14,6 +14,7 @@ export const GET_EVENTS = gql`
         startDate
         endDate
         members
+        attending
       }
       ongoingEvents {
         id
@@ -24,6 +25,7 @@ export const GET_EVENTS = gql`
         startDate
         endDate
         members
+        attending
       }
       pastEvents {
         id
@@ -34,6 +36,7 @@ export const GET_EVENTS = gql`
         startDate
         endDate
         members
+        attending
       }
     }
   }
@@ -58,20 +61,22 @@ export const CREATE_EVENT = gql`
   `;
 
 export const EDIT_EVENT = gql`
-    mutation editEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!) {
-      editEvent(edit: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location})
+    mutation editEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attending: [String!]!) {
+      editEvent(edit: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location, attending: $attending}) {
+        type
+      }
     }
   `;
 
 export const SUBSCRIBE_EVENT = gql`
-    mutation subscribeEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!) {
-      subscribeEvent(subscribe: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location})
+    mutation subscribeEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attending: [String!]!) {
+      subscribeEvent(subscribe: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location, attending: $attending})
     }
   `;
 
 export const ATTEND_EVENT = gql`
-    mutation attendEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!) {
-      attendEvent(attend: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location})
+    mutation attendEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attending: [String!]!) {
+      attendEvent(attend: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location, attending: $attending})
     }
   `;
 

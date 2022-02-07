@@ -47,7 +47,13 @@ type ComplexityRoot struct {
 		Type  func(childComplexity int) int
 	}
 
+	EditEventResponse struct {
+		Ok   func(childComplexity int) int
+		Type func(childComplexity int) int
+	}
+
 	Event struct {
+		Attending   func(childComplexity int) int
 		Description func(childComplexity int) int
 		EndDate     func(childComplexity int) int
 		Host        func(childComplexity int) int
@@ -65,9 +71,9 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		AttendEvent    func(childComplexity int, attend model.EditEventRequest) int
 		CreateEvent    func(childComplexity int, newEvent model.CreateEventRequest) int
 		EditEvent      func(childComplexity int, edit model.EditEventRequest) int
-		LeaveEvent     func(childComplexity int, leave model.EditEventRequest) int
 		RemoveEvent    func(childComplexity int, remove string) int
 		SubscribeEvent func(childComplexity int, subscribe model.EditEventRequest) int
 	}
@@ -79,10 +85,10 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	CreateEvent(ctx context.Context, newEvent model.CreateEventRequest) (*model.CreateEventResponse, error)
-	EditEvent(ctx context.Context, edit model.EditEventRequest) (string, error)
+	EditEvent(ctx context.Context, edit model.EditEventRequest) (*model.EditEventResponse, error)
 	RemoveEvent(ctx context.Context, remove string) (string, error)
 	SubscribeEvent(ctx context.Context, subscribe model.EditEventRequest) (string, error)
-	LeaveEvent(ctx context.Context, leave model.EditEventRequest) (string, error)
+	AttendEvent(ctx context.Context, attend model.EditEventRequest) (string, error)
 }
 type QueryResolver interface {
 	GetEvents(ctx context.Context) (*model.GetEventsResponse, error)
@@ -116,6 +122,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CreateEventResponse.Type(childComplexity), true
+
+	case "EditEventResponse.ok":
+		if e.complexity.EditEventResponse.Ok == nil {
+			break
+		}
+
+		return e.complexity.EditEventResponse.Ok(childComplexity), true
+
+	case "EditEventResponse.type":
+		if e.complexity.EditEventResponse.Type == nil {
+			break
+		}
+
+		return e.complexity.EditEventResponse.Type(childComplexity), true
+
+	case "Event.attending":
+		if e.complexity.Event.Attending == nil {
+			break
+		}
+
+		return e.complexity.Event.Attending(childComplexity), true
 
 	case "Event.description":
 		if e.complexity.Event.Description == nil {
@@ -194,6 +221,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GetEventsResponse.UpcomingEvents(childComplexity), true
 
+	case "Mutation.attendEvent":
+		if e.complexity.Mutation.AttendEvent == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_attendEvent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.AttendEvent(childComplexity, args["attend"].(model.EditEventRequest)), true
+
 	case "Mutation.createEvent":
 		if e.complexity.Mutation.CreateEvent == nil {
 			break
@@ -217,18 +256,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.EditEvent(childComplexity, args["edit"].(model.EditEventRequest)), true
-
-	case "Mutation.leaveEvent":
-		if e.complexity.Mutation.LeaveEvent == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_leaveEvent_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.LeaveEvent(childComplexity, args["leave"].(model.EditEventRequest)), true
 
 	case "Mutation.removeEvent":
 		if e.complexity.Mutation.RemoveEvent == nil {
@@ -342,6 +369,7 @@ input EditEventRequest {
     startDate: String!
     endDate: String!
     location: String!
+    attending: [String!]!
 }
 
 type Event {
@@ -353,6 +381,7 @@ type Event {
     description: String!
     members: [String!]!
     host: String!
+    attending: [String!]!
 }
 
 type GetEventsResponse {
@@ -364,13 +393,18 @@ type GetEventsResponse {
 type CreateEventResponse {
     event: Event!
     type: String!
+}
+
+type EditEventResponse {
+    ok: String!
+    type: String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/mutation.graphql", Input: `type Mutation {
     createEvent(newEvent: CreateEventRequest!): CreateEventResponse!
-    editEvent(edit: EditEventRequest!): String!
+    editEvent(edit: EditEventRequest!): EditEventResponse!
     removeEvent(remove: String!): String!
     subscribeEvent(subscribe: EditEventRequest!): String!
-    leaveEvent(leave: EditEventRequest!): String!
+    attendEvent(attend: EditEventRequest!): String!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
     getEvents: GetEventsResponse
@@ -382,6 +416,21 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_attendEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.EditEventRequest
+	if tmp, ok := rawArgs["attend"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("attend"))
+		arg0, err = ec.unmarshalNEditEventRequest2eventᚑserviceᚋgraphᚋmodelᚐEditEventRequest(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["attend"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_createEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -410,21 +459,6 @@ func (ec *executionContext) field_Mutation_editEvent_args(ctx context.Context, r
 		}
 	}
 	args["edit"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_leaveEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 model.EditEventRequest
-	if tmp, ok := rawArgs["leave"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("leave"))
-		arg0, err = ec.unmarshalNEditEventRequest2eventᚑserviceᚋgraphᚋmodelᚐEditEventRequest(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["leave"] = arg0
 	return args, nil
 }
 
@@ -555,6 +589,76 @@ func (ec *executionContext) _CreateEventResponse_type(ctx context.Context, field
 	}()
 	fc := &graphql.FieldContext{
 		Object:     "CreateEventResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EditEventResponse_ok(ctx context.Context, field graphql.CollectedField, obj *model.EditEventResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EditEventResponse",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ok, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _EditEventResponse_type(ctx context.Context, field graphql.CollectedField, obj *model.EditEventResponse) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "EditEventResponse",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   false,
@@ -861,6 +965,41 @@ func (ec *executionContext) _Event_host(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Event_attending(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Event",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Attending, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _GetEventsResponse_upcomingEvents(ctx context.Context, field graphql.CollectedField, obj *model.GetEventsResponse) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -1045,9 +1184,9 @@ func (ec *executionContext) _Mutation_editEvent(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*model.EditEventResponse)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNEditEventResponse2ᚖeventᚑserviceᚋgraphᚋmodelᚐEditEventResponse(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_removeEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1134,7 +1273,7 @@ func (ec *executionContext) _Mutation_subscribeEvent(ctx context.Context, field 
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_leaveEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_attendEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1151,7 +1290,7 @@ func (ec *executionContext) _Mutation_leaveEvent(ctx context.Context, field grap
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_leaveEvent_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_attendEvent_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -1159,7 +1298,7 @@ func (ec *executionContext) _Mutation_leaveEvent(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().LeaveEvent(rctx, args["leave"].(model.EditEventRequest))
+		return ec.resolvers.Mutation().AttendEvent(rctx, args["attend"].(model.EditEventRequest))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2488,6 +2627,14 @@ func (ec *executionContext) unmarshalInputEditEventRequest(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
+		case "attending":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("attending"))
+			it.Attending, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -2520,6 +2667,38 @@ func (ec *executionContext) _CreateEventResponse(ctx context.Context, sel ast.Se
 			}
 		case "type":
 			out.Values[i] = ec._CreateEventResponse_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var editEventResponseImplementors = []string{"EditEventResponse"}
+
+func (ec *executionContext) _EditEventResponse(ctx context.Context, sel ast.SelectionSet, obj *model.EditEventResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, editEventResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EditEventResponse")
+		case "ok":
+			out.Values[i] = ec._EditEventResponse_ok(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "type":
+			out.Values[i] = ec._EditEventResponse_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2582,6 +2761,11 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "host":
 			out.Values[i] = ec._Event_host(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "attending":
+			out.Values[i] = ec._Event_attending(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2668,8 +2852,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "leaveEvent":
-			out.Values[i] = ec._Mutation_leaveEvent(ctx, field)
+		case "attendEvent":
+			out.Values[i] = ec._Mutation_attendEvent(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3007,6 +3191,20 @@ func (ec *executionContext) marshalNCreateEventResponse2ᚖeventᚑserviceᚋgra
 func (ec *executionContext) unmarshalNEditEventRequest2eventᚑserviceᚋgraphᚋmodelᚐEditEventRequest(ctx context.Context, v interface{}) (model.EditEventRequest, error) {
 	res, err := ec.unmarshalInputEditEventRequest(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNEditEventResponse2eventᚑserviceᚋgraphᚋmodelᚐEditEventResponse(ctx context.Context, sel ast.SelectionSet, v model.EditEventResponse) graphql.Marshaler {
+	return ec._EditEventResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEditEventResponse2ᚖeventᚑserviceᚋgraphᚋmodelᚐEditEventResponse(ctx context.Context, sel ast.SelectionSet, v *model.EditEventResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._EditEventResponse(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEvent2ᚕᚖeventᚑserviceᚋgraphᚋmodelᚐEventᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Event) graphql.Marshaler {

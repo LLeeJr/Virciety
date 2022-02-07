@@ -17,7 +17,7 @@
           </mat-radio-group>
         </mat-menu>
       </button>
-      <button mat-icon-button (click)="openDialog(null, false)">
+      <button mat-icon-button (click)="openEventDialog(null, false)">
         <mat-icon>add_circle</mat-icon>
       </button>
     </mat-toolbar>
@@ -48,11 +48,12 @@
         {{e.description}}
       </mat-card-content>
       <mat-card-actions>
-        <button mat-button *ngIf="selectedList === 'Ongoing events'">Attend/ Leave</button>
+        <button mat-flat-button *ngIf="selectedList === 'Ongoing events'" [style]="e.attending.indexOf(username) < 0 ? {background:'rgb(92, 184, 92)'} : {background:'rgb(217,83,79)'}" (click)="attendEvent(e)">{{e.attending.indexOf(username) < 0 ? 'Attend' : 'Leave'}}</button>
         <button mat-button *ngIf="e.host !== username && selectedList === 'Upcoming events'" (click)="subscribeEvent(e)">{{e.members.indexOf(username) < 0 ? 'Subscribe' : 'Unsubscribe'}}</button>
-        <button mat-button *ngIf="e.host === username && selectedList !== 'Past events'" (click)="openDialog(e, true)">Edit</button>
+        <button mat-button *ngIf="e.host === username && selectedList !== 'Past events'" (click)="openEventDialog(e, true)">Edit</button>
         <button mat-button *ngIf="e.host === username && selectedList === 'Past events'" color="warn" (click)="removeEvent(e)">Remove</button>
-        <button mat-button *ngIf="e.host === username && e.members.length > 0" (click)="showMembers(e.members)">Show Members</button>
+        <button mat-button *ngIf="e.host === username && e.members.length > 0" (click)="showPeople(e.members)">Show members</button>
+        <button mat-button *ngIf="e.host === username && selectedList !== 'Upcoming events' && e.attending.length > 0" (click)="showPeople(e.attending)">Show people who attended</button>
       </mat-card-actions>
     </mat-card>
   </div>

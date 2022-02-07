@@ -25,6 +25,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, newEvent model.Creat
 		EndDate:     newEvent.EndDate,
 		Location:    newEvent.Location,
 		Members:     make([]string, 0),
+		Attending:   make([]string, 0),
 	}
 
 	// save event in database
@@ -39,7 +40,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, newEvent model.Creat
 	}, nil
 }
 
-func (r *mutationResolver) EditEvent(ctx context.Context, edit model.EditEventRequest) (string, error) {
+func (r *mutationResolver) EditEvent(ctx context.Context, edit model.EditEventRequest) (*model.EditEventResponse, error) {
 	// process the data and create new event
 	event := database.Event{
 		EventID:     edit.EventID,
@@ -51,15 +52,19 @@ func (r *mutationResolver) EditEvent(ctx context.Context, edit model.EditEventRe
 		StartDate:   edit.StartDate,
 		EndDate:     edit.EndDate,
 		Location:    edit.Location,
+		Attending:   edit.Attending,
 	}
 
 	// save event in database
-	ok, err := r.repo.EditEvent(event)
+	ok, timeType, err := r.repo.EditEvent(event)
 	if err != nil {
-		return ok, err
+		return nil, err
 	}
 
-	return ok, nil
+	return &model.EditEventResponse{
+		Ok:   ok,
+		Type: timeType,
+	}, nil
 }
 
 func (r *mutationResolver) RemoveEvent(ctx context.Context, remove string) (string, error) {
@@ -91,10 +96,11 @@ func (r *mutationResolver) SubscribeEvent(ctx context.Context, subscribe model.E
 		StartDate:   subscribe.StartDate,
 		EndDate:     subscribe.EndDate,
 		Location:    subscribe.Location,
+		Attending:   subscribe.Attending,
 	}
 
 	// save event in database
-	ok, err := r.repo.AddedMember(event)
+	ok, err := r.repo.SubscribeEvent(event)
 	if err != nil {
 		return ok, err
 	}
@@ -102,22 +108,23 @@ func (r *mutationResolver) SubscribeEvent(ctx context.Context, subscribe model.E
 	return ok, nil
 }
 
-func (r *mutationResolver) LeaveEvent(ctx context.Context, leave model.EditEventRequest) (string, error) {
+func (r *mutationResolver) AttendEvent(ctx context.Context, attend model.EditEventRequest) (string, error) {
 	// process the data and create new event
 	event := database.Event{
-		EventID:     leave.EventID,
+		EventID:     attend.EventID,
 		EventTime:   time.Now(),
-		EventType:   "RemoveMember",
-		Title:       leave.Title,
-		Members:     leave.Members,
-		Description: leave.Description,
-		StartDate:   leave.StartDate,
-		EndDate:     leave.EndDate,
-		Location:    leave.Location,
+		EventType:   "AttendEvent",
+		Title:       attend.Title,
+		Members:     attend.Members,
+		Description: attend.Description,
+		StartDate:   attend.StartDate,
+		EndDate:     attend.EndDate,
+		Location:    attend.Location,
+		Attending:   attend.Attending,
 	}
 
 	// save event in database
-	ok, err := r.repo.RemoveMember(event)
+	ok, err := r.repo.AttendEvent(event)
 	if err != nil {
 		return ok, err
 	}

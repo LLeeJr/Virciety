@@ -1,7 +1,7 @@
 type Mutation {
     createEvent(newEvent: CreateEventRequest!): CreateEventResponse!
-    editEvent(edit: EditEventRequest!): String!
+    editEvent(edit: EditEventRequest!): EditEventResponse!
     removeEvent(remove: String!): String!
     subscribeEvent(subscribe: EditEventRequest!): String!
-    leaveEvent(leave: EditEventRequest!): String!
+    attendEvent(attend: EditEventRequest!): String!
 }

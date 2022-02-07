@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase} from "apollo-angular";
 import {HttpLink} from "apollo-angular/http";
 import {InMemoryCache} from "@apollo/client/core";
-import {CREATE_EVENT, EDIT_EVENT, GET_EVENTS, REMOVE_EVENT} from "./gql-request-strings";
+import {ATTEND_EVENT, CREATE_EVENT, EDIT_EVENT, GET_EVENTS, REMOVE_EVENT, SUBSCRIBE_EVENT} from "./gql-request-strings";
 import {Event} from "../model/event";
 import {EventDate} from "../event/event.component";
 
@@ -71,6 +71,7 @@ export class GQLService {
           startDate: eventDate.startDate,
           endDate: eventDate.endDate,
           location: event.location,
+          attending: event.attending
         }
       }
     )
@@ -78,7 +79,7 @@ export class GQLService {
 
   subscribeEvent(event: Event) {
     return this.apollo.mutate({
-        mutation: EDIT_EVENT,
+        mutation: SUBSCRIBE_EVENT,
         variables: {
           eventID: event.id,
           title: event.title,
@@ -87,6 +88,24 @@ export class GQLService {
           startDate: event.startDate,
           endDate: event.endDate,
           location: event.location,
+          attending: event.attending,
+        }
+      }
+    )
+  }
+
+  attendEvent(event: Event) {
+    return this.apollo.mutate({
+        mutation: ATTEND_EVENT,
+        variables: {
+          eventID: event.id,
+          title: event.title,
+          description: event.description,
+          members: event.members,
+          startDate: event.startDate,
+          endDate: event.endDate,
+          location: event.location,
+          attending: event.attending
         }
       }
     )

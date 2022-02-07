@@ -15,6 +15,7 @@ input EditEventRequest {
     startDate: String!
     endDate: String!
     location: String!
+    attending: [String!]!
 }
 
 type Event {
@@ -26,6 +27,7 @@ type Event {
     description: String!
     members: [String!]!
     host: String!
+    attending: [String!]!
 }
 
 type GetEventsResponse {
@@ -36,5 +38,10 @@ type GetEventsResponse {
 
 type CreateEventResponse {
     event: Event!
+    type: String!
+}
+
+type EditEventResponse {
+    ok: String!
     type: String!
 }

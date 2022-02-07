@@ -9,6 +9,7 @@ export class Event {
   private _members: string[];
   private _startTime: string | null;
   private _endTime: string | null;
+  private _attending: string[];
 
   constructor(data: any) {
     this._description = data.description;
@@ -19,6 +20,7 @@ export class Event {
     this._startDate = data.startDate;
     this._endDate = data.endDate;
     this._members = data.members;
+    this._attending = data.attending;
 
     if (data.startDate.endsWith('M') && data.endDate.endsWith('M')) {
       this._startTime = data.startDate.split(',')[1].trim();
@@ -27,6 +29,10 @@ export class Event {
       this._startTime = null;
       this._endTime = null;
     }
+  }
+
+  get attending(): string[] {
+    return this._attending;
   }
 
   get description(): string {
@@ -67,6 +73,10 @@ export class Event {
 
   get members(): string[] {
     return this._members;
+  }
+
+  set attending(value: string[]) {
+    this._attending = value;
   }
 
   set description(value: string) {

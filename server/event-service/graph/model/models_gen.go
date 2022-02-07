@@ -24,6 +24,12 @@ type EditEventRequest struct {
 	StartDate   string   `json:"startDate"`
 	EndDate     string   `json:"endDate"`
 	Location    string   `json:"location"`
+	Attending   []string `json:"attending"`
+}
+
+type EditEventResponse struct {
+	Ok   string `json:"ok"`
+	Type string `json:"type"`
 }
 
 type Event struct {
@@ -35,6 +41,7 @@ type Event struct {
 	Description string   `json:"description"`
 	Members     []string `json:"members"`
 	Host        string   `json:"host"`
+	Attending   []string `json:"attending"`
 }
 
 type GetEventsResponse struct {

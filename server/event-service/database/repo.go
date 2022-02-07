@@ -16,9 +16,9 @@ type Repository interface {
 	CreateEvent(event Event) (*model.Event, string, error)
 	GetEvents() ([]*model.Event, []*model.Event, []*model.Event, error)
 	RemoveEvent(event Event) (string, error)
-	EditEvent(event Event) (string, error)
-	AddedMember(event Event) (string, error)
-	RemoveMember(event Event) (string, error)
+	EditEvent(event Event) (string, string, error)
+	SubscribeEvent(event Event) (string, error)
+	AttendEvent(event Event) (string, error)
 }
 
 type Repo struct {
@@ -66,6 +66,7 @@ func (repo *Repo) CreateEvent(event Event) (*model.Event, string, error) {
 		Location:    event.Location,
 		Description: event.Description,
 		Members:     event.Members,
+		Attending: 	 event.Attending,
 	}
 
 	startTime, endTime, onlyCheckDate, err := formatDate(eventModel.StartDate, eventModel.EndDate)
@@ -81,7 +82,7 @@ func (repo *Repo) CreateEvent(event Event) (*model.Event, string, error) {
 		return eventModel, "upcoming", nil
 	}
 
-	return nil, "", errors.New("event is whether ongoing, upcoming nor in the past")
+	return nil, "", errors.New("event is not ongoing, upcoming nor in the past")
 }
 
 func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, error) {
@@ -116,6 +117,7 @@ func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, e
 			Description: event.Description,
 			Members:     event.Members,
 			Host:        event.Host,
+			Attending:   event.Attending,
 		})
 	}
 
@@ -126,7 +128,7 @@ func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, e
 		cursor, err = repo.eventCollection.Find(ctx, bson.D{
 			{"id", eventModel.ID},
 			{"event_type", bson.D{
-				{"$in", bson.A{"EditEvent", "SubscribeEvent"}},
+				{"$in", bson.A{"EditEvent", "SubscribeEvent", "AttendEvent"}},
 			}},
 		}, opts)
 		if err != nil {
@@ -146,6 +148,7 @@ func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, e
 			eventModel.EndDate = event.EndDate
 			eventModel.StartDate = event.StartDate
 			eventModel.Location = event.Location
+			eventModel.Attending = event.Attending
 		}
 
 		// Add to correct list in relation to the start and endDate of event
@@ -216,7 +219,7 @@ func (repo *Repo) RemoveEvent(event Event) (string, error) {
 	_, err = repo.eventCollection.DeleteMany(ctx, bson.D{
 		{"id", event.EventID},
 		{"event_type", bson.D{
-			{"$in", bson.A{"EditEvent", "AddedMember", "RemoveMember"}},
+			{"$in", bson.A{"EditEvent", "SubscribeEvent", "AttendEvent"}},
 		}},
 	})
 	if err != nil {
@@ -232,7 +235,31 @@ func (repo *Repo) RemoveEvent(event Event) (string, error) {
 	return "success", nil
 }
 
-func (repo *Repo) EditEvent(event Event) (string, error) {
+func (repo *Repo) EditEvent(event Event) (string, string, error) {
+	_, err := repo.InsertEvent(event)
+	if err != nil {
+		return "failed", "", err
+	}
+
+	currentTime := time.Now().UTC()
+
+	startTime, endTime, onlyCheckDate, err := formatDate(event.StartDate, event.EndDate)
+	if err != nil {
+		return "failure", "", err
+	}
+
+	if !onlyCheckDate && currentTime.Before(endTime) && currentTime.After(startTime) || onlyCheckDate && currentTime.After(startTime) && currentTime.Before(endTime) {
+		return "success", "ongoing", nil
+	} else if currentTime.After(endTime) {
+		return "success", "past", nil
+	} else if currentTime.Before(startTime) {
+		return "success", "upcoming", nil
+	}
+
+	return "failure", "", errors.New("event is not ongoing, upcoming nor in the past")
+}
+
+func (repo *Repo) SubscribeEvent(event Event) (string, error) {
 	_, err := repo.InsertEvent(event)
 	if err != nil {
 		return "failed", err
@@ -241,16 +268,7 @@ func (repo *Repo) EditEvent(event Event) (string, error) {
 	return "success", nil
 }
 
-func (repo *Repo) AddedMember(event Event) (string, error) {
-	_, err := repo.InsertEvent(event)
-	if err != nil {
-		return "failed", err
-	}
-
-	return "success", nil
-}
-
-func (repo *Repo) RemoveMember(event Event) (string, error) {
+func (repo *Repo) AttendEvent(event Event) (string, error) {
 	_, err := repo.InsertEvent(event)
 	if err != nil {
 		return "failed", err
