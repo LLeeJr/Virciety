@@ -3,7 +3,8 @@ import {ApiService} from "../../api/api.service";
 import {Dm} from "../../data/dm";
 import {KeycloakService} from "keycloak-angular";
 import {Subscription} from "rxjs";
-import {ActivatedRoute, Params} from "@angular/router";
+import {ActivatedRoute, Params, Router} from "@angular/router";
+import {Room} from "../../data/room";
 
 @Component({
   selector: 'app-open-chat',
@@ -17,11 +18,13 @@ export class OpenChatComponent implements OnInit, OnDestroy {
   message: string = '';
   username: string;
   private subscription: Subscription;
+  private room: Room;
 
   constructor(public api: ApiService,
               private elem: ElementRef,
               private keycloak: KeycloakService,
-              private route: ActivatedRoute) { }
+              private route: ActivatedRoute,
+              private router: Router) { }
 
   ngOnDestroy(): void {
     this.messages = [];
@@ -31,6 +34,7 @@ export class OpenChatComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.room = this.api.selectedRoom;
     this.keycloak.isLoggedIn().then(isLoggedIn => {
       if (isLoggedIn) {
         this.username = this.keycloak.getUsername();
@@ -102,5 +106,17 @@ export class OpenChatComponent implements OnInit, OnDestroy {
     try {
       this.elem.nativeElement.scrollTop = this.elem.nativeElement.scrollHeight;
     } catch (err) { }
+  }
+
+  goBack() {
+    this.router.navigate(['/chat']);
+  }
+
+  getRoomMembers() {
+    return this.api.selectedRoom.member.join(', ');
+  }
+
+  isDirect() {
+    return this.room.isDirect;
   }
 }
