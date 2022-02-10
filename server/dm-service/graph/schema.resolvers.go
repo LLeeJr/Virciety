@@ -183,6 +183,20 @@ func (r *mutationResolver) LeaveChat(ctx context.Context, roomID string, userNam
 	members := util.Remove(room.Member, userName)
 	room.Member = members
 
+	if len(room.Member) == 0 {
+		// room is empty so delete it
+		removeRoom := model.RemoveRoom{
+			ID:       roomID,
+			RoomName: userName,
+			UserName: userName,
+		}
+		_, err = r.DeleteRoom(ctx, removeRoom)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}
+
 	if owner != nil {
 		if util.Contains(members, *owner) {
 			room.Owner = *owner
