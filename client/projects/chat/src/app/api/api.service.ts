@@ -135,7 +135,8 @@ export class ApiService {
         id,
         member,
         name,
-        owner
+        owner,
+        isDirect
       }
     }`;
 

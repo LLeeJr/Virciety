@@ -194,6 +194,7 @@ type Chatroom struct {
 	Member    []string           `bson:"member"`
 	Name      string             `bson:"name"`
 	Owner     string             `bson:"owner"`
+	IsDirect  bool               `bson:"isdirect"`
 }
 
 func (r repo) GetRoom(ctx context.Context, roomName string, id string) (*model.Chatroom, error) {
@@ -248,6 +249,7 @@ func (r repo) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Cha
 			Member: chatroom.Member,
 			Name:   chatroom.Name,
 			Owner:  chatroom.Owner,
+			IsDirect: chatroom.IsDirect,
 		})
 	}
 

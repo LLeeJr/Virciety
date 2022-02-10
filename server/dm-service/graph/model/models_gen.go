@@ -12,10 +12,11 @@ type Chat struct {
 }
 
 type Chatroom struct {
-	ID     string   `json:"id"`
-	Member []string `json:"member"`
-	Name   string   `json:"name"`
-	Owner  string   `json:"owner"`
+	ID       string   `json:"id"`
+	Member   []string `json:"member"`
+	Name     string   `json:"name"`
+	Owner    string   `json:"owner"`
+	IsDirect bool     `json:"isDirect"`
 }
 
 type CreateRoom struct {

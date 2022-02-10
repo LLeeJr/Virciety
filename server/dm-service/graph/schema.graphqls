@@ -20,6 +20,7 @@ type Chatroom {
   member: [String!]!
   name: String!
   owner: String!
+  isDirect: Boolean!
 }
 
 type Dm {

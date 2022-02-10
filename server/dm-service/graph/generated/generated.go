@@ -52,10 +52,11 @@ type ComplexityRoot struct {
 	}
 
 	Chatroom struct {
-		ID     func(childComplexity int) int
-		Member func(childComplexity int) int
-		Name   func(childComplexity int) int
-		Owner  func(childComplexity int) int
+		ID       func(childComplexity int) int
+		IsDirect func(childComplexity int) int
+		Member   func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Owner    func(childComplexity int) int
 	}
 
 	Dm struct {
@@ -136,6 +137,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Chatroom.ID(childComplexity), true
+
+	case "Chatroom.isDirect":
+		if e.complexity.Chatroom.IsDirect == nil {
+			break
+		}
+
+		return e.complexity.Chatroom.IsDirect(childComplexity), true
 
 	case "Chatroom.member":
 		if e.complexity.Chatroom.Member == nil {
@@ -406,6 +414,7 @@ type Chatroom {
   member: [String!]!
   name: String!
   owner: String!
+  isDirect: Boolean!
 }
 
 type Dm {
@@ -960,6 +969,41 @@ func (ec *executionContext) _Chatroom_owner(ctx context.Context, field graphql.C
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Chatroom_isDirect(ctx context.Context, field graphql.CollectedField, obj *model.Chatroom) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Chatroom",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsDirect, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Dm_chatroomId(ctx context.Context, field graphql.CollectedField, obj *model.Dm) (ret graphql.Marshaler) {
@@ -2854,6 +2898,11 @@ func (ec *executionContext) _Chatroom(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "owner":
 			out.Values[i] = ec._Chatroom_owner(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "isDirect":
+			out.Values[i] = ec._Chatroom_isDirect(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
