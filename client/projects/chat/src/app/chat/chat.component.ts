@@ -15,6 +15,7 @@ import {FormControl, Validators} from "@angular/forms";
 export class ChatComponent implements OnInit {
 
   chatrooms: Room[] = [];
+  showSettings = false;
   private username: string;
 
   constructor(private api: ApiService,
@@ -112,6 +113,22 @@ export class ChatComponent implements OnInit {
         }
       });
     }
+  }
+
+  parseChatName(roomName: string) {
+    let name = roomName;
+    let front = this.username.concat('-');
+    let back = '-'.concat(this.username);
+    if (roomName.includes(front)) {
+      name = roomName.replace(front, '')
+    } else if (roomName.includes(back)) {
+      name = roomName.replace(back, '')
+    }
+    return name;
+  }
+
+  showMembers(room: Room) {
+    return !room.isDirect ? `${room.member.length} members` : '';
   }
 }
 

@@ -14,6 +14,10 @@
   margin-bottom: auto;
 }
 
+.mat-card-title:hover {
+  color: #e91e63;
+}
+
 .room-card {
   cursor: pointer;
   margin-bottom: 1em;
@@ -23,6 +27,12 @@
 .addButton {
   position: fixed;
   right: 3em;
+  margin-top: 1em;
+}
+
+.settingsButton {
+  position: fixed;
+  right: 7em;
   margin-top: 1em;
 }
 
@@ -44,4 +54,8 @@
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
+}
+
+.mat-icon:hover {
+  color: #e91e63;
 }

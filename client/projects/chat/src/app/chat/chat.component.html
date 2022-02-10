@@ -3,19 +3,25 @@
   <button mat-icon-button class="addButton" (click)="openDialog()">
     <mat-icon style="font-size: 40px">add_circle_outline</mat-icon>
   </button>
+  <button mat-icon-button class="settingsButton" (click)="this.showSettings = !this.showSettings">
+    <mat-icon style="font-size: 40px">settings</mat-icon>
+  </button>
   <div *ngFor="let room of chatrooms" class="room-card">
     <mat-card (click)="setChatPartner(room)" class="card-content">
       <div>
         <mat-card-title>
-          Chatroom: {{room.name}}
+          Chatroom: {{parseChatName(room.name)}}
         </mat-card-title>
-        <small *ngFor="let m of room.member">{{m}} {{room.member.indexOf(m) === room.member.length-1 ? '' : ','}} </small>
+        <small>{{showMembers(room)}}</small>
       </div>
-      <div class="card-controls">
-        <button mat-icon-button (click)="$event.stopPropagation(); handleLeaveChatroom(room)">
+      <div class="card-controls" *ngIf="this.showSettings">
+        <button mat-icon-button matTooltip="leave group" (click)="$event.stopPropagation(); handleLeaveChatroom(room)" *ngIf="!room.isDirect">
           <mat-icon style="font-size: 24px">logout</mat-icon>
         </button>
-        <button mat-icon-button (click)="$event.stopPropagation(); removeRoom(room)" *ngIf="isOwner(room)">
+        <button mat-icon-button matTooltip="delete room" (click)="$event.stopPropagation(); removeRoom(room)" *ngIf="isOwner(room)">
+          <mat-icon style="font-size: 24px">delete</mat-icon>
+        </button>
+        <button mat-icon-button matTooltip="leave chat" (click)="$event.stopPropagation(); handleLeaveChatroom(room)" *ngIf="room.isDirect && !isOwner(room)">
           <mat-icon style="font-size: 24px">delete</mat-icon>
         </button>
       </div>
