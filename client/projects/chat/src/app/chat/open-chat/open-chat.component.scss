@@ -82,3 +82,8 @@
 .mat-icon:hover {
   color: #e91e63;
 }
+
+.mat-card {
+  display: flex;
+  flex-direction: column;
+}

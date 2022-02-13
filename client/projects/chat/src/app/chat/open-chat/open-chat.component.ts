@@ -5,6 +5,7 @@ import {KeycloakService} from "keycloak-angular";
 import {Subscription} from "rxjs";
 import {ActivatedRoute, Params, Router} from "@angular/router";
 import {Room} from "../../data/room";
+import {DatePipe} from "@angular/common";
 
 @Component({
   selector: 'app-open-chat',
@@ -21,6 +22,7 @@ export class OpenChatComponent implements OnInit, OnDestroy {
   private room: Room;
 
   constructor(public api: ApiService,
+              public datePipe: DatePipe,
               private elem: ElementRef,
               private keycloak: KeycloakService,
               private route: ActivatedRoute,
@@ -118,5 +120,9 @@ export class OpenChatComponent implements OnInit, OnDestroy {
 
   isDirect() {
     return this.room.isDirect;
+  }
+
+  transformTime(createdAt: any) {
+    return this.datePipe.transform(createdAt, 'short');
   }
 }

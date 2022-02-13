@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
-import {Observable, Subscription} from "rxjs";
-import {DatePipe} from "@angular/common";
+import {Observable} from "rxjs";
 import {ChatSubscriptionGqlService} from "./chat-subscription-gql";
 import {SubscriptionClient} from "subscriptions-transport-ws";
 import {HttpLink} from "apollo-angular/http";
@@ -9,7 +8,6 @@ import {WebSocketLink} from "@apollo/client/link/ws";
 import {InMemoryCache, split} from "@apollo/client/core";
 import {getMainDefinition} from "@apollo/client/utilities";
 import {AuthLibService} from "auth-lib";
-import {Room} from "../data/room";
 
 @Injectable({
   providedIn: 'root',
@@ -27,7 +25,6 @@ export class ApiService {
   constructor(private apolloProvider: Apollo,
               private auth: AuthLibService,
               private chatSubGql: ChatSubscriptionGqlService,
-              private datePipe: DatePipe,
               private httpLink: HttpLink) {
     this.start();
   }

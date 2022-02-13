@@ -30,13 +30,13 @@
 <ng-template #userMessage let-message='message' class="message-card">
   <mat-card class="user-message-card">
     {{message.msg}}
-    <small>{{message.createdBy}}, {{message.createdAt}}</small>
+    <small>{{message.createdBy}}, {{transformTime(message.createdAt)}}</small>
   </mat-card>
 </ng-template>
 
 <ng-template #friendMessage let-message='message'>
   <mat-card class="friend-message-card">
     {{message.msg}}
-    <small>{{message.createdBy}}, {{message.createdAt}}</small>
+    <small>{{message.createdBy}}, {{transformTime(message.createdAt)}}</small>
   </mat-card>
 </ng-template>
