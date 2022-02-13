@@ -36,7 +36,10 @@ export class OpenChatComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.room = this.api.selectedRoom;
+    if (this.api.selectedRoom) {
+      sessionStorage.setItem("room", JSON.stringify(this.api.selectedRoom));
+    }
+    this.room = this.getCurrentRoom();
     this.keycloak.isLoggedIn().then(isLoggedIn => {
       if (isLoggedIn) {
         this.username = this.keycloak.getUsername();
@@ -44,8 +47,8 @@ export class OpenChatComponent implements OnInit, OnDestroy {
         this.route.params.subscribe((params: Params) => {
           let roomName = params['name'];
           let users = roomName.split('-');
-          if (this.api.selectedRoom && this.api.selectedRoom.id) {
-            this.api.getRoom().subscribe(value => {
+          if (this.room && this.room.id) {
+            this.api.getRoom(roomName, this.room.id).subscribe(value => {
               if (value && value.data && value.data.getRoom) {
                 this.api.selectedRoom = value.data.getRoom;
                 let id = value.data.getRoom.id;
@@ -74,6 +77,10 @@ export class OpenChatComponent implements OnInit, OnDestroy {
         });
       }
     });
+  }
+
+  private getCurrentRoom() {
+    return this.api.selectedRoom ? this.api.selectedRoom : JSON.parse(<string>sessionStorage.getItem("room"));
   }
 
   private getMessagesAndSubscribe(id: string, roomName: string) {

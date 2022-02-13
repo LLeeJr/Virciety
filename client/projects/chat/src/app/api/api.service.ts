@@ -148,7 +148,7 @@ export class ApiService {
     return this.query.valueChanges;
   }
 
-  getRoom(): Observable<any> {
+  getRoom(roomName: string, roomId: string): Observable<any> {
     const query = gql`
     query getRoom($roomName: String!, $roomID: String!) {
       getRoom(roomName: $roomName, roomID: $roomID)
@@ -163,8 +163,8 @@ export class ApiService {
     this.query = this.apollo.watchQuery<any>({
       query: query,
       variables: {
-        roomName: this.selectedRoom.name,
-        roomID: this.selectedRoom.id,
+        roomName: roomName,
+        roomID: roomId,
       }
     });
 
