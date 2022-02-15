@@ -1,4 +1,4 @@
-import {Component, ElementRef, OnDestroy, OnInit} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit} from '@angular/core';
 import {ApiService} from "../../api/api.service";
 import {Dm} from "../../data/dm";
 import {KeycloakService} from "keycloak-angular";
@@ -18,8 +18,8 @@ export class OpenChatComponent implements OnInit, OnDestroy {
 
   message: string = '';
   username: string;
+  room: Room;
   private subscription: Subscription;
-  private room: Room;
 
   constructor(public api: ApiService,
               public datePipe: DatePipe,
@@ -36,10 +36,6 @@ export class OpenChatComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    if (this.api.selectedRoom) {
-      sessionStorage.setItem("room", JSON.stringify(this.api.selectedRoom));
-    }
-    this.room = this.getCurrentRoom();
     this.keycloak.isLoggedIn().then(isLoggedIn => {
       if (isLoggedIn) {
         this.username = this.keycloak.getUsername();
@@ -47,29 +43,30 @@ export class OpenChatComponent implements OnInit, OnDestroy {
         this.route.params.subscribe((params: Params) => {
           let roomName = params['name'];
           let users = roomName.split('-');
+          this.room = this.getCurrentRoom(roomName);
           if (this.room && this.room.id) {
             this.api.getRoom(roomName, this.room.id).subscribe(value => {
               if (value && value.data && value.data.getRoom) {
-                this.api.selectedRoom = value.data.getRoom;
-                let id = value.data.getRoom.id;
-                this.getMessagesAndSubscribe(id, roomName);
+                this.room = value.data.getRoom;
+                this.storeRoom(this.room);
+                this.getMessagesAndSubscribe(this.room.id, roomName);
               }
             });
           } else {
             // id is empty, so request comes from a direct chat call
             this.api.getDirectRoom(users[0], users[1]).subscribe(value => {
               if (value && value.data && value.data.getDirectRoom) {
-                this.api.selectedRoom = value.data.getDirectRoom;
-                let id = value.data.getDirectRoom.id;
-                this.getMessagesAndSubscribe(id, roomName);
+                this.room = value.data.getDirectRoom;
+                this.storeRoom(this.room);
+                this.getMessagesAndSubscribe(this.room.id, roomName);
               }
             }, () => {
               // room was not found, so a new one needs to be created
               this.api.createRoom(users, roomName, this.username, true).subscribe(value => {
                 if (value && value.data && value.data.createRoom) {
-                  this.api.selectedRoom = value.data.createRoom;
-                  let id = value.data.createRoom.id;
-                  this.getMessagesAndSubscribe(id, roomName);
+                  this.room = value.data.createRoom;
+                  this.storeRoom(this.room);
+                  this.getMessagesAndSubscribe(this.room.id, roomName);
                 }
               })
             });
@@ -79,13 +76,27 @@ export class OpenChatComponent implements OnInit, OnDestroy {
     });
   }
 
-  private getCurrentRoom() {
-    return this.api.selectedRoom ? this.api.selectedRoom : JSON.parse(<string>sessionStorage.getItem("room"));
+  private storeRoom(room: Room) {
+    sessionStorage.setItem("room", JSON.stringify(room));
+  }
+
+  private getCurrentRoom(roomName: string) {
+    if (this.api.selectedRoom) {
+      return this.api.selectedRoom;
+    }
+    if (sessionStorage.getItem("room")) {
+      let room =  JSON.parse(<string>sessionStorage.getItem("room"));
+      if (room.name === roomName) {
+        sessionStorage.removeItem("room");
+        return room;
+      }
+    }
   }
 
   private getMessagesAndSubscribe(id: string, roomName: string) {
     this.subscription = this.api.getMessagesFromRoom(id).subscribe(value => {
       this.messages = value.data.getMessagesFromRoom;
+      this.scrollToBottom();
     });
 
     this.api.subscribeToChat(roomName).subscribe(value => {
@@ -105,7 +116,7 @@ export class OpenChatComponent implements OnInit, OnDestroy {
 
   async sendMessage() {
     if (this.message.length > 0) {
-      await this.api.writeDm(this.message).toPromise();
+      await this.api.writeDm(this.message, this.room.name, this.room.id).toPromise();
       this.message = '';
       this.scrollToBottom();
     }
@@ -122,11 +133,14 @@ export class OpenChatComponent implements OnInit, OnDestroy {
   }
 
   getRoomMembers() {
-    return this.api.selectedRoom.member.join(', ');
+    return this.room.member.join(', ');
   }
 
   isDirect() {
-    return this.room.isDirect;
+    if (this.room) {
+      return this.room.isDirect;
+    }
+    return false;
   }
 
   transformTime(createdAt: any) {

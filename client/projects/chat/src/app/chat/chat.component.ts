@@ -75,6 +75,12 @@ export class ChatComponent implements OnInit {
       }
     }
     this.chatrooms = [...rooms];
+    if (sessionStorage.getItem("room")) {
+      let room = JSON.parse(<string>sessionStorage.getItem("room"));
+      if (room.id === id) {
+        sessionStorage.removeItem("room");
+      }
+    }
   }
 
   isOwner(room: Room) {

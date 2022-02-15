@@ -1,4 +1,4 @@
-<div *ngIf="chatrooms.length > 0" class="chat-rooms">
+<div class="chat-rooms">
   <div class="chat-title">Recent Chats</div>
   <button mat-icon-button class="addButton" (click)="openDialog()">
     <mat-icon style="font-size: 40px">add_circle_outline</mat-icon>
@@ -6,25 +6,31 @@
   <button mat-icon-button class="settingsButton" (click)="this.showSettings = !this.showSettings">
     <mat-icon style="font-size: 40px">settings</mat-icon>
   </button>
-  <div *ngFor="let room of chatrooms" class="room-card">
-    <mat-card (click)="setChatPartner(room)" class="card-content">
-      <div>
-        <mat-card-title>
-          Chatroom: {{parseChatName(room.name)}}
-        </mat-card-title>
-        <small>{{showMembers(room)}}</small>
-      </div>
-      <div class="card-controls" *ngIf="this.showSettings">
-        <button mat-icon-button matTooltip="leave group" (click)="$event.stopPropagation(); handleLeaveChatroom(room)" *ngIf="!room.isDirect">
-          <mat-icon style="font-size: 24px">logout</mat-icon>
-        </button>
-        <button mat-icon-button matTooltip="delete room" (click)="$event.stopPropagation(); removeRoom(room)" *ngIf="isOwner(room)">
-          <mat-icon style="font-size: 24px">delete</mat-icon>
-        </button>
-        <button mat-icon-button matTooltip="leave chat" (click)="$event.stopPropagation(); handleLeaveChatroom(room)" *ngIf="room.isDirect && !isOwner(room)">
-          <mat-icon style="font-size: 24px">delete</mat-icon>
-        </button>
-      </div>
-    </mat-card>
+  <div *ngIf="chatrooms.length > 0; else none">
+    <div *ngFor="let room of chatrooms" class="room-card">
+      <mat-card (click)="setChatPartner(room)" class="card-content">
+        <div>
+          <mat-card-title>
+            Chatroom: {{parseChatName(room.name)}}
+          </mat-card-title>
+          <small>{{showMembers(room)}}</small>
+        </div>
+        <div class="card-controls" *ngIf="this.showSettings">
+          <button mat-icon-button matTooltip="leave group" (click)="$event.stopPropagation(); handleLeaveChatroom(room)" *ngIf="!room.isDirect">
+            <mat-icon style="font-size: 24px">logout</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="delete room" (click)="$event.stopPropagation(); removeRoom(room)" *ngIf="isOwner(room)">
+            <mat-icon style="font-size: 24px">delete</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="delete chat" (click)="$event.stopPropagation(); removeRoom(room)" *ngIf="room.isDirect && !isOwner(room)">
+            <mat-icon style="font-size: 24px">delete</mat-icon>
+          </button>
+        </div>
+      </mat-card>
+    </div>
   </div>
 </div>
+
+<ng-template #none>
+  <p>No rooms yet!</p>
+</ng-template>

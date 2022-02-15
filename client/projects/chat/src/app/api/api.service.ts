@@ -52,17 +52,25 @@ export class ApiService {
     );
 
     this.apolloProvider.createNamed('chat', {
-      cache: new InMemoryCache(),
+      cache: new InMemoryCache({
+        typePolicies: {
+          Query: {
+            fields: {
+              getRoomsByUser: {
+                merge: false,
+              },
+            },
+          },
+        },
+      }),
       link: link
     });
 
     this.apollo = this.apolloProvider.use('chat');
   }
 
-  writeDm(msg: string): Observable<any> {
+  writeDm(msg: string, roomName: string, roomId: string): Observable<any> {
     const userName = this.auth.userName;
-    const roomName = this.selectedRoom.name;
-    const roomId = this.selectedRoom.id;
 
     const mutation = gql`
     mutation createDm($msg: String!, $userName: String!, $roomName: String!, $roomID: String!){
@@ -179,7 +187,8 @@ export class ApiService {
         id,
         member,
         name,
-        owner
+        owner,
+        isDirect
       }
     }`;
 
@@ -202,7 +211,8 @@ export class ApiService {
         id,
         member,
         name,
-        owner
+        owner,
+        isDirect
       }
     }
     `;

@@ -33,6 +33,7 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName st
 				Name:   chatroom.Name,
 				Member: chatroom.Member,
 				Id:     chatroom.ID,
+				IsDirect: chatroom.IsDirect,
 				Owner:  chatroom.Owner,
 				Observers: map[string]struct {
 					Username string
@@ -98,6 +99,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 			}
 			room = &Chatroom{
 				Id:     createRoom.ID,
+				IsDirect: createRoom.IsDirect,
 				Name:   createRoom.Name,
 				Member: createRoom.Member,
 				Owner:  createRoom.Owner,
@@ -111,6 +113,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 			// no error occurred, so a room was found in db
 			room = &Chatroom{
 				Id:     chatroom.ID,
+				IsDirect: chatroom.IsDirect,
 				Name:   chatroom.Name,
 				Member: chatroom.Member,
 				Owner:  chatroom.Owner,
@@ -126,6 +129,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 	r.mu.Unlock()
 	return &model.Chatroom{
 		ID:     room.Id,
+		IsDirect: room.IsDirect,
 		Member: room.Member,
 		Name:   room.Name,
 		Owner:  room.Owner,
@@ -220,6 +224,7 @@ func (r *queryResolver) GetDirectRoom(ctx context.Context, user1 string, user2 s
 	if r.Rooms[room.Name] == nil {
 		chatroom := &Chatroom{
 			Id:     room.ID,
+			IsDirect: room.IsDirect,
 			Name:   room.Name,
 			Member: room.Member,
 			Owner:  room.Owner,
@@ -251,6 +256,7 @@ func (r *queryResolver) GetRoom(ctx context.Context, roomName string, roomID str
 			// room exists in db
 			room = &Chatroom{
 				Id:     chatroom.ID,
+				IsDirect: chatroom.IsDirect,
 				Name:   chatroom.Name,
 				Member: chatroom.Member,
 				Owner:  chatroom.Owner,
@@ -266,6 +272,7 @@ func (r *queryResolver) GetRoom(ctx context.Context, roomName string, roomID str
 
 	return &model.Chatroom{
 		ID:     room.Id,
+		IsDirect: room.IsDirect,
 		Member: room.Member,
 		Name:   room.Name,
 		Owner:  room.Owner,
@@ -358,6 +365,7 @@ type subscriptionResolver struct{ *Resolver }
 
 type Chatroom struct {
 	Id        string
+	IsDirect  bool
 	Name      string
 	Messages  []*model.Dm
 	Member    []string

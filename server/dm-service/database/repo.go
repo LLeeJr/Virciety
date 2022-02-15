@@ -70,6 +70,7 @@ func (r repo) GetDirectRoom(ctx context.Context, user1 string, user2 string) (*m
 	if len(rooms) != 0 {
 		chatroom := &model.Chatroom{
 			ID:     rooms[0].ID.Hex(),
+			IsDirect: rooms[0].IsDirect,
 			Member: rooms[0].Member,
 			Name:   rooms[0].Name,
 			Owner:  rooms[0].Owner,
@@ -163,6 +164,7 @@ func (r repo) CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.C
 
 	modelRoom := &model.Chatroom{
 		ID:       insertedId,
+		IsDirect: *roomEvent.IsDirect,
 		Member:   roomEvent.Member,
 		Name:     roomEvent.Name,
 		Owner:    roomEvent.Owner,
@@ -222,6 +224,7 @@ func (r repo) GetRoom(ctx context.Context, roomName string, id string) (*model.C
 
 	return &model.Chatroom{
 		ID:     result.ID.Hex(),
+		IsDirect: result.IsDirect,
 		Member: result.Member,
 		Name:   result.Name,
 		Owner:  result.Owner,
