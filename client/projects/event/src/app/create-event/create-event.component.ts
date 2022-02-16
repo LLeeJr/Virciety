@@ -2,25 +2,7 @@ import {Component, Inject, OnInit} from '@angular/core';
 import {formatDate} from "@angular/common";
 import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from "@angular/forms";
 import {MAT_DIALOG_DATA, MatDialogRef} from "@angular/material/dialog";
-import {Event} from "../model/event";
-
-export interface DialogData {
-  editMode: boolean;
-  event: Event | null;
-}
-
-export interface OutputData {
-  event: Event | {
-    description: string,
-    location: string,
-    startDate: string,
-    endDate: string,
-    startTime: string | null,
-    endTime: string | null,
-    title: string,
-  } | null;
-  remove: boolean;
-}
+import {CreateEventData, CreateEventDialogData} from "../model/dialog.data";
 
 @Component({
   selector: 'app-create-event',
@@ -30,7 +12,7 @@ export interface OutputData {
 export class CreateEventComponent implements OnInit {
 
   currDate: string = formatDate(new Date(), 'fullDate', 'en-GB');
-  remove: OutputData = {
+  remove: CreateEventData = {
     event: this.data.event,
     remove: true,
   }
@@ -47,7 +29,7 @@ export class CreateEventComponent implements OnInit {
     endDate: new FormControl('', Validators.required),
   });
 
-  constructor(@Inject(MAT_DIALOG_DATA) public data: DialogData,
+  constructor(@Inject(MAT_DIALOG_DATA) public data: CreateEventDialogData,
               private dialogRef: MatDialogRef<CreateEventComponent>) {
     // fill the dialog with event data if in edit mode
     if (data.editMode && data.event) {
@@ -116,7 +98,7 @@ export class CreateEventComponent implements OnInit {
         }
       }
 
-      let output: OutputData = {
+      let output: CreateEventData = {
         event: this.data.event,
         remove: false
       }
@@ -124,7 +106,7 @@ export class CreateEventComponent implements OnInit {
       this.dialogRef.close(output);
     // if not in editMode create output data, so new event can be created
     } else if (!required && !this.data.editMode) {
-      let output: OutputData = {
+      let output: CreateEventData = {
         event: {
           description: this.description,
           location: this.location,

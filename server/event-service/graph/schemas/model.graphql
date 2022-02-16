@@ -45,3 +45,25 @@ type EditEventResponse {
     ok: String!
     type: String!
 }
+
+input UserDataRequest {
+    username: String!
+    firstname: String!
+    lastname: String!
+    street: String!
+    housenumber: String!
+    postalcode: String!
+    city: String!
+    email: String!
+}
+
+type UserData {
+    username: String!
+    firstname: String!
+    lastname: String!
+    street: String!
+    housenumber: String!
+    postalcode: String!
+    city: String!
+    email: String!
+}

@@ -3,8 +3,11 @@ import {KeycloakService} from "keycloak-angular";
 import {GQLService} from "../service/gql.service";
 import {Event} from "../model/event";
 import {MAT_DIALOG_DATA, MatDialog} from "@angular/material/dialog";
-import {CreateEventComponent, OutputData} from "../create-event/create-event.component";
+import {CreateEventComponent} from "../create-event/create-event.component";
+import {CreateEventData} from "../model/dialog.data";
 import {formatDate} from "@angular/common";
+import {ContactDetailsComponent} from "../contact-details/contact-details.component";
+import {UserData} from "../model/userData";
 
 export interface EventDate {
   startDate: string;
@@ -56,10 +59,10 @@ export class EventComponent implements OnInit {
 
     /*this.gqlService.getEvents().subscribe(({data}: any) => {
       // console.log(data);
-      this.ongoingEvents = EventComponent.sortEvents(this.data.getEvents.ongoingEvents, this.asc);
+      this.ongoingEvents = EventComponent.sortEvents(data.getEvents.ongoingEvents, this.asc);
       this.pastEvents = EventComponent.sortEvents(data.getEvents.pastEvents, this.desc);
       this.upcomingEvents = EventComponent.sortEvents(data.getEvents.upcomingEvents, this.asc);
-      this.selectedEvents = this.upcomingEvents;
+      this.selectedEvents = this.ongoingEvents; // TODO
     }, (error: any) => {
       console.error('there was an error sending the getEvents-query', error);
     });*/
@@ -86,9 +89,9 @@ export class EventComponent implements OnInit {
         editMode: editMode,
         event: event,
       }
-    })
+    });
 
-    dialogRef.afterClosed().subscribe((data: OutputData | false) => {
+    dialogRef.afterClosed().subscribe((data: CreateEventData | false) => {
       // console.log(data);
       if (data === undefined || data === false) {
         return;
@@ -218,14 +221,40 @@ export class EventComponent implements OnInit {
     });
   }
 
+  checkUserData(event: Event) {
+    this.gqlService.userDataExists(this.username).subscribe(({data}: any) => {
+      // console.log(data);
+      if (data.userDataExists) {
+        this.attendEvent(event);
+      } else {
+        let dialogRef = this.dialog.open(ContactDetailsComponent, {
+          data: this.username
+        });
+
+        dialogRef.afterClosed().subscribe((userData: UserData | null) => {
+          if (!userData) {
+            return;
+          }
+
+          this.gqlService.addUserData(userData).subscribe(({data}: any) => {
+            this.attendEvent(event);
+          });
+        });
+      }
+    })
+  }
+
   attendEvent(event: Event) {
+    let left;
     if (event.attending.indexOf(this.username) < 0) {
+      left = false;
       event.attending = [...event.attending, this.username];
     } else {
+      left = true;
       event.attending = event.attending.filter(member => member !== this.username);
     }
 
-    this.gqlService.attendEvent(event).subscribe(({data}: any) => {
+    this.gqlService.attendEvent(event, left, this.username).subscribe(({data}: any) => {
       console.log(data);
     })
   }

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"errors"
 	"event-service/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,7 +19,9 @@ type Repository interface {
 	RemoveEvent(event Event) (string, error)
 	EditEvent(event Event) (string, string, error)
 	SubscribeEvent(event Event) (string, error)
-	AttendEvent(event Event) (string, error)
+	AttendEvent(event Event, username string) (string, error)
+	InsertUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error)
+	CheckUserData(ctx context.Context, username string) (*model.UserData, error)
 }
 
 type Repo struct {
@@ -128,7 +131,7 @@ func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, e
 		cursor, err = repo.eventCollection.Find(ctx, bson.D{
 			{"id", eventModel.ID},
 			{"event_type", bson.D{
-				{"$in", bson.A{"EditEvent", "SubscribeEvent", "AttendEvent"}},
+				{"$in", bson.A{"EditEvent", "SubscribeEvent", "AttendEvent", "LeaveEvent"}},
 			}},
 		}, opts)
 		if err != nil {
@@ -219,7 +222,7 @@ func (repo *Repo) RemoveEvent(event Event) (string, error) {
 	_, err = repo.eventCollection.DeleteMany(ctx, bson.D{
 		{"id", event.EventID},
 		{"event_type", bson.D{
-			{"$in", bson.A{"EditEvent", "SubscribeEvent", "AttendEvent"}},
+			{"$in", bson.A{"EditEvent", "SubscribeEvent", "AttendEvent", "LeaveEvent"}},
 		}},
 	})
 	if err != nil {
@@ -268,11 +271,54 @@ func (repo *Repo) SubscribeEvent(event Event) (string, error) {
 	return "success", nil
 }
 
-func (repo *Repo) AttendEvent(event Event) (string, error) {
+func (repo *Repo) AttendEvent(event Event, username string) (string, error) {
 	_, err := repo.InsertEvent(event)
 	if err != nil {
 		return "failed", err
 	}
 
+	logTime := LogTime{
+		EventID:   event.EventID,
+		Username:  username,
+		EventType: event.EventType,
+		Timestamp: time.Now(),
+	}
+
+	_, err = repo.eventCollection.InsertOne(ctx, logTime)
+	if err != nil {
+		return "", err
+	}
+
 	return "success", nil
+}
+
+func (repo *Repo) InsertUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error) {
+	_, err := repo.userDataCollection.InsertOne(ctx, userData)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.UserData{
+		Username:    userData.Username,
+		Firstname:   userData.Firstname,
+		Lastname:    userData.Lastname,
+		Street:      userData.Street,
+		Housenumber: userData.Housenumber,
+		Postalcode:  userData.Postalcode,
+		City:        userData.City,
+		Email:       userData.Email,
+	}, nil
+}
+
+func (repo *Repo) CheckUserData(ctx context.Context, username string) (*model.UserData, error) {
+	var result model.UserData
+	err := repo.userDataCollection.FindOne(ctx, bson.D{{"username", username}}).Decode(&result)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &result, nil
 }

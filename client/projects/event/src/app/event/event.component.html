@@ -48,7 +48,7 @@
         {{e.description}}
       </mat-card-content>
       <mat-card-actions>
-        <button mat-flat-button *ngIf="selectedList === 'Ongoing events'" [style]="e.attending.indexOf(username) < 0 ? {background:'rgb(92, 184, 92)'} : {background:'rgb(217,83,79)'}" (click)="attendEvent(e)">{{e.attending.indexOf(username) < 0 ? 'Attend' : 'Leave'}}</button>
+        <button mat-flat-button *ngIf="selectedList === 'Ongoing events'" [style]="e.attending.indexOf(username) < 0 ? {background:'rgb(92, 184, 92)'} : {background:'rgb(217,83,79)'}" (click)="checkUserData(e)">{{e.attending.indexOf(username) < 0 ? 'Attend' : 'Leave'}}</button>
         <button mat-button *ngIf="e.host !== username && selectedList === 'Upcoming events'" (click)="subscribeEvent(e)">{{e.members.indexOf(username) < 0 ? 'Subscribe' : 'Unsubscribe'}}</button>
         <button mat-button *ngIf="e.host === username && selectedList !== 'Past events'" (click)="openEventDialog(e, true)">Edit</button>
         <button mat-button *ngIf="e.host === username && selectedList === 'Past events'" color="warn" (click)="removeEvent(e)">Remove</button>

@@ -108,12 +108,18 @@ func (r *mutationResolver) SubscribeEvent(ctx context.Context, subscribe model.E
 	return ok, nil
 }
 
-func (r *mutationResolver) AttendEvent(ctx context.Context, attend model.EditEventRequest) (string, error) {
+func (r *mutationResolver) AttendEvent(ctx context.Context, attend model.EditEventRequest, username string, left bool) (string, error) {
+	eventType := "AttendEvent"
+
+	if left {
+		eventType = "LeaveEvent"
+	}
+
 	// process the data and create new event
 	event := database.Event{
 		EventID:     attend.EventID,
 		EventTime:   time.Now(),
-		EventType:   "AttendEvent",
+		EventType:   eventType,
 		Title:       attend.Title,
 		Members:     attend.Members,
 		Description: attend.Description,
@@ -124,12 +130,16 @@ func (r *mutationResolver) AttendEvent(ctx context.Context, attend model.EditEve
 	}
 
 	// save event in database
-	ok, err := r.repo.AttendEvent(event)
+	ok, err := r.repo.AttendEvent(event, username)
 	if err != nil {
 		return ok, err
 	}
 
 	return ok, nil
+}
+
+func (r *mutationResolver) AddUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error) {
+	return r.repo.InsertUserData(ctx, userData)
 }
 
 // Mutation returns generated.MutationResolver implementation.

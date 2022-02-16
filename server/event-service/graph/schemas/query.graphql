@@ -1,3 +1,4 @@
 type Query {
     getEvents: GetEventsResponse
+    userDataExists(username: String): UserData
 }

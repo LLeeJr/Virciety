@@ -3,5 +3,6 @@ type Mutation {
     editEvent(edit: EditEventRequest!): EditEventResponse!
     removeEvent(remove: String!): String!
     subscribeEvent(subscribe: EditEventRequest!): String!
-    attendEvent(attend: EditEventRequest!): String!
+    attendEvent(attend: EditEventRequest!, username: String!, left: Boolean!): String!
+    addUserData(userData: UserDataRequest!): UserData!
 }

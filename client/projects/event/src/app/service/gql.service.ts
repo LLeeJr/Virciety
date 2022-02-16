@@ -2,9 +2,19 @@ import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase} from "apollo-angular";
 import {HttpLink} from "apollo-angular/http";
 import {InMemoryCache} from "@apollo/client/core";
-import {ATTEND_EVENT, CREATE_EVENT, EDIT_EVENT, GET_EVENTS, REMOVE_EVENT, SUBSCRIBE_EVENT} from "./gql-request-strings";
+import {
+  ADD_USER_DATA,
+  ATTEND_EVENT,
+  CREATE_EVENT,
+  EDIT_EVENT,
+  GET_EVENTS,
+  REMOVE_EVENT,
+  SUBSCRIBE_EVENT,
+  USER_DATA_EXISTS
+} from "./gql-request-strings";
 import {Event} from "../model/event";
 import {EventDate} from "../event/event.component";
+import {UserData} from "../model/userData";
 
 @Injectable({
   providedIn: 'root'
@@ -44,7 +54,7 @@ export class GQLService {
     })
   }
 
-  getEvents(): any {
+  getEvents() {
     return this.apollo.watchQuery({
       query: GET_EVENTS
     }).valueChanges
@@ -57,7 +67,7 @@ export class GQLService {
           remove: eventID,
         }
       }
-    )
+    );
   }
 
   editEvent(event: Event, eventDate: EventDate) {
@@ -74,7 +84,7 @@ export class GQLService {
           attending: event.attending
         }
       }
-    )
+    );
   }
 
   subscribeEvent(event: Event) {
@@ -91,10 +101,10 @@ export class GQLService {
           attending: event.attending,
         }
       }
-    )
+    );
   }
 
-  attendEvent(event: Event) {
+  attendEvent(event: Event, left: boolean, username: string) {
     return this.apollo.mutate({
         mutation: ATTEND_EVENT,
         variables: {
@@ -105,9 +115,36 @@ export class GQLService {
           startDate: event.startDate,
           endDate: event.endDate,
           location: event.location,
-          attending: event.attending
+          attending: event.attending,
+          left: left,
+          username: username
         }
       }
-    )
+    );
+  }
+
+  userDataExists(username: String) {
+    return this.apollo.mutate({
+      mutation: USER_DATA_EXISTS,
+      variables: {
+        username: username,
+      }
+    });
+  }
+
+  addUserData(userData: UserData) {
+    return this.apollo.mutate({
+      mutation: ADD_USER_DATA,
+      variables: {
+        username: userData.username,
+        firstname: userData.firstname,
+        lastname: userData.lastname,
+        street: userData.address.street,
+        housenumber: userData.address.housenumber,
+        postalcode: userData.address.postalcode,
+        city: userData.address.city,
+        email: userData.email
+      }
+    });
   }
 }

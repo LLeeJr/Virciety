@@ -22,6 +22,15 @@ func (r *queryResolver) GetEvents(ctx context.Context) (*model.GetEventsResponse
 	}, nil
 }
 
+func (r *queryResolver) UserDataExists(ctx context.Context, username *string) (*model.UserData, error) {
+	userData, err := r.repo.CheckUserData(ctx, *username)
+	if err != nil {
+		return nil, err
+	}
+
+	return userData, nil
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 

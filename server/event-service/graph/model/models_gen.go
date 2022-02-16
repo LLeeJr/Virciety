@@ -49,3 +49,25 @@ type GetEventsResponse struct {
 	OngoingEvents  []*Event `json:"ongoingEvents"`
 	PastEvents     []*Event `json:"pastEvents"`
 }
+
+type UserData struct {
+	Username    string `json:"username"`
+	Firstname   string `json:"firstname"`
+	Lastname    string `json:"lastname"`
+	Street      string `json:"street"`
+	Housenumber string `json:"housenumber"`
+	Postalcode  string `json:"postalcode"`
+	City        string `json:"city"`
+	Email       string `json:"email"`
+}
+
+type UserDataRequest struct {
+	Username    string `json:"username"`
+	Firstname   string `json:"firstname"`
+	Lastname    string `json:"lastname"`
+	Street      string `json:"street"`
+	Housenumber string `json:"housenumber"`
+	Postalcode  string `json:"postalcode"`
+	City        string `json:"city"`
+	Email       string `json:"email"`
+}

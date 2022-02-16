@@ -19,3 +19,11 @@ type Event struct {
 	Location  			string  			`bson:"location,omitempty"`
 	Attending 			[]string 			`bson:"currently_attending,omitempty"`
 }
+
+type LogTime struct {
+	ID			primitive.ObjectID	`bson:"_id,omitempty"`
+	EventID		string				`bson:"id,omitempty"`
+	Username	string				`bson:"username,omitempty"`
+	EventType	string				`bson:"event_type,omitempty"`
+	Timestamp	time.Time			`bson:"timestamp,omitempty"`
+}
