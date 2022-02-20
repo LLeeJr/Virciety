@@ -19,14 +19,20 @@
       <mat-form-field appearance="fill">
         <mat-label>Friends</mat-label>
         <mat-select [formControl]="friends" multiple>
+          <mat-select-trigger>
+            {{friends.value ? friends.value[0] : ''}}
+            <span *ngIf="friends.value?.length > 1" class="example-selection">
+              (+{{friends.value.length - 1}} {{friends.value?.length === 2 ? 'other' : 'others'}})
+            </span>
+          </mat-select-trigger>
           <mat-option *ngFor="let friend of friendList" [value]="friend">{{friend}}</mat-option>
         </mat-select>
-        <mat-error *ngIf="this.pickedUsers.length == 0">Pick at least one person!</mat-error>
+<!--        <mat-error *ngIf="this.pickedUsers.length == 0">Pick at least one person!</mat-error>-->
       </mat-form-field>
     </div>
 
     <div *ngIf="pickedUsers.length == 1">
-      <mat-checkbox [(ngModel)]="checked">Is this a direct chat?</mat-checkbox>
+<!--      <mat-checkbox [(ngModel)]="checked">Is this a direct chat?</mat-checkbox>-->
     </div>
   </div>
 

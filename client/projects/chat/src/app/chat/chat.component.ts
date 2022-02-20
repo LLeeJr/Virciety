@@ -52,8 +52,10 @@ export class ChatComponent implements OnInit {
         let dialogRef = this.dialog.open(AddChatDialog, {
           data: value.data.getUserByName,
         });
-        dialogRef.componentInstance.newRoom.subscribe(room => {
-          this.chatrooms = [...this.chatrooms, room];
+        dialogRef.afterClosed().subscribe(room => {
+          if (room && room.data && room.data.createRoom) {
+            this.chatrooms = [...this.chatrooms, room.data.createRoom];
+          }
         });
       }
     });
@@ -143,15 +145,16 @@ export class ChatComponent implements OnInit {
   templateUrl: './add-chat-dialog.html',
   styleUrls: ['./add-chat-dialog.scss']
 })
-export class AddChatDialog {
+export class AddChatDialog implements OnInit {
   username: string = '';
   roomName: string = '';
   friendList: string[] = [];
   pickedUsers: string[] = [];
-  friends = new FormControl([], [
-    Validators.required,
-    Validators.minLength(1),
-  ]);
+  friends = new FormControl();
+  // friends = new FormControl([], [
+  //   Validators.required,
+  //   Validators.minLength(1),
+  // ]);
   nameInput = new FormControl('', [
     Validators.required,
     Validators.minLength(2),
@@ -162,12 +165,15 @@ export class AddChatDialog {
   constructor(@Inject(MAT_DIALOG_DATA) public data: any,
               private api: ApiService,
               private dialogRef: MatDialogRef<AddChatDialog>) {
-    if (data) {
-      let {follows, followers} = this.data;
-      this.friendList = this.removeDuplicates(follows.concat(followers));
-    }
+  }
+
+  ngOnInit() {
+    let {follows, followers} = this.data;
+    this.friendList = this.removeDuplicates(follows.concat(followers));
+    console.log(this.friendList)
 
     this.friends.valueChanges.subscribe(value => {
+      console.log(value)
       this.pickedUsers = value;
       if (this.pickedUsers.length == 1) {
         this.nameInput.setValue(`${this.data.username}-${this.pickedUsers[0]}`);
@@ -180,10 +186,7 @@ export class AddChatDialog {
   createRoom(name: string, users: string[], checked: boolean) {
     let member = [this.data.username, ...users];
     this.api.createRoom(member, name, this.data.username, checked).subscribe(value => {
-      if (value && value.data && value.data.createRoom) {
-        this.newRoom.emit(value.data.createRoom);
-        this.dialogRef.close();
-      }
+      this.dialogRef.close(value);
     });
   }
 

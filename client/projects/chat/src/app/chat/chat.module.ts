@@ -5,6 +5,7 @@ import {AddChatDialog, ChatComponent, SelectOwnerDialog} from './chat.component'
 import { OpenChatComponent } from './open-chat/open-chat.component';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {MaterialModule} from "../material/material.module";
+import {MatFormFieldModule} from "@angular/material/form-field";
 
 
 @NgModule({
@@ -12,7 +13,7 @@ import {MaterialModule} from "../material/material.module";
     ChatComponent,
     OpenChatComponent,
     AddChatDialog,
-    SelectOwnerDialog
+    SelectOwnerDialog,
   ],
   imports: [
     CommonModule,
@@ -20,6 +21,7 @@ import {MaterialModule} from "../material/material.module";
     FormsModule,
     MaterialModule,
     ReactiveFormsModule,
+    MatFormFieldModule,
   ],
 })
 export class ChatModule { }

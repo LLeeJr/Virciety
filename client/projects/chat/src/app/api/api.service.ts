@@ -5,9 +5,10 @@ import {ChatSubscriptionGqlService} from "./chat-subscription-gql";
 import {SubscriptionClient} from "subscriptions-transport-ws";
 import {HttpLink} from "apollo-angular/http";
 import {WebSocketLink} from "@apollo/client/link/ws";
-import {InMemoryCache, split} from "@apollo/client/core";
+import {ApolloLink, InMemoryCache, split} from "@apollo/client/core";
 import {getMainDefinition} from "@apollo/client/utilities";
 import {AuthLibService} from "auth-lib";
+import {setContext} from "@apollo/client/link/context";
 
 @Injectable({
   providedIn: 'root',
@@ -30,8 +31,37 @@ export class ApiService {
   }
 
   private start() {
-    const http = this.httpLink.create({
-      uri: 'http://localhost:8081/query'
+    const basic = setContext((operation, context) => ({
+      headers: {
+        Accept: 'charset=utf-8'
+      }
+    }));
+
+    const auth = setContext((operation, context) => {
+      const token = localStorage.getItem('token');
+
+      if (token === null) {
+        return {};
+      } else {
+        return {
+          headers: {
+            Authorization: `JWT ${token}`
+          }
+        };
+      }
+    });
+
+    const http = ApolloLink.from([basic, auth, this.httpLink.create({ uri: 'http://localhost:8081/query'})]);
+    const cache = new InMemoryCache({
+      typePolicies: {
+        Query: {
+          fields: {
+            getRoomsByUser: {
+              merge: false,
+            },
+          },
+        },
+      },
     });
 
     this.webSocketClient = new SubscriptionClient('ws://localhost:8081/query', {
@@ -52,17 +82,7 @@ export class ApiService {
     );
 
     this.apolloProvider.createNamed('chat', {
-      cache: new InMemoryCache({
-        typePolicies: {
-          Query: {
-            fields: {
-              getRoomsByUser: {
-                merge: false,
-              },
-            },
-          },
-        },
-      }),
+      cache: cache,
       link: link
     });
 
