@@ -10,7 +10,7 @@ import (
 )
 
 func (r *queryResolver) GetEvents(ctx context.Context) (*model.GetEventsResponse, error) {
-	upcomingEvents, ongoingEvents, pastEvents, err := r.repo.GetEvents()
+	upcomingEvents, ongoingEvents, pastEvents, err := r.repo.GetEvents(ctx)
 	if err != nil {
 		return nil, err
 	}

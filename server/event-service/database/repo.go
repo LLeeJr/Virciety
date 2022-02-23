@@ -13,20 +13,21 @@ import (
 )
 
 type Repository interface {
-	InsertEvent(event Event) (string, error)
-	CreateEvent(event Event) (*model.Event, string, error)
-	GetEvents() ([]*model.Event, []*model.Event, []*model.Event, error)
-	RemoveEvent(event Event) (string, error)
-	EditEvent(event Event) (string, string, error)
-	SubscribeEvent(event Event) (string, error)
-	AttendEvent(event Event, username string) (string, error)
+	InsertEvent(ctx context.Context, event Event) (string, error)
+	CreateEvent(ctx context.Context, event Event) (*model.Event, string, error)
+	GetEvents(ctx context.Context) ([]*model.Event, []*model.Event, []*model.Event, error)
+	RemoveEvent(ctx context.Context, event Event) (string, error)
+	EditEvent(ctx context.Context, event Event) (string, string, error)
+	AttendEvent(ctx context.Context, event Event, username string) (string, error)
 	InsertUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error)
 	CheckUserData(ctx context.Context, username string) (*model.UserData, error)
+	LogTime(ctx context.Context, eventID, username string) (string, error)
 }
 
 type Repo struct {
 	eventCollection    *mongo.Collection
 	userDataCollection *mongo.Collection
+	timeCollection     *mongo.Collection
 }
 
 func NewRepo() (Repository, error) {
@@ -40,10 +41,11 @@ func NewRepo() (Repository, error) {
 	return &Repo{
 		eventCollection:    db.Collection("event-events"),
 		userDataCollection: db.Collection("user-data"),
+		timeCollection:     db.Collection("time"),
 	}, nil
 }
 
-func (repo *Repo) InsertEvent(event Event) (string, error) {
+func (repo *Repo) InsertEvent(ctx context.Context, event Event) (string, error) {
 	inserted, err := repo.eventCollection.InsertOne(ctx, event)
 	if err != nil {
 		return "", err
@@ -52,10 +54,10 @@ func (repo *Repo) InsertEvent(event Event) (string, error) {
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
-func (repo *Repo) CreateEvent(event Event) (*model.Event, string, error) {
+func (repo *Repo) CreateEvent(ctx context.Context, event Event) (*model.Event, string, error) {
 	currentTime := time.Now().UTC()
 
-	insertedID, err := repo.InsertEvent(event)
+	insertedID, err := repo.InsertEvent(ctx, event)
 	if err != nil {
 		return nil, "", err
 	}
@@ -69,7 +71,7 @@ func (repo *Repo) CreateEvent(event Event) (*model.Event, string, error) {
 		Location:    event.Location,
 		Description: event.Description,
 		Members:     event.Members,
-		Attending: 	 event.Attending,
+		Attending:   event.Attending,
 	}
 
 	startTime, endTime, onlyCheckDate, err := formatDate(eventModel.StartDate, eventModel.EndDate)
@@ -88,7 +90,7 @@ func (repo *Repo) CreateEvent(event Event) (*model.Event, string, error) {
 	return nil, "", errors.New("event is not ongoing, upcoming nor in the past")
 }
 
-func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, error) {
+func (repo *Repo) GetEvents(ctx context.Context) ([]*model.Event, []*model.Event, []*model.Event, error) {
 	events, upcomingEvents, ongoingEvents, pastEvents := make([]*model.Event, 0), make([]*model.Event, 0), make([]*model.Event, 0), make([]*model.Event, 0)
 	currentTime := time.Now().UTC()
 
@@ -163,6 +165,7 @@ func (repo *Repo) GetEvents() ([]*model.Event, []*model.Event, []*model.Event, e
 		if !onlyCheckDate && currentTime.Before(endTime) && currentTime.After(startTime) || onlyCheckDate && currentTime.After(startTime) && currentTime.Before(endTime) {
 			ongoingEvents = append(ongoingEvents, eventModel)
 		} else if currentTime.After(endTime) {
+			// TODO only show past events you attended or are host of
 			pastEvents = append(pastEvents, eventModel)
 		} else if currentTime.Before(startTime) {
 			upcomingEvents = append(upcomingEvents, eventModel)
@@ -202,7 +205,7 @@ func formatDate(startDate string, endDate string) (time.Time, time.Time, bool, e
 	}
 }
 
-func (repo *Repo) RemoveEvent(event Event) (string, error) {
+func (repo *Repo) RemoveEvent(ctx context.Context, event Event) (string, error) {
 	// convert hex-string into primitive.objectID
 	objID, err := primitive.ObjectIDFromHex(event.EventID)
 	if err != nil {
@@ -230,7 +233,7 @@ func (repo *Repo) RemoveEvent(event Event) (string, error) {
 	}
 
 	// new current event events
-	_, err = repo.InsertEvent(event)
+	_, err = repo.InsertEvent(ctx, event)
 	if err != nil {
 		return "failed", err
 	}
@@ -238,8 +241,8 @@ func (repo *Repo) RemoveEvent(event Event) (string, error) {
 	return "success", nil
 }
 
-func (repo *Repo) EditEvent(event Event) (string, string, error) {
-	_, err := repo.InsertEvent(event)
+func (repo *Repo) EditEvent(ctx context.Context, event Event) (string, string, error) {
+	_, err := repo.InsertEvent(ctx, event)
 	if err != nil {
 		return "failed", "", err
 	}
@@ -262,31 +265,15 @@ func (repo *Repo) EditEvent(event Event) (string, string, error) {
 	return "failure", "", errors.New("event is not ongoing, upcoming nor in the past")
 }
 
-func (repo *Repo) SubscribeEvent(event Event) (string, error) {
-	_, err := repo.InsertEvent(event)
+func (repo *Repo) AttendEvent(ctx context.Context, event Event, username string) (string, error) {
+	_, err := repo.InsertEvent(ctx, event)
 	if err != nil {
 		return "failed", err
 	}
 
-	return "success", nil
-}
-
-func (repo *Repo) AttendEvent(event Event, username string) (string, error) {
-	_, err := repo.InsertEvent(event)
+	_, err = repo.LogTime(ctx, event.EventID, username)
 	if err != nil {
 		return "failed", err
-	}
-
-	logTime := LogTime{
-		EventID:   event.EventID,
-		Username:  username,
-		EventType: event.EventType,
-		Timestamp: time.Now(),
-	}
-
-	_, err = repo.eventCollection.InsertOne(ctx, logTime)
-	if err != nil {
-		return "", err
 	}
 
 	return "success", nil
@@ -321,4 +308,45 @@ func (repo *Repo) CheckUserData(ctx context.Context, username string) (*model.Us
 	}
 
 	return &result, nil
+}
+
+func (repo *Repo) LogTime(ctx context.Context, eventID, username string) (string, error) {
+	var log LogTime
+	err := repo.timeCollection.FindOne(ctx, bson.D{
+		{"username", username},
+		{"id", eventID},
+		{"leave", bson.D{
+			{"$exists", false},
+		}},
+	}).Decode(&log)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			logTime := LogTime{
+				EventID:  eventID,
+				Username: username,
+				Arrive:   time.Now(),
+			}
+
+			_, err = repo.timeCollection.InsertOne(ctx, logTime)
+			if err != nil {
+				return "", err
+			}
+		}
+		return "", err
+	}
+
+	filter := bson.D{{"_id", log.ID}}
+	update := bson.D{{"$set", bson.D{{"leave", time.Now()}}}}
+
+	result, err := repo.timeCollection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return "", err
+	}
+
+	if result.MatchedCount == 0 {
+		text := "no event with id " + log.EventID + " found"
+		return "", errors.New(text)
+	}
+
+	return "success", nil
 }

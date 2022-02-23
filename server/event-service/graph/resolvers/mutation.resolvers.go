@@ -29,7 +29,7 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, newEvent model.Creat
 	}
 
 	// save event in database
-	eventModel, timeType, err := r.repo.CreateEvent(event)
+	eventModel, timeType, err := r.repo.CreateEvent(ctx, event)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (r *mutationResolver) EditEvent(ctx context.Context, edit model.EditEventRe
 	}
 
 	// save event in database
-	ok, timeType, err := r.repo.EditEvent(event)
+	ok, timeType, err := r.repo.EditEvent(ctx, event)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func (r *mutationResolver) RemoveEvent(ctx context.Context, remove string) (stri
 	}
 
 	// save event in database
-	ok, err := r.repo.RemoveEvent(event)
+	ok, err := r.repo.RemoveEvent(ctx, event)
 	if err != nil {
 		return ok, err
 	}
@@ -100,12 +100,12 @@ func (r *mutationResolver) SubscribeEvent(ctx context.Context, subscribe model.E
 	}
 
 	// save event in database
-	ok, err := r.repo.SubscribeEvent(event)
+	_, err := r.repo.InsertEvent(ctx, event)
 	if err != nil {
-		return ok, err
+		return "", err
 	}
 
-	return ok, nil
+	return "success", nil
 }
 
 func (r *mutationResolver) AttendEvent(ctx context.Context, attend model.EditEventRequest, username string, left bool) (string, error) {
@@ -130,7 +130,7 @@ func (r *mutationResolver) AttendEvent(ctx context.Context, attend model.EditEve
 	}
 
 	// save event in database
-	ok, err := r.repo.AttendEvent(event, username)
+	ok, err := r.repo.AttendEvent(ctx, event, username)
 	if err != nil {
 		return ok, err
 	}

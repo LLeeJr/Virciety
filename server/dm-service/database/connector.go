@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const defaultMongoDBUrl = "mongodb://user:pass@localhost:27018/"
+const defaultMongoDBUrl = "mongodb://admin:admin@localhost:27018/"
 
 func Connect() (*mongo.Client, error) {
 	url := os.Getenv("DM_MONGODB_URL")
