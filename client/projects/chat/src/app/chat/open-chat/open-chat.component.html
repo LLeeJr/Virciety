@@ -1,5 +1,9 @@
-<div class="chat-container" *ngIf="this.api.selectedRoom">
-  <div class="chatroom-title">Chatroom: {{this.api.selectedRoom.name}}</div>
+<div class="chat-container" *ngIf="this.room">
+  <button mat-icon-button class="backButton" (click)="goBack()">
+    <mat-icon style="font-size: 40px">arrow_back_ios</mat-icon>
+  </button>
+  <mat-icon *ngIf="!isDirect()" class="groupIcon" matTooltip="{{this.getRoomMembers()}}">groups</mat-icon>
+  <div class="chatroom-title">Chatroom: {{this.room.name}}</div>
   <div class="chat">
     <div *ngFor="let message of messages" class="message-container">
       <ng-container [ngTemplateOutlet]="message.createdBy === this.username ? userMessage : friendMessage"
@@ -26,13 +30,13 @@
 <ng-template #userMessage let-message='message' class="message-card">
   <mat-card class="user-message-card">
     {{message.msg}}
-    <small>{{message.createdBy}}, {{message.createdAt}}</small>
+    <small>{{message.createdBy}}, {{transformTime(message.createdAt)}}</small>
   </mat-card>
 </ng-template>
 
 <ng-template #friendMessage let-message='message'>
   <mat-card class="friend-message-card">
     {{message.msg}}
-    <small>{{message.createdBy}}, {{message.createdAt}}</small>
+    <small>{{message.createdBy}}, {{transformTime(message.createdAt)}}</small>
   </mat-card>
 </ng-template>

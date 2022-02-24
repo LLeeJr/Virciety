@@ -1,15 +1,14 @@
 import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
-import {Observable, Subscription} from "rxjs";
-import {DatePipe} from "@angular/common";
+import {Observable} from "rxjs";
 import {ChatSubscriptionGqlService} from "./chat-subscription-gql";
 import {SubscriptionClient} from "subscriptions-transport-ws";
 import {HttpLink} from "apollo-angular/http";
 import {WebSocketLink} from "@apollo/client/link/ws";
-import {InMemoryCache, split} from "@apollo/client/core";
+import {ApolloLink, InMemoryCache, split} from "@apollo/client/core";
 import {getMainDefinition} from "@apollo/client/utilities";
 import {AuthLibService} from "auth-lib";
-import {Room} from "../data/room";
+import {setContext} from "@apollo/client/link/context";
 
 @Injectable({
   providedIn: 'root',
@@ -27,14 +26,42 @@ export class ApiService {
   constructor(private apolloProvider: Apollo,
               private auth: AuthLibService,
               private chatSubGql: ChatSubscriptionGqlService,
-              private datePipe: DatePipe,
               private httpLink: HttpLink) {
     this.start();
   }
 
   private start() {
-    const http = this.httpLink.create({
-      uri: 'http://localhost:8081/query'
+    const basic = setContext((operation, context) => ({
+      headers: {
+        Accept: 'charset=utf-8'
+      }
+    }));
+
+    const auth = setContext((operation, context) => {
+      const token = localStorage.getItem('token');
+
+      if (token === null) {
+        return {};
+      } else {
+        return {
+          headers: {
+            Authorization: `JWT ${token}`
+          }
+        };
+      }
+    });
+
+    const http = ApolloLink.from([basic, auth, this.httpLink.create({ uri: 'http://localhost:8081/query'})]);
+    const cache = new InMemoryCache({
+      typePolicies: {
+        Query: {
+          fields: {
+            getRoomsByUser: {
+              merge: false,
+            },
+          },
+        },
+      },
     });
 
     this.webSocketClient = new SubscriptionClient('ws://localhost:8081/query', {
@@ -55,20 +82,19 @@ export class ApiService {
     );
 
     this.apolloProvider.createNamed('chat', {
-      cache: new InMemoryCache(),
+      cache: cache,
       link: link
     });
 
     this.apollo = this.apolloProvider.use('chat');
   }
 
-  writeDm(msg: string): Observable<any> {
+  writeDm(msg: string, roomName: string, roomId: string): Observable<any> {
     const userName = this.auth.userName;
-    const roomName = this.selectedRoom.name;
 
     const mutation = gql`
-    mutation createDm($msg: String!, $userName: String!, $roomName: String!){
-      createDm(msg: $msg, userName: $userName, roomName: $roomName)
+    mutation createDm($msg: String!, $userName: String!, $roomName: String!, $roomID: String!){
+      createDm(msg: $msg, userName: $userName, roomName: $roomName, roomID: $roomID)
       {
         chatroomId,
         createdAt,
@@ -84,6 +110,7 @@ export class ApiService {
         msg: msg,
         userName: userName,
         roomName: roomName,
+        roomID: roomId,
       },
     });
   }
@@ -133,7 +160,8 @@ export class ApiService {
         id,
         member,
         name,
-        owner
+        owner,
+        isDirect
       }
     }`;
 
@@ -148,10 +176,10 @@ export class ApiService {
     return this.query.valueChanges;
   }
 
-  getRoom(roomName: string): Observable<any> {
+  getRoom(roomName: string, roomId: string): Observable<any> {
     const query = gql`
-    query getRoom($roomName: String!) {
-      getRoom(roomName: $roomName)
+    query getRoom($roomName: String!, $roomID: String!) {
+      getRoom(roomName: $roomName, roomID: $roomID)
       {
         id,
         member,
@@ -162,15 +190,41 @@ export class ApiService {
 
     this.query = this.apollo.watchQuery<any>({
       query: query,
+      fetchPolicy: "network-only",
       variables: {
         roomName: roomName,
+        roomID: roomId,
       }
     });
 
     return this.query.valueChanges;
   }
 
-  createRoom(member: string[], name: string, owner: string) {
+  getDirectRoom(user1: string, user2: string): Observable<any> {
+    const query = gql`
+    query getDirectRoom($user1: String!, $user2: String!) {
+      getDirectRoom(user1: $user1, user2: $user2)
+      {
+        id,
+        member,
+        name,
+        owner,
+        isDirect
+      }
+    }`;
+
+    this.query = this.apollo.watchQuery<any>({
+      query: query,
+      variables: {
+        user1: user1,
+        user2: user2,
+      }
+    });
+
+    return this.query.valueChanges;
+  }
+
+  createRoom(member: string[], name: string, owner: string, isDirect: boolean) {
     const mutation = gql`
     mutation createRoom($input: CreateRoom!){
       createRoom(input: $input)
@@ -178,7 +232,8 @@ export class ApiService {
         id,
         member,
         name,
-        owner
+        owner,
+        isDirect
       }
     }
     `;
@@ -187,12 +242,53 @@ export class ApiService {
       member: member,
       name: name,
       owner: owner,
+      isDirect: isDirect,
     }
 
     return this.apollo.mutate<any>({
       mutation: mutation,
       variables: {
         input: input,
+      },
+    });
+  }
+
+  deleteRoom(roomName: string, roomId: string, owner: string) {
+    const mutation = gql`
+    mutation deleteRoom($remove: RemoveRoom!){
+      deleteRoom(remove: $remove)
+    }
+    `;
+
+    const remove = {
+      id: roomId,
+      roomName: roomName,
+      userName: owner
+    }
+
+    return this.apollo.mutate<any>({
+      mutation: mutation,
+      variables: {
+        remove: remove,
+      }
+    })
+  }
+
+  leaveChat(roomId: string, username: string, owner: string | undefined): Observable<any> {
+    const mutation = gql`
+    mutation leaveChat($roomId: String!, $userName: String!, $owner: String) {
+      leaveChat(roomId: $roomId, userName: $userName, owner: $owner) {
+        id,
+      }
+    }
+    `;
+
+    return this.apollo.mutate<any>({
+      mutation: mutation,
+      variables: {
+        roomId: roomId,
+        userName: username,
+        owner: owner,
       },
     });
   }

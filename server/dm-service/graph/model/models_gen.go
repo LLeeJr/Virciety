@@ -12,16 +12,18 @@ type Chat struct {
 }
 
 type Chatroom struct {
-	ID     string   `json:"id"`
-	Member []string `json:"member"`
-	Name   string   `json:"name"`
-	Owner  string   `json:"owner"`
+	ID       string   `json:"id"`
+	Member   []string `json:"member"`
+	Name     string   `json:"name"`
+	Owner    string   `json:"owner"`
+	IsDirect bool     `json:"isDirect"`
 }
 
 type CreateRoom struct {
-	Member []string `json:"member"`
-	Name   string   `json:"name"`
-	Owner  string   `json:"owner"`
+	Member   []string `json:"member"`
+	Name     string   `json:"name"`
+	Owner    string   `json:"owner"`
+	IsDirect *bool    `json:"isDirect"`
 }
 
 type Dm struct {
@@ -30,4 +32,10 @@ type Dm struct {
 	CreatedBy  string    `json:"createdBy"`
 	ID         string    `json:"id"`
 	Msg        string    `json:"msg"`
+}
+
+type RemoveRoom struct {
+	ID       string `json:"id"`
+	RoomName string `json:"roomName"`
+	UserName string `json:"userName"`
 }

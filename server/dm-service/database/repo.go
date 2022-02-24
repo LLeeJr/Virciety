@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"dm-service/graph/model"
+	"errors"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -14,7 +16,7 @@ type UniqueUser struct {
 }
 
 type Repository interface {
-	GetRoom(ctx context.Context, roomName string) (*model.Chatroom, error)
+	GetRoom(ctx context.Context, roomName string, id string) (*model.Chatroom, error)
 	GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error)
 	CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error)
 	CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.Chatroom, error)
@@ -22,12 +24,80 @@ type Repository interface {
 	InsertDmEvent(ctx context.Context, dmEvent DmEvent) (string, error)
 	InsertRoomEvent(ctx context.Context, roomEvent ChatroomEvent) (string, error)
 	GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, error)
+	DeleteRoom(ctx context.Context, id string) (string, error)
+	GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error)
 }
 
 type repo struct {
 	dmCollection   *mongo.Collection
 	roomCollection *mongo.Collection
 	bucket         *gridfs.Bucket
+}
+
+func (r repo) GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error) {
+	order1 := []string{user1, user2}
+	order2 := []string{user2, user1}
+	query := bson.M{
+		"$or": []interface{}{
+			bson.M{
+				"$and": []interface{}{
+					bson.M{"membersize": bson.M{"$eq": 2}},
+					bson.M{"member": order1},
+					bson.M{"isdirect": true},
+				},
+			},
+			bson.M{
+				"$and": []interface{}{
+					bson.M{"membersize": bson.M{"$eq": 2}},
+					bson.M{"member": order2},
+					bson.M{"isdirect": true},
+				},
+			},
+		},
+	}
+
+	var rooms []*Chatroom
+	cursor, err := r.roomCollection.Find(ctx, query)
+
+	if err != nil {
+		return nil, err
+	}
+	err = cursor.All(ctx, &rooms)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(rooms) != 0 {
+		chatroom := &model.Chatroom{
+			ID:     rooms[0].ID.Hex(),
+			IsDirect: rooms[0].IsDirect,
+			Member: rooms[0].Member,
+			Name:   rooms[0].Name,
+			Owner:  rooms[0].Owner,
+		}
+
+		return chatroom, nil
+	}
+
+	return nil, errors.New("no room found")
+}
+
+func (r repo) DeleteRoom(ctx context.Context, id string) (string, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+
+	result, err := r.roomCollection.DeleteOne(ctx, bson.D{
+		{"_id", objID},
+	})
+	if err != nil {
+		return "", err
+	}
+	msg := fmt.Sprintf("Deleted %v room!", result.DeletedCount)
+
+	_, err = r.dmCollection.DeleteMany(ctx, bson.D{
+		{"chatroomid", id},
+	})
+
+	return msg, err
 }
 
 func (r repo) GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, error) {
@@ -70,7 +140,9 @@ func (r repo) UpdateRoom(ctx context.Context, room *model.Chatroom) (string, err
 
 	update := bson.M{
 		"$set": bson.M{
-			"member": room.Member,
+			"member":     room.Member,
+			"membersize": len(room.Member),
+			"owner":      room.Owner,
 		},
 	}
 
@@ -92,6 +164,7 @@ func (r repo) CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.C
 
 	modelRoom := &model.Chatroom{
 		ID:       insertedId,
+		IsDirect: *roomEvent.IsDirect,
 		Member:   roomEvent.Member,
 		Name:     roomEvent.Name,
 		Owner:    roomEvent.Owner,
@@ -124,19 +197,34 @@ type Chatroom struct {
 	Member    []string           `bson:"member"`
 	Name      string             `bson:"name"`
 	Owner     string             `bson:"owner"`
+	IsDirect  bool               `bson:"isdirect"`
 }
 
-func (r repo) GetRoom(ctx context.Context, roomName string) (*model.Chatroom, error) {
+func (r repo) GetRoom(ctx context.Context, roomName string, id string) (*model.Chatroom, error) {
+	var objID primitive.ObjectID
+	if id != "" {
+		var err error
+		objID, err = primitive.ObjectIDFromHex(id)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	query := bson.M{
+		"$or": []interface{}{
+			bson.M{"_id": objID},
+			bson.M{"name": roomName},
+		},
+	}
 
 	var result *Chatroom
-	if err := r.roomCollection.FindOne(ctx, bson.D{
-		{"name", roomName},
-	}).Decode(&result); err != nil {
+	if err := r.roomCollection.FindOne(ctx, query).Decode(&result); err != nil {
 		return nil, err
 	}
 
 	return &model.Chatroom{
 		ID:     result.ID.Hex(),
+		IsDirect: result.IsDirect,
 		Member: result.Member,
 		Name:   result.Name,
 		Owner:  result.Owner,
@@ -165,6 +253,7 @@ func (r repo) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Cha
 			Member: chatroom.Member,
 			Name:   chatroom.Name,
 			Owner:  chatroom.Owner,
+			IsDirect: chatroom.IsDirect,
 		})
 	}
 

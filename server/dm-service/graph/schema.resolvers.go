@@ -9,18 +9,19 @@ import (
 	"dm-service/graph/generated"
 	"dm-service/graph/model"
 	"dm-service/util"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName string, roomName string) (*model.Dm, error) {
+func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName string, roomName string, roomID string) (*model.Dm, error) {
 	r.mu.Lock()
 	room := r.Rooms[roomName]
 
 	// if no room was found in current server session, try retrieving from db
 	if room == nil {
-		chatroom, err := r.repo.GetRoom(ctx, roomName)
+		chatroom, err := r.repo.GetRoom(ctx, roomName, roomID)
 		if err != nil {
 			// room does not exist in db
 			r.mu.Unlock()
@@ -32,6 +33,7 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName st
 				Name:   chatroom.Name,
 				Member: chatroom.Member,
 				Id:     chatroom.ID,
+				IsDirect: chatroom.IsDirect,
 				Owner:  chatroom.Owner,
 				Observers: map[string]struct {
 					Username string
@@ -40,44 +42,8 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName st
 			}
 			r.Rooms[roomName] = room
 		}
-		//else {
-		//	// room exists neither in db nor in server cache
-		//	room = &Chatroom{
-		//		Name:   roomName,
-		//		Member: []string{userName},
-		//		Observers: map[string]struct {
-		//			Username string
-		//			Message  chan *model.Dm
-		//		}{},
-		//	}
-		//	roomEvent := database.ChatroomEvent{
-		//		EventType: "CreateRoom",
-		//		Member:    room.Member,
-		//		Name:      room.Name,
-		//	}
-		//
-		//	createdRoom, err := r.repo.CreateRoom(ctx, roomEvent)
-		//	if err != nil {
-		//		return nil, err
-		//	}
-		//	// update repos room map since the current room now has an id
-		//	room.Id = createdRoom.ID
-		//}
 	}
 	r.mu.Unlock()
-
-	// if the user is no member of the chatroom yet, add the user as member
-	//if !util.Contains(room.Member, userName) {
-	//	room.Member = append(room.Member, userName)
-	//	_, err := r.repo.UpdateRoom(ctx, &model.Chatroom{
-	//		ID:     room.Id,
-	//		Member: room.Member,
-	//		Name:   room.Name,
-	//	})
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//}
 
 	dmEvent := database.DmEvent{
 		ChatroomId: room.Id,
@@ -115,14 +81,16 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 
 	// if no room was found in current server session, try retrieving from db
 	if r.Rooms[input.Name] == nil {
-		chatroom, err := r.repo.GetRoom(ctx, input.Name)
+		chatroom, err := r.repo.GetRoom(ctx, input.Name, "")
 		if err != nil {
 			// no room was found in db, so create one
 			roomEvent := database.ChatroomEvent{
-				EventType: "CreateRoom",
-				Member:    input.Member,
-				Name:      input.Name,
-				Owner:     input.Owner,
+				EventType:  "CreateRoom",
+				IsDirect:   input.IsDirect,
+				Member:     input.Member,
+				MemberSize: len(input.Member),
+				Name:       input.Name,
+				Owner:      input.Owner,
 			}
 			createRoom, createRoomErr := r.repo.CreateRoom(ctx, roomEvent)
 			if createRoomErr != nil {
@@ -131,6 +99,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 			}
 			room = &Chatroom{
 				Id:     createRoom.ID,
+				IsDirect: createRoom.IsDirect,
 				Name:   createRoom.Name,
 				Member: createRoom.Member,
 				Owner:  createRoom.Owner,
@@ -144,6 +113,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 			// no error occurred, so a room was found in db
 			room = &Chatroom{
 				Id:     chatroom.ID,
+				IsDirect: chatroom.IsDirect,
 				Name:   chatroom.Name,
 				Member: chatroom.Member,
 				Owner:  chatroom.Owner,
@@ -159,19 +129,128 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 	r.mu.Unlock()
 	return &model.Chatroom{
 		ID:     room.Id,
+		IsDirect: room.IsDirect,
 		Member: room.Member,
 		Name:   room.Name,
 		Owner:  room.Owner,
 	}, nil
 }
 
-func (r *queryResolver) GetRoom(ctx context.Context, roomName string) (*model.Chatroom, error) {
+func (r *mutationResolver) DeleteRoom(ctx context.Context, remove model.RemoveRoom) (string, error) {
+	r.mu.Lock()
+	room := r.Rooms[remove.RoomName]
+
+	// if room does not exist in cache look for the room in db
+	if r.Rooms[remove.RoomName] == nil {
+		r.mu.Unlock()
+		chatroom, err := r.repo.GetRoom(ctx, remove.RoomName, remove.ID)
+		if err != nil {
+			// room does not exist in db
+			return "", err
+		}
+		if chatroom.Owner != remove.UserName {
+			err = errors.New("given user is no owner of the requested room")
+			return "", err
+		}
+		msg, err := r.repo.DeleteRoom(ctx, chatroom.ID)
+		if err != nil {
+			return "", err
+		}
+		return msg, err
+	}
+
+	// room does exist in server cache
+	if room.Owner != remove.UserName {
+		r.mu.Unlock()
+		err := errors.New("given user is no owner of the requested room")
+		return "", err
+	}
+
+	msg, err := r.repo.DeleteRoom(ctx, room.Id)
+	if err != nil {
+		r.mu.Unlock()
+		return "", err
+	}
+
+	delete(r.Rooms, room.Name)
+	r.mu.Unlock()
+
+	return msg, err
+}
+
+func (r *mutationResolver) LeaveChat(ctx context.Context, roomID string, userName string, owner *string) (*model.Chatroom, error) {
+	room, err := r.repo.GetRoom(ctx, "", roomID)
+	if err != nil {
+		return nil, err
+	}
+
+	members := util.Remove(room.Member, userName)
+	room.Member = members
+
+	if len(room.Member) == 0 {
+		// room is empty so delete it
+		removeRoom := model.RemoveRoom{
+			ID:       roomID,
+			RoomName: userName,
+			UserName: userName,
+		}
+		_, err = r.DeleteRoom(ctx, removeRoom)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}
+
+	if owner != nil {
+		if util.Contains(members, *owner) {
+			room.Owner = *owner
+		}
+	}
+
+	_, err = r.repo.UpdateRoom(ctx, room)
+	if err != nil {
+		return nil, err
+	}
+
+	chatroom := r.Rooms[room.Name]
+	chatroom.Member = room.Member
+	chatroom.Owner = room.Owner
+	r.Rooms[room.Name] = chatroom
+
+	return room, nil
+}
+
+func (r *queryResolver) GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error) {
+	room, err := r.repo.GetDirectRoom(ctx, user1, user2)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.Rooms[room.Name] == nil {
+		chatroom := &Chatroom{
+			Id:     room.ID,
+			IsDirect: room.IsDirect,
+			Name:   room.Name,
+			Member: room.Member,
+			Owner:  room.Owner,
+			Observers: map[string]struct {
+				Username string
+				Message  chan *model.Dm
+			}{},
+		}
+		r.Rooms[room.Name] = chatroom
+	}
+
+	return room, nil
+}
+
+func (r *queryResolver) GetRoom(ctx context.Context, roomName string, roomID string) (*model.Chatroom, error) {
 	r.mu.Lock()
 	room := r.Rooms[roomName]
 
 	// if room does not exist in cache look for the room in db
 	if r.Rooms[roomName] == nil {
-		chatroom, err := r.repo.GetRoom(ctx, roomName)
+		chatroom, err := r.repo.GetRoom(ctx, roomName, roomID)
 		if err != nil {
 			// room does not exist in db
 			r.mu.Unlock()
@@ -182,6 +261,7 @@ func (r *queryResolver) GetRoom(ctx context.Context, roomName string) (*model.Ch
 			// room exists in db
 			room = &Chatroom{
 				Id:     chatroom.ID,
+				IsDirect: chatroom.IsDirect,
 				Name:   chatroom.Name,
 				Member: chatroom.Member,
 				Owner:  chatroom.Owner,
@@ -197,6 +277,7 @@ func (r *queryResolver) GetRoom(ctx context.Context, roomName string) (*model.Ch
 
 	return &model.Chatroom{
 		ID:     room.Id,
+		IsDirect: room.IsDirect,
 		Member: room.Member,
 		Name:   room.Name,
 		Owner:  room.Owner,
@@ -289,6 +370,7 @@ type subscriptionResolver struct{ *Resolver }
 
 type Chatroom struct {
 	Id        string
+	IsDirect  bool
 	Name      string
 	Messages  []*model.Dm
 	Member    []string

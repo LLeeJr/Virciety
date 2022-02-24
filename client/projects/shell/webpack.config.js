@@ -45,7 +45,11 @@ module.exports = {
           "keycloak-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
           "@apollo/client": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
           "apollo-angular": { singleton: true, strictVersion: true, requiredVersion: 'auto' },
-          "@angular/material": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
+          "@angular/material/input": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
+          "@angular/material/select": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
+          "@angular/material/core": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
+          "@angular/material/form-field": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
+          "@angular/forms": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
 
           ...sharedMappings.getDescriptors()
         })
