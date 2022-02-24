@@ -8,6 +8,12 @@ import {MatDialogModule} from "@angular/material/dialog";
 import {MatFormFieldModule} from "@angular/material/form-field";
 import {MatInputModule} from "@angular/material/input";
 import {MatAutocompleteModule} from "@angular/material/autocomplete";
+import {MatCardModule} from "@angular/material/card";
+import {MatSelectModule} from "@angular/material/select";
+import {MatOptionModule} from "@angular/material/core";
+import {MatRadioModule} from "@angular/material/radio";
+import {MatCheckboxModule} from "@angular/material/checkbox";
+import {MatTooltipModule} from "@angular/material/tooltip";
 
 @NgModule({
   imports: [
@@ -20,6 +26,12 @@ import {MatAutocompleteModule} from "@angular/material/autocomplete";
     MatFormFieldModule,
     MatInputModule,
     MatAutocompleteModule,
+    MatCardModule,
+    MatSelectModule,
+    MatOptionModule,
+    MatRadioModule,
+    MatCheckboxModule,
+    MatTooltipModule,
   ],
   exports: [
     MatToolbarModule,
@@ -31,6 +43,12 @@ import {MatAutocompleteModule} from "@angular/material/autocomplete";
     MatFormFieldModule,
     MatInputModule,
     MatAutocompleteModule,
+    MatCardModule,
+    MatSelectModule,
+    MatOptionModule,
+    MatRadioModule,
+    MatCheckboxModule,
+    MatTooltipModule,
   ],
 })
 export class MaterialModule { }
