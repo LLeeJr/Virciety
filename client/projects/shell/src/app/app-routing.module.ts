@@ -29,15 +29,6 @@ const routes: Routes = [
       }).then(m => m.PostModule),
   },
   {
-    path: 'user',
-    canActivate: [AuthGuard],
-    loadChildren: () =>
-      loadRemoteModule({
-        remoteName: 'user',
-        exposedModule: './UserModule',
-      }).then(m => m.UserModule),
-  },
-  {
     path: 'profile',
     canActivate: [AuthGuard],
     component: ProfileComponent
