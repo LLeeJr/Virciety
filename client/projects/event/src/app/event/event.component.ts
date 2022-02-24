@@ -42,7 +42,7 @@ export class EventComponent implements OnInit {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
-          this.gqlService.getEvents().subscribe(({data}: any) => {
+          this.gqlService.getEvents(this.username).subscribe(({data}: any) => {
             // console.log(data);
             this.ongoingEvents = EventComponent.sortEvents(data.getEvents.ongoingEvents, this.asc);
             this.pastEvents = EventComponent.sortEvents(data.getEvents.pastEvents, this.desc);
@@ -251,12 +251,19 @@ export class EventComponent implements OnInit {
       event.attending = [...event.attending, this.username];
     } else {
       left = true;
-      event.attending = event.attending.filter(member => member !== this.username);
     }
 
     this.gqlService.attendEvent(event, left, this.username).subscribe(({data}: any) => {
       console.log(data);
     })
+  }
+
+  reportCovidCase(attending: string[]) {
+
+  }
+
+  notifyHost(attending: string[]) {
+
   }
 }
 

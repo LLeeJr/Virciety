@@ -49,11 +49,13 @@
       </mat-card-content>
       <mat-card-actions>
         <button mat-flat-button *ngIf="selectedList === 'Ongoing events'" [style]="e.attending.indexOf(username) < 0 ? {background:'rgb(92, 184, 92)'} : {background:'rgb(217,83,79)'}" (click)="checkUserData(e)">{{e.attending.indexOf(username) < 0 ? 'Attend' : 'Leave'}}</button>
+        <button mat-button *ngIf="e.host === username && e.members.length > 0" (click)="showPeople(e.members)">Show members</button>
         <button mat-button *ngIf="e.host !== username && selectedList === 'Upcoming events'" (click)="subscribeEvent(e)">{{e.members.indexOf(username) < 0 ? 'Subscribe' : 'Unsubscribe'}}</button>
         <button mat-button *ngIf="e.host === username && selectedList !== 'Past events'" (click)="openEventDialog(e, true)">Edit</button>
         <button mat-button *ngIf="e.host === username && selectedList === 'Past events'" color="warn" (click)="removeEvent(e)">Remove</button>
-        <button mat-button *ngIf="e.host === username && e.members.length > 0" (click)="showPeople(e.members)">Show members</button>
-        <button mat-button *ngIf="e.host === username && selectedList !== 'Upcoming events' && e.attending.length > 0" (click)="showPeople(e.attending)">Show people who attended</button>
+        <button mat-button *ngIf="e.host === username && selectedList === 'Past events' && e.attending.length > 0" (click)="showPeople(e.attending)">Show people who attended</button>
+        <button mat-button *ngIf="e.host === username && selectedList === 'Past events' && e.attending.length > 0" (click)="reportCovidCase(e.attending)">Report covid case</button>
+        <button mat-button *ngIf="selectedList === 'Past events' && e.attending.indexOf(username) >= 0" (click)="notifyHost(e.attending)">Notify host (Covid)</button>
       </mat-card-actions>
     </mat-card>
   </div>

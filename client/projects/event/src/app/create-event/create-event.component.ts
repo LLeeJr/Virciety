@@ -130,7 +130,7 @@ export class CreateEventComponent implements OnInit {
     let startTime: string = this.startTime.value;
     let endTime: string = this.endTime.value;
 
-    // compare dates and times
+    // check if datetime is valid
     if (startDate && endDate && startDate === endDate && startTime && endTime) {
       if (startTime.endsWith('PM') && endTime.endsWith('AM')) {
         this.endTime.setErrors({wrongTime: true});
@@ -138,7 +138,7 @@ export class CreateEventComponent implements OnInit {
         let startHour: number = parseInt(startTime.split(':')[0]);
         let endHour: number = parseInt(endTime.split(':')[0]);
 
-        if (startHour >= endHour) {
+        if ((startHour !== 12 && startHour >= endHour) || endHour === 12) {
           this.endTime.setErrors({wrongTime: true});
         } else {
           this.endTime.setErrors(null);

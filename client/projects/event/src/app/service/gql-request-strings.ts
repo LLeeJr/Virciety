@@ -3,8 +3,8 @@ import {gql} from "apollo-angular";
 // ------------------------- Queries, Mutations and Subscriptions
 
 export const GET_EVENTS = gql`
-  query getEvents {
-    getEvents {
+  query getEvents($username: String) {
+    getEvents(username: $username) {
       upcomingEvents {
         id
         title

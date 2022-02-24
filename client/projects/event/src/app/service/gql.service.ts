@@ -54,9 +54,12 @@ export class GQLService {
     })
   }
 
-  getEvents() {
+  getEvents(username: string) {
     return this.apollo.watchQuery({
-      query: GET_EVENTS
+      query: GET_EVENTS,
+      variables: {
+        username: username,
+      }
     }).valueChanges
   }
 
