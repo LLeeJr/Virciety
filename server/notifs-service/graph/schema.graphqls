@@ -4,7 +4,7 @@
 
 type Notif {
   id: String!
-  receiver: String!
+  receiver: [String!]!
   text: String!
   event: String!
 }
@@ -13,12 +13,6 @@ type Query {
   getNotifsByReceiver(receiver: String!): [Notif!]!
 }
 
-input CreateNotifRequest {
-  receiver: String!
-  text: String!
-  event: String!
-}
-
-type Mutation {
-  createNotif(input: CreateNotifRequest!): Notif!
+type Subscription {
+  notifAdded(userName: String!): Notif!
 }
