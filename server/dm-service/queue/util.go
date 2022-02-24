@@ -8,10 +8,10 @@ import (
 
 type (
 	RabbitMsg struct {
-		QueueName string           `json:"queueName"`
-		DmEvent   database.DmEvent `json:"dmEvent"`
-		MessageId string           `json:"messageId"`
-	}
+	QueueName string             `json:"queueName"`
+	MessageId string             `json:"messageId"`
+	ChatEvent database.ChatEvent `json:"chat_event"`
+}
 
 	ChannelConfig struct {
 		QueryChan chan RabbitMsg
