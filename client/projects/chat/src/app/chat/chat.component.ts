@@ -150,11 +150,10 @@ export class AddChatDialog implements OnInit {
   roomName: string = '';
   friendList: string[] = [];
   pickedUsers: string[] = [];
-  friends = new FormControl();
-  // friends = new FormControl([], [
-  //   Validators.required,
-  //   Validators.minLength(1),
-  // ]);
+  friends = new FormControl([], [
+    Validators.required,
+    Validators.minLength(1),
+  ]);
   nameInput = new FormControl('', [
     Validators.required,
     Validators.minLength(2),
@@ -170,10 +169,8 @@ export class AddChatDialog implements OnInit {
   ngOnInit() {
     let {follows, followers} = this.data;
     this.friendList = this.removeDuplicates(follows.concat(followers));
-    console.log(this.friendList)
 
     this.friends.valueChanges.subscribe(value => {
-      console.log(value)
       this.pickedUsers = value;
       if (this.pickedUsers.length == 1) {
         this.nameInput.setValue(`${this.data.username}-${this.pickedUsers[0]}`);
