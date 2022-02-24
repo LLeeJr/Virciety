@@ -10,28 +10,18 @@
   margin-bottom: 1em;
 }
 
-.mat-form-field {
-  display: contents;
-  position: relative;
-  text-align: left;
-}
-
-.dialog-body {
+.user-radio-list {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  margin-bottom: 1em;
 }
 
-.name-input {
-  margin-bottom: 1em;
-}
-
-.person-picker {
-  margin-bottom: 1em;
+.user-radio-button {
+  margin-top: .5em;
+  margin-bottom: .5em;
 }
 
 .dialog-footer {
+  margin-top: 1em;
   display: flex;
   flex-direction: row;
   justify-content: space-between;

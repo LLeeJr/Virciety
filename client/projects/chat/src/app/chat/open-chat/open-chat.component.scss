@@ -64,3 +64,26 @@
     background-color: rgb(33, 33, 33);
   }
 }
+
+.backButton {
+  position: fixed;
+  left: 1em;
+  margin-top: 1em;
+}
+
+.groupIcon {
+  position: fixed;
+  left: 1.5em;
+  margin-top: 0.5em;
+  font-size: 40px;
+  cursor: default;
+}
+
+.mat-icon:hover {
+  color: #e91e63;
+}
+
+.mat-card {
+  display: flex;
+  flex-direction: column;
+}

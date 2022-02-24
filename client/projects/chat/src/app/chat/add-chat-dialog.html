@@ -24,10 +24,14 @@
         <mat-error *ngIf="this.pickedUsers.length == 0">Pick at least one person!</mat-error>
       </mat-form-field>
     </div>
+
+    <div *ngIf="pickedUsers.length == 1">
+      <mat-checkbox [(ngModel)]="checked">Is this a direct chat?</mat-checkbox>
+    </div>
   </div>
 
   <div class="dialog-footer">
-    <button mat-raised-button [disabled]="!valid()" (click)="createRoom(this.nameInput.value, this.friends.value)">Create Room</button>
+    <button mat-raised-button [disabled]="!valid()" (click)="createRoom(this.nameInput.value, this.friends.value, this.checked)">Create Room</button>
     <button mat-raised-button mat-dialog-close>Close</button>
   </div>
 

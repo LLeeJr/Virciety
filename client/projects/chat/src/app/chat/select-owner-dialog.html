@@ -1,0 +1,13 @@
+<div class="dialog">
+  <div class="dialog-title">Select a new owner</div>
+  <mat-radio-group class="user-radio-list" [(ngModel)]="pickedUser">
+    <mat-radio-button class="user-radio-button" *ngFor="let user of members" [value]="user">
+      {{user}}
+    </mat-radio-button>
+  </mat-radio-group>
+
+  <div class="dialog-footer">
+    <button mat-raised-button mat-dialog-close="">Close</button>
+    <button mat-raised-button [disabled]="!pickedUser" (click)="submit()">Submit</button>
+  </div>
+</div>
