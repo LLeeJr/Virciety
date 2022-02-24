@@ -212,6 +212,11 @@ func (r *mutationResolver) LeaveChat(ctx context.Context, roomID string, userNam
 		return nil, err
 	}
 
+	chatroom := r.Rooms[room.Name]
+	chatroom.Member = room.Member
+	chatroom.Owner = room.Owner
+	r.Rooms[room.Name] = chatroom
+
 	return room, nil
 }
 
