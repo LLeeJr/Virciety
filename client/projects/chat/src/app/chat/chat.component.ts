@@ -6,6 +6,7 @@ import {KeycloakService} from "keycloak-angular";
 import {Router} from "@angular/router";
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog";
 import {FormControl, Validators} from "@angular/forms";
+import {take} from "rxjs/operators";
 
 @Component({
   selector: 'app-chat',
@@ -30,7 +31,9 @@ export class ChatComponent implements OnInit {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
-          this.api.getRoomsByUser(this.username).subscribe(value => {
+          this.api.getRoomsByUser(this.username)
+            .pipe(take(1))
+            .subscribe(value => {
             this.chatrooms = value.data.getRoomsByUser;
           });
         })

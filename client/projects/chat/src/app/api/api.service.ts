@@ -190,6 +190,7 @@ export class ApiService {
 
     this.query = this.apollo.watchQuery<any>({
       query: query,
+      fetchPolicy: "network-only",
       variables: {
         roomName: roomName,
         roomID: roomId,
