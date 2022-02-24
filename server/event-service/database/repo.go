@@ -15,13 +15,15 @@ import (
 type Repository interface {
 	InsertEvent(ctx context.Context, event Event) (string, error)
 	CreateEvent(ctx context.Context, event Event) (*model.Event, string, error)
-	GetEvents(ctx context.Context) ([]*model.Event, []*model.Event, []*model.Event, error)
+	GetEvents(ctx context.Context, username string) ([]*model.Event, []*model.Event, []*model.Event, error)
 	RemoveEvent(ctx context.Context, event Event) (string, error)
 	EditEvent(ctx context.Context, event Event) (string, string, error)
 	AttendEvent(ctx context.Context, event Event, username string) (string, error)
 	InsertUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error)
 	CheckUserData(ctx context.Context, username string) (*model.UserData, error)
 	LogTime(ctx context.Context, eventID, username string) (string, error)
+	CheckAttendance(ctx context.Context, username, eventID string) (bool, error)
+	DetermineContactPersons(ctx context.Context, username, eventID string) ([]string, error)
 }
 
 type Repo struct {
@@ -90,7 +92,7 @@ func (repo *Repo) CreateEvent(ctx context.Context, event Event) (*model.Event, s
 	return nil, "", errors.New("event is not ongoing, upcoming nor in the past")
 }
 
-func (repo *Repo) GetEvents(ctx context.Context) ([]*model.Event, []*model.Event, []*model.Event, error) {
+func (repo *Repo) GetEvents(ctx context.Context, username string) ([]*model.Event, []*model.Event, []*model.Event, error) {
 	events, upcomingEvents, ongoingEvents, pastEvents := make([]*model.Event, 0), make([]*model.Event, 0), make([]*model.Event, 0), make([]*model.Event, 0)
 	currentTime := time.Now().UTC()
 
@@ -165,8 +167,15 @@ func (repo *Repo) GetEvents(ctx context.Context) ([]*model.Event, []*model.Event
 		if !onlyCheckDate && currentTime.Before(endTime) && currentTime.After(startTime) || onlyCheckDate && currentTime.After(startTime) && currentTime.Before(endTime) {
 			ongoingEvents = append(ongoingEvents, eventModel)
 		} else if currentTime.After(endTime) {
-			// TODO only show past events you attended or are host of
-			pastEvents = append(pastEvents, eventModel)
+			attended, err := repo.CheckAttendance(ctx, username, eventModel.ID)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+
+			// only show past events which the user is a host of or attended
+			if eventModel.Host == username || attended {
+				pastEvents = append(pastEvents, eventModel)
+			}
 		} else if currentTime.Before(startTime) {
 			upcomingEvents = append(upcomingEvents, eventModel)
 		}
@@ -349,4 +358,23 @@ func (repo *Repo) LogTime(ctx context.Context, eventID, username string) (string
 	}
 
 	return "success", nil
+}
+
+func (repo *Repo) CheckAttendance(ctx context.Context, username, eventID string) (bool, error) {
+	var log LogTime
+	err := repo.timeCollection.FindOne(ctx, bson.D{
+		{"username", username},
+		{"id", eventID}}).Decode(&log)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (repo *Repo) DetermineContactPersons(ctx context.Context, username, eventID string) ([]string, error) {
+	return nil, nil
 }

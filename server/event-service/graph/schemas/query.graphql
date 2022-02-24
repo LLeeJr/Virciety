@@ -1,4 +1,4 @@
 type Query {
-    getEvents: GetEventsResponse
+    getEvents(username: String): GetEventsResponse
     userDataExists(username: String): UserData
 }

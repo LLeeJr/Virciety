@@ -9,8 +9,8 @@ import (
 	"event-service/graph/model"
 )
 
-func (r *queryResolver) GetEvents(ctx context.Context) (*model.GetEventsResponse, error) {
-	upcomingEvents, ongoingEvents, pastEvents, err := r.repo.GetEvents(ctx)
+func (r *queryResolver) GetEvents(ctx context.Context, username *string) (*model.GetEventsResponse, error) {
+	upcomingEvents, ongoingEvents, pastEvents, err := r.repo.GetEvents(ctx, *username)
 	if err != nil {
 		return nil, err
 	}
