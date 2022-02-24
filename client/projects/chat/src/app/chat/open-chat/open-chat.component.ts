@@ -6,6 +6,7 @@ import {Subscription} from "rxjs";
 import {ActivatedRoute, Params, Router} from "@angular/router";
 import {Room} from "../../data/room";
 import {DatePipe} from "@angular/common";
+import {take} from "rxjs/operators";
 
 @Component({
   selector: 'app-open-chat',
@@ -45,7 +46,9 @@ export class OpenChatComponent implements OnInit, OnDestroy {
           let users = roomName.split('-');
           this.room = this.getCurrentRoom(roomName);
           if (this.room && this.room.id) {
-            this.api.getRoom(roomName, this.room.id).subscribe(value => {
+            this.api.getRoom(roomName, this.room.id)
+              .pipe(take(1))
+              .subscribe(value => {
               if (value && value.data && value.data.getRoom) {
                 this.room = value.data.getRoom;
                 this.storeRoom(this.room);
@@ -54,7 +57,9 @@ export class OpenChatComponent implements OnInit, OnDestroy {
             });
           } else {
             // id is empty, so request comes from a direct chat call
-            this.api.getDirectRoom(users[0], users[1]).subscribe(value => {
+            this.api.getDirectRoom(users[0], users[1])
+              .pipe(take(1))
+              .subscribe(value => {
               if (value && value.data && value.data.getDirectRoom) {
                 this.room = value.data.getDirectRoom;
                 this.storeRoom(this.room);
@@ -62,7 +67,9 @@ export class OpenChatComponent implements OnInit, OnDestroy {
               }
             }, () => {
               // room was not found, so a new one needs to be created
-              this.api.createRoom(users, roomName, this.username, true).subscribe(value => {
+              this.api.createRoom(users, roomName, this.username, true)
+                .pipe(take(1))
+                .subscribe(value => {
                 if (value && value.data && value.data.createRoom) {
                   this.room = value.data.createRoom;
                   this.storeRoom(this.room);
