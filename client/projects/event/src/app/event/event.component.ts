@@ -8,7 +8,7 @@ import {CreateEventData} from "../model/dialog.data";
 import {formatDate} from "@angular/common";
 import {ContactDetailsComponent} from "../contact-details/contact-details.component";
 import {UserData} from "../model/userData";
-import {NOTIFY_HOST_OF_EVENT} from "../service/gql-request-strings";
+import {NOTIFY_CONTACT_PERSONS, NOTIFY_HOST_OF_EVENT} from "../service/gql-request-strings";
 
 export interface EventDate {
   startDate: string;
@@ -261,8 +261,18 @@ export class EventComponent implements OnInit {
     })
   }
 
-  reportCovidCase(attendees: string[]) {
+  reportCovidCase(attendees: string[], id: string) {
+    let dialogRef = this.dialog.open(DialogReportCovidCaseComponent, {
+      data: attendees
+    });
 
+    dialogRef.afterClosed().subscribe((covidCase: string | null) => {
+      if (covidCase) {
+        this.gqlService.notify(NOTIFY_CONTACT_PERSONS, covidCase, id).subscribe(({data}: any) => {
+
+        });
+      }
+    });
   }
 
   notifyHost(host: string, id: string) {
@@ -283,5 +293,37 @@ export class EventComponent implements OnInit {
     </div>`,
 })
 export class DialogSubscribersComponent {
+  constructor(@Inject(MAT_DIALOG_DATA) public data: string[]) {}
+}
+
+@Component({
+  selector: 'dialog-report-covid-case',
+  template: `
+    <h1 mat-dialog-title>Report covid case</h1>
+    <h4>All contact persons will automatically be notified</h4>
+    <mat-dialog-content>
+      <mat-form-field>
+        <mat-label>Attendees</mat-label>
+        <mat-select [(value)]="covidCase">
+          <mat-option>None</mat-option>
+          <mat-option *ngFor="let attendee of data" [value]="attendee">
+            {{attendee}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-dialog-content>
+
+    <mat-dialog-actions class="mat-dialog-actions">
+      <button mat-button [mat-dialog-close]="null">Cancel</button>
+      <button mat-button [disabled]="covidCase === undefined" [mat-dialog-close]="covidCase">Report</button>
+    </mat-dialog-actions>
+  `,
+  styles: [`
+  .mat-dialog-actions {
+  justify-content: flex-end;}`]
+})
+export class DialogReportCovidCaseComponent {
+  covidCase: string;
+
   constructor(@Inject(MAT_DIALOG_DATA) public data: string[]) {}
 }

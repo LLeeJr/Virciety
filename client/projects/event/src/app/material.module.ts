@@ -14,6 +14,7 @@ import {MatToolbarModule} from "@angular/material/toolbar";
 import {MatListModule} from "@angular/material/list";
 import {MatMenuModule} from "@angular/material/menu";
 import {MatRadioModule} from "@angular/material/radio";
+import {MatSelectModule} from "@angular/material/select";
 
 @NgModule({
   imports: [
@@ -31,7 +32,8 @@ import {MatRadioModule} from "@angular/material/radio";
     MatToolbarModule,
     MatListModule,
     MatMenuModule,
-    MatRadioModule
+    MatRadioModule,
+    MatSelectModule
   ],
   exports: [
     MatCardModule,
@@ -48,7 +50,8 @@ import {MatRadioModule} from "@angular/material/radio";
     MatToolbarModule,
     MatListModule,
     MatMenuModule,
-    MatRadioModule
+    MatRadioModule,
+    MatSelectModule
   ],
   providers: [
     MatDatepickerModule

@@ -161,7 +161,7 @@ func (repo *Repo) GetEvents(ctx context.Context, username string) ([]*model.Even
 			eventModel.Attendees = event.Attendees
 		}
 
-		// Add to correct list in relation to the start and endDate of event
+		// Add to correct list in relation to the arrive and endDate of event
 		startTime, endTime, onlyCheckDate, err := formatDate(eventModel.StartDate, eventModel.EndDate)
 		if err != nil {
 			return nil, nil, nil, err
@@ -451,6 +451,15 @@ func (repo *Repo) SetLeaveTimeAfterEventEnded(ctx context.Context, username stri
 }
 
 func (repo *Repo) DetermineContactPersons(ctx context.Context, username, eventID string) ([]string, error) {
+	contactPersons := make([]string, 0)
+
+	type interval struct {
+		arrive time.Time
+		leave  time.Time
+	}
+
+	logTimes := make([]interval, 0)
+
 	cursor, err := repo.timeCollection.Find(ctx, bson.D{
 		{"id", eventID},
 		{"username", username},
@@ -465,7 +474,64 @@ func (repo *Repo) DetermineContactPersons(ctx context.Context, username, eventID
 			return nil, err
 		}
 
+		logTimes = append(logTimes, interval{
+			arrive: logTime.Arrive,
+			leave:  logTime.Leave,
+		})
 	}
 
-	return nil, nil
+	for _, logTime := range logTimes {
+		cursor, err := repo.timeCollection.Find(ctx, bson.D{
+			{"id", eventID},
+			{"username", bson.D{
+				{"$ne", username},
+			}},
+			{"$or", []interface{}{
+				bson.D{
+					{"$and", []interface{}{
+						bson.D{{"arrive", bson.D{
+							{"$lte", logTime.arrive},
+						}}},
+						bson.D{{"leave", bson.D{
+							{"$gte", logTime.arrive},
+						}}},
+					}},
+				},
+				bson.D{
+					{"$and", []interface{}{
+						bson.D{{"arrive", bson.D{
+							{"$gte", logTime.arrive},
+							{"$lte", logTime.leave},
+						}}},
+					}},
+				},
+			}},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		for cursor.Next(ctx) {
+			var logTime LogTime
+			if err = cursor.Decode(&logTime); err != nil {
+				return nil, err
+			}
+
+			contactPersons = append(contactPersons, logTime.Username)
+		}
+	}
+
+	removeDuplicatesStr := func(strSlice []string) []string {
+		allKeys := make(map[string]bool)
+		list := []string{}
+		for _, item := range strSlice {
+			if _, value := allKeys[item]; !value {
+				allKeys[item] = true
+				list = append(list, item)
+			}
+		}
+		return list
+	}
+
+	return removeDuplicatesStr(contactPersons), nil
 }

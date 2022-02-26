@@ -124,27 +124,29 @@ export class CreateEventComponent implements OnInit {
 
   // check if input times are valid
   checkTimes() {
-    let startDate = formatDate(this.range.controls.startDate.value, 'fullDate', 'en-GB');
-    let endDate = formatDate(this.range.controls.endDate.value, 'fullDate', 'en-GB');
+    if (this.range.controls.startDate.value && this.range.controls.endDate.value) {
+      let startDate = formatDate(this.range.controls.startDate.value, 'fullDate', 'en-GB');
+      let endDate = formatDate(this.range.controls.endDate.value, 'fullDate', 'en-GB');
 
-    let startTime: string = this.startTime.value;
-    let endTime: string = this.endTime.value;
+      let startTime: string = this.startTime.value;
+      let endTime: string = this.endTime.value;
 
-    // check if datetime is valid
-    if (startDate && endDate && startDate === endDate && startTime && endTime) {
-      if (startTime.endsWith('PM') && endTime.endsWith('AM')) {
-        this.endTime.setErrors({wrongTime: true});
-      } else if (startTime.endsWith('AM') && endTime.endsWith('AM') || startTime.endsWith('PM') && endTime.endsWith('PM')) {
-        let startHour: number = parseInt(startTime.split(':')[0]);
-        let endHour: number = parseInt(endTime.split(':')[0]);
-
-        if ((startHour !== 12 && startHour >= endHour) || endHour === 12) {
+      // check if datetime is valid
+      if (startDate && endDate && startDate === endDate && startTime && endTime) {
+        if (startTime.endsWith('PM') && endTime.endsWith('AM')) {
           this.endTime.setErrors({wrongTime: true});
+        } else if (startTime.endsWith('AM') && endTime.endsWith('AM') || startTime.endsWith('PM') && endTime.endsWith('PM')) {
+          let startHour: number = parseInt(startTime.split(':')[0]);
+          let endHour: number = parseInt(endTime.split(':')[0]);
+
+          if ((startHour !== 12 && startHour >= endHour) || endHour === 12) {
+            this.endTime.setErrors({wrongTime: true});
+          } else {
+            this.endTime.setErrors(null);
+          }
         } else {
           this.endTime.setErrors(null);
         }
-      } else {
-        this.endTime.setErrors(null);
       }
     }
   }

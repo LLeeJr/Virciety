@@ -7,6 +7,7 @@ import (
 	"context"
 	"event-service/graph/generated"
 	"event-service/graph/model"
+	"strings"
 )
 
 func (r *queryResolver) GetEvents(ctx context.Context, username *string) (*model.GetEventsResponse, error) {
@@ -41,6 +42,13 @@ func (r *queryResolver) NotifyHostOfEvent(ctx context.Context, username *string,
 func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *string, eventID *string) (*bool, error) {
 	// TODO notification service
 	notified := true
+
+	contactPersons, err := r.repo.DetermineContactPersons(ctx, *username, *eventID)
+	if err != nil {
+		return nil, err
+	}
+
+	println(*username + " was in contact with " + strings.Join(contactPersons, ","))
 
 	return &notified, nil
 }
