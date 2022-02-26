@@ -21,9 +21,10 @@ type Repository interface {
 	AttendEvent(ctx context.Context, event Event, username string, left bool) (string, error)
 	InsertUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error)
 	CheckUserData(ctx context.Context, username string) (*model.UserData, error)
-	LogTime(ctx context.Context, eventID, username string) (string, error)
+	LogTime(ctx context.Context, eventID, username string, expired bool, leaveTime *time.Time) (string, error)
 	CheckIfAttendedOnce(ctx context.Context, username, eventID string) (bool, error)
 	CheckIfCurrentlyAttended(ctx context.Context, username, eventID string) (bool, error)
+	SetLeaveTimeAfterEventEnded(ctx context.Context, username string, event *model.Event) error
 	DetermineContactPersons(ctx context.Context, username, eventID string) ([]string, error)
 }
 
@@ -181,19 +182,22 @@ func (repo *Repo) GetEvents(ctx context.Context, username string) ([]*model.Even
 				return nil, nil, nil, err
 			}
 
-			// check if user didn't leave the event
-			currentlyAttended, err := repo.CheckIfCurrentlyAttended(ctx, username, eventModel.ID)
-			if err != nil {
-				return nil, nil, nil, err
-			}
-
-			// TODO if he's still attending, after event ended set leave time -> endtime of event
-			if currentlyAttended {
-
-			}
-
 			// only show past events which the user is a host of or attended
-			if eventModel.Host == username || attendedOnce {
+			if attendedOnce || eventModel.Host == username {
+				// check if user didn't leave the event
+				currentlyAttended, err := repo.CheckIfCurrentlyAttended(ctx, username, eventModel.ID)
+				if err != nil {
+					return nil, nil, nil, err
+				}
+
+				// if they're still attending, after event ended set leave time -> endtime of event
+				if currentlyAttended {
+					err = repo.SetLeaveTimeAfterEventEnded(ctx, username, eventModel)
+					if err != nil {
+						return nil, nil, nil, err
+					}
+				}
+
 				pastEvents = append(pastEvents, eventModel)
 			}
 		} else if currentTime.Before(startTime) {
@@ -310,7 +314,7 @@ func (repo *Repo) AttendEvent(ctx context.Context, event Event, username string,
 		}
 	}
 
-	_, err := repo.LogTime(ctx, event.EventID, username)
+	_, err := repo.LogTime(ctx, event.EventID, username, false, nil)
 	if err != nil {
 		return "failed", err
 	}
@@ -349,7 +353,7 @@ func (repo *Repo) CheckUserData(ctx context.Context, username string) (*model.Us
 	return &result, nil
 }
 
-func (repo *Repo) LogTime(ctx context.Context, eventID, username string) (string, error) {
+func (repo *Repo) LogTime(ctx context.Context, eventID, username string, expired bool, leaveTime *time.Time) (string, error) {
 	var log LogTime
 	err := repo.timeCollection.FindOne(ctx, bson.D{
 		{"username", username},
@@ -370,12 +374,19 @@ func (repo *Repo) LogTime(ctx context.Context, eventID, username string) (string
 			if err != nil {
 				return "", err
 			}
+
+			return "success", nil
 		}
 		return "", err
 	}
 
 	filter := bson.D{{"_id", log.ID}}
-	update := bson.D{{"$set", bson.D{{"leave", time.Now()}}}}
+	var update bson.D
+	if expired {
+		update = bson.D{{"$set", bson.D{{"leave", *leaveTime}}}}
+	} else {
+		update = bson.D{{"$set", bson.D{{"leave", time.Now()}}}}
+	}
 
 	result, err := repo.timeCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
@@ -422,6 +433,21 @@ func (repo *Repo) CheckIfCurrentlyAttended(ctx context.Context, username, eventI
 	}
 
 	return true, nil
+}
+
+func (repo *Repo) SetLeaveTimeAfterEventEnded(ctx context.Context, username string, event *model.Event) error {
+	_, leaveTime, _, err := formatDate(event.StartDate, event.EndDate)
+	if err != nil {
+		return err
+	}
+
+	_, err = repo.LogTime(ctx, event.ID, username, true, &leaveTime)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (repo *Repo) DetermineContactPersons(ctx context.Context, username, eventID string) ([]string, error) {
