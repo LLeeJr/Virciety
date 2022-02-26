@@ -20,11 +20,11 @@ type EditEventRequest struct {
 	EventID     string   `json:"eventID"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
-	Members     []string `json:"members"`
+	Subscribers []string `json:"subscribers"`
 	StartDate   string   `json:"startDate"`
 	EndDate     string   `json:"endDate"`
 	Location    string   `json:"location"`
-	Attending   []string `json:"attending"`
+	Attendees   []string `json:"attendees"`
 }
 
 type EditEventResponse struct {
@@ -33,15 +33,16 @@ type EditEventResponse struct {
 }
 
 type Event struct {
-	ID          string   `json:"id"`
-	Title       string   `json:"title"`
-	StartDate   string   `json:"startDate"`
-	EndDate     string   `json:"endDate"`
-	Location    string   `json:"location"`
-	Description string   `json:"description"`
-	Members     []string `json:"members"`
-	Host        string   `json:"host"`
-	Attending   []string `json:"attending"`
+	ID                string   `json:"id"`
+	Title             string   `json:"title"`
+	StartDate         string   `json:"startDate"`
+	EndDate           string   `json:"endDate"`
+	Location          string   `json:"location"`
+	Description       string   `json:"description"`
+	Subscribers       []string `json:"subscribers"`
+	Host              string   `json:"host"`
+	Attendees         []string `json:"attendees"`
+	CurrentlyAttended *bool    `json:"currentlyAttended"`
 }
 
 type GetEventsResponse struct {

@@ -24,8 +24,8 @@ func (r *mutationResolver) CreateEvent(ctx context.Context, newEvent model.Creat
 		StartDate:   newEvent.StartDate,
 		EndDate:     newEvent.EndDate,
 		Location:    newEvent.Location,
-		Members:     make([]string, 0),
-		Attending:   make([]string, 0),
+		Subscribers: make([]string, 0),
+		Attendees:   make([]string, 0),
 	}
 
 	// save event in database
@@ -47,12 +47,12 @@ func (r *mutationResolver) EditEvent(ctx context.Context, edit model.EditEventRe
 		EventTime:   time.Now(),
 		EventType:   "EditEvent",
 		Title:       edit.Title,
-		Members:     edit.Members,
+		Subscribers: edit.Subscribers,
 		Description: edit.Description,
 		StartDate:   edit.StartDate,
 		EndDate:     edit.EndDate,
 		Location:    edit.Location,
-		Attending:   edit.Attending,
+		Attendees:   edit.Attendees,
 	}
 
 	// save event in database
@@ -91,12 +91,12 @@ func (r *mutationResolver) SubscribeEvent(ctx context.Context, subscribe model.E
 		EventTime:   time.Now(),
 		EventType:   "SubscribeEvent",
 		Title:       subscribe.Title,
-		Members:     subscribe.Members,
+		Subscribers: subscribe.Subscribers,
 		Description: subscribe.Description,
 		StartDate:   subscribe.StartDate,
 		EndDate:     subscribe.EndDate,
 		Location:    subscribe.Location,
-		Attending:   subscribe.Attending,
+		Attendees:   subscribe.Attendees,
 	}
 
 	// save event in database
@@ -109,28 +109,22 @@ func (r *mutationResolver) SubscribeEvent(ctx context.Context, subscribe model.E
 }
 
 func (r *mutationResolver) AttendEvent(ctx context.Context, attend model.EditEventRequest, username string, left bool) (string, error) {
-	eventType := "AttendEvent"
-
-	if left {
-		eventType = "LeaveEvent"
-	}
-
 	// process the data and create new event
 	event := database.Event{
 		EventID:     attend.EventID,
 		EventTime:   time.Now(),
-		EventType:   eventType,
+		EventType:   "AttendEvent",
 		Title:       attend.Title,
-		Members:     attend.Members,
+		Subscribers: attend.Subscribers,
 		Description: attend.Description,
 		StartDate:   attend.StartDate,
 		EndDate:     attend.EndDate,
 		Location:    attend.Location,
-		Attending:   attend.Attending,
+		Attendees:   attend.Attendees,
 	}
 
 	// save event in database
-	ok, err := r.repo.AttendEvent(ctx, event, username)
+	ok, err := r.repo.AttendEvent(ctx, event, username, left)
 	if err != nil {
 		return ok, err
 	}

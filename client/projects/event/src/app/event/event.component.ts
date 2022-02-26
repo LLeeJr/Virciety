@@ -8,6 +8,7 @@ import {CreateEventData} from "../model/dialog.data";
 import {formatDate} from "@angular/common";
 import {ContactDetailsComponent} from "../contact-details/contact-details.component";
 import {UserData} from "../model/userData";
+import {NOTIFY_HOST_OF_EVENT} from "../service/gql-request-strings";
 
 export interface EventDate {
   startDate: string;
@@ -57,7 +58,7 @@ export class EventComponent implements OnInit {
       }
     });
 
-    /*this.gqlService.getEvents().subscribe(({data}: any) => {
+    /*this.gqlService.getEvents('user3').subscribe(({data}: any) => {
       // console.log(data);
       this.ongoingEvents = EventComponent.sortEvents(data.getEvents.ongoingEvents, this.asc);
       this.pastEvents = EventComponent.sortEvents(data.getEvents.pastEvents, this.desc);
@@ -110,9 +111,9 @@ export class EventComponent implements OnInit {
     });
   }
 
-  showPeople(members: string[]) {
-    this.dialog.open(DialogMembersComponent, {
-      data: members
+  showPeople(people: string[]) {
+    this.dialog.open(DialogSubscribersComponent, {
+      data: people
     });
   }
 
@@ -210,10 +211,10 @@ export class EventComponent implements OnInit {
   }
 
   subscribeEvent(event: Event) {
-    if (event.members.indexOf(this.username) < 0) {
-      event.members = [...event.members, this.username];
+    if (event.subscribers.indexOf(this.username) < 0) {
+      event.subscribers = [...event.subscribers, this.username];
     } else {
-      event.members = event.members.filter(member => member !== this.username);
+      event.subscribers = event.subscribers.filter(member => member !== this.username);
     }
 
     this.gqlService.subscribeEvent(event).subscribe(({data}: any) => {
@@ -245,38 +246,42 @@ export class EventComponent implements OnInit {
   }
 
   attendEvent(event: Event) {
-    let left;
-    if (event.attending.indexOf(this.username) < 0) {
+    let left: boolean;
+    if (event.attendees.indexOf(this.username) < 0) {
       left = false;
-      event.attending = [...event.attending, this.username];
+      event.attendees = [...event.attendees, this.username];
     } else {
       left = true;
     }
 
     this.gqlService.attendEvent(event, left, this.username).subscribe(({data}: any) => {
-      console.log(data);
+      if (data.attendEvent === "success") {
+        event.currentlyAttended = !event.currentlyAttended;
+      }
     })
   }
 
-  reportCovidCase(attending: string[]) {
+  reportCovidCase(attendees: string[]) {
 
   }
 
-  notifyHost(attending: string[]) {
-
+  notifyHost(host: string, id: string) {
+    this.gqlService.notify(NOTIFY_HOST_OF_EVENT, host, id).subscribe(({data}: any) => {
+      console.log(data);
+    });
   }
 }
 
 @Component({
-  selector: 'dialog-members',
+  selector: 'dialog-subscribers',
   template: `
-    <h1 mat-dialog-title>Members</h1>
+    <h1 mat-dialog-title>subscribers</h1>
     <div mat-dialog-content>
         <mat-list>
             <mat-list-item role="listitem" *ngFor="let username of data">{{username}}</mat-list-item>
         </mat-list>
     </div>`,
 })
-export class DialogMembersComponent {
+export class DialogSubscribersComponent {
   constructor(@Inject(MAT_DIALOG_DATA) public data: string[]) {}
 }

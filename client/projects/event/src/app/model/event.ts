@@ -6,10 +6,11 @@ export class Event {
   private _location: string;
   private _startDate: string;
   private _title: string;
-  private _members: string[];
+  private _subscribers: string[];
   private _startTime: string | null;
   private _endTime: string | null;
-  private _attending: string[];
+  private _attendees: string[];
+  private _currentlyAttended: boolean;
 
   constructor(data: any) {
     this._description = data.description;
@@ -19,8 +20,9 @@ export class Event {
     this._location = data.location;
     this._startDate = data.startDate;
     this._endDate = data.endDate;
-    this._members = data.members;
-    this._attending = data.attending;
+    this._subscribers = data.subscribers;
+    this._attendees = data.attendees;
+    this._currentlyAttended = data.currentlyAttended;
 
     if (data.startDate.endsWith('M') && data.endDate.endsWith('M')) {
       this._startTime = data.startDate.split(',')[1].trim();
@@ -31,8 +33,12 @@ export class Event {
     }
   }
 
-  get attending(): string[] {
-    return this._attending;
+  get currentlyAttended(): boolean {
+    return this._currentlyAttended;
+  }
+
+  get attendees(): string[] {
+    return this._attendees;
   }
 
   get description(): string {
@@ -71,20 +77,24 @@ export class Event {
     return this._endTime;
   }
 
-  get members(): string[] {
-    return this._members;
+  get subscribers(): string[] {
+    return this._subscribers;
   }
 
-  set attending(value: string[]) {
-    this._attending = value;
+  set currentlyAttended(value: boolean) {
+    this._currentlyAttended = value;
+  }
+
+  set attendees(value: string[]) {
+    this._attendees = value;
   }
 
   set description(value: string) {
     this._description = value;
   }
 
-  set members(value: string[]) {
-    this._members = value;
+  set subscribers(value: string[]) {
+    this._subscribers = value;
   }
 
   set endDate(value: string) {

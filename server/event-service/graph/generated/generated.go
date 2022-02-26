@@ -53,15 +53,16 @@ type ComplexityRoot struct {
 	}
 
 	Event struct {
-		Attending   func(childComplexity int) int
-		Description func(childComplexity int) int
-		EndDate     func(childComplexity int) int
-		Host        func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Location    func(childComplexity int) int
-		Members     func(childComplexity int) int
-		StartDate   func(childComplexity int) int
-		Title       func(childComplexity int) int
+		Attendees         func(childComplexity int) int
+		CurrentlyAttended func(childComplexity int) int
+		Description       func(childComplexity int) int
+		EndDate           func(childComplexity int) int
+		Host              func(childComplexity int) int
+		ID                func(childComplexity int) int
+		Location          func(childComplexity int) int
+		StartDate         func(childComplexity int) int
+		Subscribers       func(childComplexity int) int
+		Title             func(childComplexity int) int
 	}
 
 	GetEventsResponse struct {
@@ -80,8 +81,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetEvents      func(childComplexity int, username *string) int
-		UserDataExists func(childComplexity int, username *string) int
+		GetEvents            func(childComplexity int, username *string) int
+		NotifyContactPersons func(childComplexity int, username *string, eventID *string) int
+		NotifyHostOfEvent    func(childComplexity int, username *string, eventID *string) int
+		UserDataExists       func(childComplexity int, username *string) int
 	}
 
 	UserData struct {
@@ -107,6 +110,8 @@ type MutationResolver interface {
 type QueryResolver interface {
 	GetEvents(ctx context.Context, username *string) (*model.GetEventsResponse, error)
 	UserDataExists(ctx context.Context, username *string) (*model.UserData, error)
+	NotifyHostOfEvent(ctx context.Context, username *string, eventID *string) (*bool, error)
+	NotifyContactPersons(ctx context.Context, username *string, eventID *string) (*bool, error)
 }
 
 type executableSchema struct {
@@ -152,12 +157,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EditEventResponse.Type(childComplexity), true
 
-	case "Event.attending":
-		if e.complexity.Event.Attending == nil {
+	case "Event.attendees":
+		if e.complexity.Event.Attendees == nil {
 			break
 		}
 
-		return e.complexity.Event.Attending(childComplexity), true
+		return e.complexity.Event.Attendees(childComplexity), true
+
+	case "Event.currentlyAttended":
+		if e.complexity.Event.CurrentlyAttended == nil {
+			break
+		}
+
+		return e.complexity.Event.CurrentlyAttended(childComplexity), true
 
 	case "Event.description":
 		if e.complexity.Event.Description == nil {
@@ -194,19 +206,19 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Event.Location(childComplexity), true
 
-	case "Event.members":
-		if e.complexity.Event.Members == nil {
-			break
-		}
-
-		return e.complexity.Event.Members(childComplexity), true
-
 	case "Event.startDate":
 		if e.complexity.Event.StartDate == nil {
 			break
 		}
 
 		return e.complexity.Event.StartDate(childComplexity), true
+
+	case "Event.subscribers":
+		if e.complexity.Event.Subscribers == nil {
+			break
+		}
+
+		return e.complexity.Event.Subscribers(childComplexity), true
 
 	case "Event.title":
 		if e.complexity.Event.Title == nil {
@@ -319,6 +331,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetEvents(childComplexity, args["username"].(*string)), true
+
+	case "Query.notifyContactPersons":
+		if e.complexity.Query.NotifyContactPersons == nil {
+			break
+		}
+
+		args, err := ec.field_Query_notifyContactPersons_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NotifyContactPersons(childComplexity, args["username"].(*string), args["eventID"].(*string)), true
+
+	case "Query.notifyHostOfEvent":
+		if e.complexity.Query.NotifyHostOfEvent == nil {
+			break
+		}
+
+		args, err := ec.field_Query_notifyHostOfEvent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.NotifyHostOfEvent(childComplexity, args["username"].(*string), args["eventID"].(*string)), true
 
 	case "Query.userDataExists":
 		if e.complexity.Query.UserDataExists == nil {
@@ -465,11 +501,11 @@ input EditEventRequest {
     eventID: String!
     title: String!
     description: String!
-    members: [String!]!
+    subscribers: [String!]!
     startDate: String!
     endDate: String!
     location: String!
-    attending: [String!]!
+    attendees: [String!]!
 }
 
 type Event {
@@ -479,9 +515,10 @@ type Event {
     endDate: String!
     location: String!
     description: String!
-    members: [String!]!
+    subscribers: [String!]!
     host: String!
-    attending: [String!]!
+    attendees: [String!]!
+    currentlyAttended: Boolean
 }
 
 type GetEventsResponse {
@@ -533,6 +570,8 @@ type UserData {
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
     getEvents(username: String): GetEventsResponse
     userDataExists(username: String): UserData
+    notifyHostOfEvent(username: String, eventID: String): Boolean
+    notifyContactPersons(username: String, eventID: String): Boolean
 }
 `, BuiltIn: false},
 }
@@ -677,6 +716,54 @@ func (ec *executionContext) field_Query_getEvents_args(ctx context.Context, rawA
 		}
 	}
 	args["username"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_notifyContactPersons_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["eventID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventID"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["eventID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_notifyHostOfEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["eventID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventID"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["eventID"] = arg1
 	return args, nil
 }
 
@@ -1083,7 +1170,7 @@ func (ec *executionContext) _Event_description(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Event_members(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
+func (ec *executionContext) _Event_subscribers(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1101,7 +1188,7 @@ func (ec *executionContext) _Event_members(ctx context.Context, field graphql.Co
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Members, nil
+		return obj.Subscribers, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1153,7 +1240,7 @@ func (ec *executionContext) _Event_host(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Event_attending(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
+func (ec *executionContext) _Event_attendees(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1171,7 +1258,7 @@ func (ec *executionContext) _Event_attending(ctx context.Context, field graphql.
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Attending, nil
+		return obj.Attendees, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1186,6 +1273,38 @@ func (ec *executionContext) _Event_attending(ctx context.Context, field graphql.
 	res := resTmp.([]string)
 	fc.Result = res
 	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Event_currentlyAttended(ctx context.Context, field graphql.CollectedField, obj *model.Event) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Event",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CurrentlyAttended, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _GetEventsResponse_upcomingEvents(ctx context.Context, field graphql.CollectedField, obj *model.GetEventsResponse) (ret graphql.Marshaler) {
@@ -1621,6 +1740,84 @@ func (ec *executionContext) _Query_userDataExists(ctx context.Context, field gra
 	res := resTmp.(*model.UserData)
 	fc.Result = res
 	return ec.marshalOUserData2ᚖeventᚑserviceᚋgraphᚋmodelᚐUserData(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_notifyHostOfEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_notifyHostOfEvent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NotifyHostOfEvent(rctx, args["username"].(*string), args["eventID"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_notifyContactPersons(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_notifyContactPersons_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().NotifyContactPersons(rctx, args["username"].(*string), args["eventID"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3151,11 +3348,11 @@ func (ec *executionContext) unmarshalInputEditEventRequest(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
-		case "members":
+		case "subscribers":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("members"))
-			it.Members, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subscribers"))
+			it.Subscribers, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3183,11 +3380,11 @@ func (ec *executionContext) unmarshalInputEditEventRequest(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
-		case "attending":
+		case "attendees":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("attending"))
-			it.Attending, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("attendees"))
+			it.Attendees, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3386,8 +3583,8 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "members":
-			out.Values[i] = ec._Event_members(ctx, field, obj)
+		case "subscribers":
+			out.Values[i] = ec._Event_subscribers(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3396,11 +3593,13 @@ func (ec *executionContext) _Event(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "attending":
-			out.Values[i] = ec._Event_attending(ctx, field, obj)
+		case "attendees":
+			out.Values[i] = ec._Event_attendees(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "currentlyAttended":
+			out.Values[i] = ec._Event_currentlyAttended(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3540,6 +3739,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_userDataExists(ctx, field)
+				return res
+			})
+		case "notifyHostOfEvent":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_notifyHostOfEvent(ctx, field)
+				return res
+			})
+		case "notifyContactPersons":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_notifyContactPersons(ctx, field)
 				return res
 			})
 		case "__type":

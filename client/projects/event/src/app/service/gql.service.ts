@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase} from "apollo-angular";
 import {HttpLink} from "apollo-angular/http";
-import {InMemoryCache} from "@apollo/client/core";
+import {DocumentNode, InMemoryCache} from "@apollo/client/core";
 import {
   ADD_USER_DATA,
   ATTEND_EVENT,
@@ -80,11 +80,11 @@ export class GQLService {
           eventID: event.id,
           title: event.title,
           description: event.description,
-          members: event.members,
+          subscribers: event.subscribers,
           startDate: eventDate.startDate,
           endDate: eventDate.endDate,
           location: event.location,
-          attending: event.attending
+          attendees: event.attendees
         }
       }
     );
@@ -97,11 +97,11 @@ export class GQLService {
           eventID: event.id,
           title: event.title,
           description: event.description,
-          members: event.members,
+          subscribers: event.subscribers,
           startDate: event.startDate,
           endDate: event.endDate,
           location: event.location,
-          attending: event.attending,
+          attendees: event.attendees,
         }
       }
     );
@@ -114,11 +114,11 @@ export class GQLService {
           eventID: event.id,
           title: event.title,
           description: event.description,
-          members: event.members,
+          subscribers: event.subscribers,
           startDate: event.startDate,
           endDate: event.endDate,
           location: event.location,
-          attending: event.attending,
+          attendees: event.attendees,
           left: left,
           username: username
         }
@@ -126,7 +126,7 @@ export class GQLService {
     );
   }
 
-  userDataExists(username: String) {
+  userDataExists(username: string) {
     return this.apollo.mutate({
       mutation: USER_DATA_EXISTS,
       variables: {
@@ -147,6 +147,16 @@ export class GQLService {
         postalcode: userData.address.postalcode,
         city: userData.address.city,
         email: userData.email
+      }
+    });
+  }
+
+  notify(query: DocumentNode, username: string, eventID: string) {
+    return this.apollo.query({
+      query: query,
+      variables: {
+        username: username,
+        eventID: eventID
       }
     });
   }

@@ -11,13 +11,13 @@ type Event struct {
 	EventTime   time.Time          `bson:"event_time,omitempty"`
 	EventType   string             `bson:"event_type,omitempty"`
 	Title       string             `bson:"title,omitempty"`
-	Members     []string           `bson:"members,omitempty"`
+	Subscribers []string           `bson:"members,omitempty"`
 	Host        string             `bson:"host,omitempty"`
 	Description string             `bson:"description,omitempty"`
 	StartDate   string             `bson:"startDate,omitempty"`
 	EndDate     string             `bson:"endDate,omitempty"`
 	Location    string             `bson:"location,omitempty"`
-	Attending   []string           `bson:"currently_attending,omitempty"`
+	Attendees   []string           `bson:"currently_attending,omitempty"`
 }
 
 type LogTime struct {

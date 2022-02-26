@@ -11,11 +11,11 @@ input EditEventRequest {
     eventID: String!
     title: String!
     description: String!
-    members: [String!]!
+    subscribers: [String!]!
     startDate: String!
     endDate: String!
     location: String!
-    attending: [String!]!
+    attendees: [String!]!
 }
 
 type Event {
@@ -25,9 +25,10 @@ type Event {
     endDate: String!
     location: String!
     description: String!
-    members: [String!]!
+    subscribers: [String!]!
     host: String!
-    attending: [String!]!
+    attendees: [String!]!
+    currentlyAttended: Boolean
 }
 
 type GetEventsResponse {

@@ -31,6 +31,20 @@ func (r *queryResolver) UserDataExists(ctx context.Context, username *string) (*
 	return userData, nil
 }
 
+func (r *queryResolver) NotifyHostOfEvent(ctx context.Context, username *string, eventID *string) (*bool, error) {
+	// TODO notification service
+	notified := true
+
+	return &notified, nil
+}
+
+func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *string, eventID *string) (*bool, error) {
+	// TODO notification service
+	notified := true
+
+	return &notified, nil
+}
+
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 

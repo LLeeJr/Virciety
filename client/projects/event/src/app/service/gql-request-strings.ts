@@ -13,8 +13,9 @@ export const GET_EVENTS = gql`
         description
         startDate
         endDate
-        members
-        attending
+        subscribers
+        attendees
+        currentlyAttended
       }
       ongoingEvents {
         id
@@ -24,8 +25,9 @@ export const GET_EVENTS = gql`
         description
         startDate
         endDate
-        members
-        attending
+        subscribers
+        attendees
+        currentlyAttended
       }
       pastEvents {
         id
@@ -35,8 +37,9 @@ export const GET_EVENTS = gql`
         description
         startDate
         endDate
-        members
-        attending
+        subscribers
+        attendees
+        currentlyAttended
       }
     }
   }
@@ -57,6 +60,18 @@ export const USER_DATA_EXISTS = gql`
   }
 `;
 
+export const NOTIFY_HOST_OF_EVENT = gql`
+  query notifyHostOfEvent($username: String!, $eventID: String!) {
+    notifyHostOfEvent(username: $username, eventID: $eventID)
+  }
+`;
+
+export const NOTIFY_CONTACT_PERSONS = gql`
+  query notifyContactPersons($username: String!, $eventID: String!) {
+    notifyContactPersons(username: $username, eventID: $eventID)
+  }
+`;
+
 export const CREATE_EVENT = gql`
     mutation createEvent($title: String!, $host: String!, $description: String!, $startDate: String!, $endDate: String!, $location: String!) {
       createEvent(newEvent: {title: $title, host: $host, description: $description, startDate: $startDate, endDate: $endDate, location: $location}) {
@@ -65,7 +80,7 @@ export const CREATE_EVENT = gql`
           title
           host
           location
-          members
+          subscribers
           description
           startDate
           endDate
@@ -76,22 +91,22 @@ export const CREATE_EVENT = gql`
   `;
 
 export const EDIT_EVENT = gql`
-    mutation editEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attending: [String!]!) {
-      editEvent(edit: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location, attending: $attending}) {
+    mutation editEvent($eventID: String!, $title: String!, $description: String!, $subscribers: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attendees: [String!]!) {
+      editEvent(edit: {eventID: $eventID, title: $title, description: $description, subscribers: $subscribers, startDate: $startDate, endDate: $endDate, location: $location, attendees: $attendees}) {
         type
       }
     }
   `;
 
 export const SUBSCRIBE_EVENT = gql`
-    mutation subscribeEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attending: [String!]!) {
-      subscribeEvent(subscribe: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location, attending: $attending})
+    mutation subscribeEvent($eventID: String!, $title: String!, $description: String!, $subscribers: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attendees: [String!]!) {
+      subscribeEvent(subscribe: {eventID: $eventID, title: $title, description: $description, subscribers: $subscribers, startDate: $startDate, endDate: $endDate, location: $location, attendees: $attendees})
     }
   `;
 
 export const ATTEND_EVENT = gql`
-    mutation attendEvent($eventID: String!, $title: String!, $description: String!, $members: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attending: [String!]!, $username: String!, $left: Boolean!) {
-      attendEvent(attend: {eventID: $eventID, title: $title, description: $description, members: $members, startDate: $startDate, endDate: $endDate, location: $location, attending: $attending}, username: $username, left: $left)
+    mutation attendEvent($eventID: String!, $title: String!, $description: String!, $subscribers: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attendees: [String!]!, $username: String!, $left: Boolean!) {
+      attendEvent(attend: {eventID: $eventID, title: $title, description: $description, subscribers: $subscribers, startDate: $startDate, endDate: $endDate, location: $location, attendees: $attendees}, username: $username, left: $left)
     }
   `;
 
