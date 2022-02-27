@@ -29,7 +29,7 @@
         </mat-date-range-picker>
 
         <mat-error *ngIf="range.controls.startDate.hasError('required')">Start date is <strong>required</strong></mat-error>
-        <mat-error *ngIf="range.controls.startDate.hasError('wrongDate')">Start date is in the <strong>past</strong></mat-error>
+        <mat-error *ngIf="range.controls.startDate.hasError('pastDate')">Start date is in the <strong>past</strong></mat-error>
         <mat-error *ngIf="range.controls.endDate.hasError('required')">End date is <strong>required</strong></mat-error>
       </mat-form-field>
 
@@ -85,8 +85,8 @@
   </mat-form-field>
 </div>
 <mat-dialog-actions class="mat-dialog-actions">
-  <button mat-button *ngIf="data.editMode" color="warn" [mat-dialog-close]="remove">Remove</button>
+  <button mat-button *ngIf="data.editMode" color="warn" [mat-dialog-close]="delete">Delete</button>
   <button mat-button [mat-dialog-close]="false">Cancel</button>
-  <button mat-button *ngIf="data.editMode" (click)="checkFields()">Update</button>
-  <button mat-button *ngIf="!data.editMode" (click)="checkFields()">Create</button>
+  <button mat-button *ngIf="data.editMode" [disabled]="!fieldsValid()" (click)="submit()">Update</button>
+  <button mat-button *ngIf="!data.editMode" [disabled]="!fieldsValid()" (click)="submit()">Create</button>
 </mat-dialog-actions>

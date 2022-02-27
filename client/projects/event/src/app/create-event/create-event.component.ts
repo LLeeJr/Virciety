@@ -12,7 +12,7 @@ import {CreateEventData, CreateEventDialogData} from "../model/dialog.data";
 export class CreateEventComponent implements OnInit {
 
   currDate: string = formatDate(new Date(), 'fullDate', 'en-GB');
-  remove: CreateEventData = {
+  delete: CreateEventData = {
     event: this.data.event,
     remove: true,
   }
@@ -51,37 +51,9 @@ export class CreateEventComponent implements OnInit {
   }
 
   // check if all required fields have a value, if so close dialog and do an action. If not, mark the required fields
-  checkFields(): void {
-    let required = false;
-
-    if (!this.title.value) {
-      this.title.markAsTouched();
-      this.title.setErrors({required: true});
-      required = true;
-    }
-    if (!this.range.controls.startDate.value) {
-      this.range.controls.startDate.markAsTouched();
-      this.range.controls.startDate.setErrors({required: true});
-      required = true;
-    }
-    if (!this.range.controls.endDate.value) {
-      this.range.controls.endDate.markAsTouched();
-      this.range.controls.endDate.setErrors({required: true});
-      required = true;
-    }
-    if (this.checked && !this.startTime.value) {
-      this.startTime.markAsTouched();
-      this.startTime.setErrors({required: true});
-      required = true;
-    }
-    if (this.checked && !this.endTime.value) {
-      this.endTime.markAsTouched();
-      this.endTime.setErrors({required: true});
-      required = true;
-    }
-
+  submit(): void {
     // if in edit mode, update event data
-    if (!required && this.data.editMode) {
+    if (this.data.editMode) {
       if (this.data.event) {
         this.data.event.title = this.title.value;
         this.data.event.location = this.location;
@@ -105,7 +77,7 @@ export class CreateEventComponent implements OnInit {
 
       this.dialogRef.close(output);
     // if not in editMode create output data, so new event can be created
-    } else if (!required && !this.data.editMode) {
+    } else {
       let output: CreateEventData = {
         event: {
           description: this.description,
@@ -123,7 +95,7 @@ export class CreateEventComponent implements OnInit {
   }
 
   // check if input times are valid
-  checkTimes() {
+  checkTimes(): boolean {
     if (this.range.controls.startDate.value && this.range.controls.endDate.value) {
       let startDate = formatDate(this.range.controls.startDate.value, 'fullDate', 'en-GB');
       let endDate = formatDate(this.range.controls.endDate.value, 'fullDate', 'en-GB');
@@ -135,32 +107,48 @@ export class CreateEventComponent implements OnInit {
       if (startDate && endDate && startDate === endDate && startTime && endTime) {
         if (startTime.endsWith('PM') && endTime.endsWith('AM')) {
           this.endTime.setErrors({wrongTime: true});
+          return false;
         } else if (startTime.endsWith('AM') && endTime.endsWith('AM') || startTime.endsWith('PM') && endTime.endsWith('PM')) {
           let startHour: number = parseInt(startTime.split(':')[0]);
           let endHour: number = parseInt(endTime.split(':')[0]);
 
           if ((startHour !== 12 && startHour >= endHour) || endHour === 12) {
             this.endTime.setErrors({wrongTime: true});
+            return false;
           } else {
             this.endTime.setErrors(null);
+            return true;
           }
         } else {
           this.endTime.setErrors(null);
+          return true;
         }
+      } else {
+        if (this.checked && startTime && endTime) {
+          return true;
+        } else return !(this.checked && !(startTime && endTime));
       }
+    } else {
+      return false;
     }
   }
 
   // check that input startDate isn't in the past
-  checkDate() {
+  checkDate(): boolean {
     let startDate = formatDate(this.range.controls.startDate.value, 'fullDate', 'en-GB');
 
     if (+new Date(startDate) - +new Date(this.currDate) < 0) {
       this.range.controls.startDate.markAsTouched();
-      this.range.controls.startDate.setErrors({wrongDate: true});
+      this.range.controls.startDate.setErrors({pastDate: true});
+      return false;
     } else {
       this.range.controls.startDate.setErrors(null);
+      return true;
     }
+  }
+
+  fieldsValid() {
+    return this.title.valid && this.checkDate() && this.checkTimes();
   }
 }
 
