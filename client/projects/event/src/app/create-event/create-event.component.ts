@@ -96,7 +96,7 @@ export class CreateEventComponent implements OnInit {
 
   // check if input times are valid
   checkTimes(): boolean {
-    if (this.range.controls.startDate.value && this.range.controls.endDate.value) {
+    if (this.range.controls.startDate.value !== '' && this.range.controls.endDate.value !== '') {
       let startDate = formatDate(this.range.controls.startDate.value, 'fullDate', 'en-GB');
       let endDate = formatDate(this.range.controls.endDate.value, 'fullDate', 'en-GB');
 
@@ -104,7 +104,7 @@ export class CreateEventComponent implements OnInit {
       let endTime: string = this.endTime.value;
 
       // check if datetime is valid
-      if (startDate && endDate && startDate === endDate && startTime && endTime) {
+      if (startDate && endDate && startDate === endDate && startTime !== '' && endTime !== '') {
         if (startTime.endsWith('PM') && endTime.endsWith('AM')) {
           this.endTime.setErrors({wrongTime: true});
           return false;
@@ -124,9 +124,9 @@ export class CreateEventComponent implements OnInit {
           return true;
         }
       } else {
-        if (this.checked && startTime && endTime) {
+        if (this.checked && startTime !== '' && endTime !== '') {
           return true;
-        } else return !(this.checked && !(startTime && endTime));
+        } else return !(this.checked && !(startTime !== '' && endTime !== ''));
       }
     } else {
       return false;
@@ -135,16 +135,19 @@ export class CreateEventComponent implements OnInit {
 
   // check that input startDate isn't in the past
   checkDate(): boolean {
-    let startDate = formatDate(this.range.controls.startDate.value, 'fullDate', 'en-GB');
+    if (this.range.controls.startDate.value !== '') {
+      let startDate = formatDate(this.range.controls.startDate.value, 'fullDate', 'en-GB');
 
-    if (+new Date(startDate) - +new Date(this.currDate) < 0) {
-      this.range.controls.startDate.markAsTouched();
-      this.range.controls.startDate.setErrors({pastDate: true});
-      return false;
-    } else {
-      this.range.controls.startDate.setErrors(null);
-      return true;
+      if (+new Date(startDate) - +new Date(this.currDate) < 0) {
+        this.range.controls.startDate.markAsTouched();
+        this.range.controls.startDate.setErrors({pastDate: true});
+        return false;
+      } else {
+        this.range.controls.startDate.setErrors(null);
+        return true;
+      }
     }
+    return false;
   }
 
   fieldsValid() {
