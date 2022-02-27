@@ -307,19 +307,27 @@ func (repo *Repo) EditEvent(ctx context.Context, event Event) (string, string, e
 }
 
 func (repo *Repo) AttendEvent(ctx context.Context, event Event, username string, left bool) (string, error) {
-	if !left {
-		_, err := repo.InsertEvent(ctx, event)
+	currentTime := time.Now()
+
+	_, endTime, _, _ := formatDate(event.StartDate, event.EndDate)
+
+	if currentTime.Before(endTime) {
+		if !left {
+			_, err := repo.InsertEvent(ctx, event)
+			if err != nil {
+				return "failed", err
+			}
+		}
+
+		_, err := repo.LogTime(ctx, event.EventID, username, false, nil)
 		if err != nil {
 			return "failed", err
 		}
+
+		return "success", nil
 	}
 
-	_, err := repo.LogTime(ctx, event.EventID, username, false, nil)
-	if err != nil {
-		return "failed", err
-	}
-
-	return "success", nil
+	return "", errors.New("event is expired")
 }
 
 func (repo *Repo) InsertUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error) {

@@ -9,6 +9,7 @@ import {formatDate} from "@angular/common";
 import {ContactDetailsComponent} from "../contact-details/contact-details.component";
 import {UserData} from "../model/userData";
 import {NOTIFY_CONTACT_PERSONS, NOTIFY_HOST_OF_EVENT} from "../service/gql-request-strings";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 export interface EventDate {
   startDate: string;
@@ -36,7 +37,8 @@ export class EventComponent implements OnInit {
 
   constructor(private keycloak: KeycloakService,
               private gqlService: GQLService,
-              private dialog: MatDialog) { }
+              private dialog: MatDialog,
+              private snackbar: MatSnackBar) { }
 
   async ngOnInit(): Promise<void> {
     await this.keycloak.isLoggedIn().then(loggedIn => {
@@ -255,10 +257,20 @@ export class EventComponent implements OnInit {
     }
 
     this.gqlService.attendEvent(event, left, this.username).subscribe(({data}: any) => {
-      if (data.attendEvent === "success") {
-        event.currentlyAttended = !event.currentlyAttended;
-      }
-    })
+        if (data.attendEvent === "success") {
+          event.currentlyAttended = !event.currentlyAttended;
+        }},
+      ((error: Error) => {
+        if (error.message === 'event is expired') {
+          this.snackbar.open(error.message + ', please reload the page', undefined,{
+            duration: 5 * 1000,
+          })
+        } else {
+          this.snackbar.open('Sorry! An error occurred.', undefined,{
+            duration: 5 * 1000,
+          })
+        }}
+    ));
   }
 
   reportCovidCase(attendees: string[], id: string) {
