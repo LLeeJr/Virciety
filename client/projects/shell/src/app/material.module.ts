@@ -2,18 +2,12 @@ import { NgModule } from '@angular/core';
 import {MatToolbarModule} from "@angular/material/toolbar";
 import {MatIconModule} from "@angular/material/icon";
 import {MatButtonModule} from "@angular/material/button";
-import { MatSidenavModule} from "@angular/material/sidenav";
+import {MatSidenavModule} from "@angular/material/sidenav";
 import {MatListModule} from "@angular/material/list";
-import {MatDialogModule} from "@angular/material/dialog";
-import {MatFormFieldModule} from "@angular/material/form-field";
-import {MatInputModule} from "@angular/material/input";
-import {MatAutocompleteModule} from "@angular/material/autocomplete";
-import {MatCardModule} from "@angular/material/card";
-import {MatSelectModule} from "@angular/material/select";
-import {MatOptionModule} from "@angular/material/core";
-import {MatRadioModule} from "@angular/material/radio";
-import {MatCheckboxModule} from "@angular/material/checkbox";
-import {MatTooltipModule} from "@angular/material/tooltip";
+import {MatMenuModule} from "@angular/material/menu";
+import {NgxMatTimepickerModule} from "ngx-mat-timepicker";
+import {MatNativeDateModule} from "@angular/material/core";
+import {MatDatepickerModule} from "@angular/material/datepicker";
 
 @NgModule({
   imports: [
@@ -22,16 +16,10 @@ import {MatTooltipModule} from "@angular/material/tooltip";
     MatButtonModule,
     MatSidenavModule,
     MatListModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatAutocompleteModule,
-    MatCardModule,
-    MatSelectModule,
-    MatOptionModule,
-    MatRadioModule,
-    MatCheckboxModule,
-    MatTooltipModule,
+    MatMenuModule,
+    NgxMatTimepickerModule,
+    MatNativeDateModule,
+    MatDatepickerModule,
   ],
   exports: [
     MatToolbarModule,
@@ -39,16 +27,13 @@ import {MatTooltipModule} from "@angular/material/tooltip";
     MatButtonModule,
     MatSidenavModule,
     MatListModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatAutocompleteModule,
-    MatCardModule,
-    MatSelectModule,
-    MatOptionModule,
-    MatRadioModule,
-    MatCheckboxModule,
-    MatTooltipModule,
+    MatMenuModule,
+    NgxMatTimepickerModule,
+    MatNativeDateModule,
+    MatDatepickerModule,
   ],
+  providers: [
+    MatDatepickerModule
+  ]
 })
 export class MaterialModule { }

@@ -51,7 +51,9 @@ module.exports = {
           "@angular/material/form-field": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
           "@angular/forms": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
           "@angular/material/datepicker": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
+          "@angular/material/menu": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
           "ngx-mat-timepicker": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
+          "@angular/platform-browser/animations": { singleton: true, strictVersion: true, requiredVersion: 'auto'},
 
           ...sharedMappings.getDescriptors()
         })
