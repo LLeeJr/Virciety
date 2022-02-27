@@ -19,10 +19,10 @@ import {MatSelectModule} from "@angular/material/select";
 @NgModule({
   imports: [
     MatCardModule,
-    // MatDatepickerModule,
+    MatDatepickerModule,
     MatFormFieldModule,
     MatInputModule,
-    // MatNativeDateModule,
+    MatNativeDateModule,
     MatDividerModule,
     MatIconModule,
     MatCheckboxModule,
@@ -37,10 +37,10 @@ import {MatSelectModule} from "@angular/material/select";
   ],
   exports: [
     MatCardModule,
-    // MatDatepickerModule,
+    MatDatepickerModule,
     MatFormFieldModule,
     MatInputModule,
-    // MatNativeDateModule,
+    MatNativeDateModule,
     MatDividerModule,
     MatIconModule,
     MatCheckboxModule,
@@ -52,9 +52,9 @@ import {MatSelectModule} from "@angular/material/select";
     MatMenuModule,
     MatRadioModule,
     MatSelectModule
-  ],/*
+  ],
   providers: [
     MatDatepickerModule
-  ]*/
+  ]
 })
 export class MaterialModule { }
