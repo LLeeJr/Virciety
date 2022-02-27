@@ -10,9 +10,15 @@ export class NotificationSubscriptionGql extends Subscription {
   subscription notifAdded($userName: String!){
     notifAdded(userName: $userName) {
       id,
+      event,
+      read,
       receiver,
       text,
-      event
+      params{
+        key,
+        value
+      },
+      route
     }
   }
   `;

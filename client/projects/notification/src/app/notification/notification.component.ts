@@ -12,7 +12,18 @@ export class NotificationComponent implements OnInit {
 
   private username: string;
   show = false;
-  notifications: {event: string, id: string, receiver: string[], text: string}[] = [];
+  notifications: {
+    event: string,
+    id: string,
+    params: {
+      key: string,
+      value: string,
+    }[],
+    read: boolean,
+    receiver: string[],
+    route: string,
+    text: string,
+  }[] = [];
 
   constructor(private api: ApiService,
               private keycloak: KeycloakService) { }

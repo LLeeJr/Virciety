@@ -92,8 +92,14 @@ export class ApiService {
       getNotifsByReceiver(receiver: $receiver) {
         id,
         event,
+        read,
+        receiver,
         text,
-        receiver
+        params{
+          key,
+          value
+        },
+        route
       }
     }
     `;
