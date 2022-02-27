@@ -2,6 +2,13 @@
   <div>
     <mat-toolbar class="event-toolbar">
       <span>{{this.selectedList}}</span>
+      <!--<mat-form-field>
+        <mat-select [(value)]="this.selectedList" (selectionChange)="changeList()">
+          <mat-option *ngFor="let list of lists" [value]="list">
+            {{list}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>-->
       <span class="spacer"></span>
       <button mat-icon-button [matMenuTriggerFor]="menu">
         <mat-icon>filter_list</mat-icon>

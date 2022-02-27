@@ -1,6 +1,6 @@
 <h2 *ngIf="!data.editMode" mat-dialog-title>Create event</h2>
 <h2 *ngIf="data.editMode" mat-dialog-title>Edit event</h2>
-<mat-dialog-content>
+<div>
   <mat-form-field appearance="fill">
     <mat-label>Enter title</mat-label>
     <input matInput [formControl]="title">
@@ -13,7 +13,7 @@
   </mat-form-field>
 
   <div>
-    <p>
+    <!--<p>
       <mat-form-field appearance="fill">
         <mat-label>Enter a date range</mat-label>
         <mat-date-range-input [formGroup]="range" [rangePicker]="picker">
@@ -35,9 +35,9 @@
 
 
       <mat-checkbox [(ngModel)]="checked">Add specific time?</mat-checkbox>
-    </p>
+    </p>-->
 
-    <p *ngIf="checked">
+    <!--<p *ngIf="checked">
       <mat-form-field appearance="fill">
         <mat-label>Start time</mat-label>
         <input matInput
@@ -70,7 +70,7 @@
         <mat-error *ngIf="endTime.hasError('required')">End time is <strong>required</strong></mat-error>
         <mat-error *ngIf="endTime.hasError('wrongTime')">End time is <strong>earlier</strong> than start time</mat-error>
       </mat-form-field>
-    </p>
+    </p>-->
 
   </div>
 
@@ -83,7 +83,7 @@
     <mat-label>Enter location</mat-label>
     <input matInput [(ngModel)]="location">
   </mat-form-field>
-</mat-dialog-content>
+</div>
 <mat-dialog-actions class="mat-dialog-actions">
   <button mat-button *ngIf="data.editMode" color="warn" [mat-dialog-close]="remove">Remove</button>
   <button mat-button [mat-dialog-close]="false">Cancel</button>
