@@ -44,10 +44,18 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Map struct {
+		Key   func(childComplexity int) int
+		Value func(childComplexity int) int
+	}
+
 	Notif struct {
 		Event    func(childComplexity int) int
 		ID       func(childComplexity int) int
+		Params   func(childComplexity int) int
+		Read     func(childComplexity int) int
 		Receiver func(childComplexity int) int
+		Route    func(childComplexity int) int
 		Text     func(childComplexity int) int
 	}
 
@@ -82,6 +90,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
+	case "Map.key":
+		if e.complexity.Map.Key == nil {
+			break
+		}
+
+		return e.complexity.Map.Key(childComplexity), true
+
+	case "Map.value":
+		if e.complexity.Map.Value == nil {
+			break
+		}
+
+		return e.complexity.Map.Value(childComplexity), true
+
 	case "Notif.event":
 		if e.complexity.Notif.Event == nil {
 			break
@@ -96,12 +118,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Notif.ID(childComplexity), true
 
+	case "Notif.params":
+		if e.complexity.Notif.Params == nil {
+			break
+		}
+
+		return e.complexity.Notif.Params(childComplexity), true
+
+	case "Notif.read":
+		if e.complexity.Notif.Read == nil {
+			break
+		}
+
+		return e.complexity.Notif.Read(childComplexity), true
+
 	case "Notif.receiver":
 		if e.complexity.Notif.Receiver == nil {
 			break
 		}
 
 		return e.complexity.Notif.Receiver(childComplexity), true
+
+	case "Notif.route":
+		if e.complexity.Notif.Route == nil {
+			break
+		}
+
+		return e.complexity.Notif.Route(childComplexity), true
 
 	case "Notif.text":
 		if e.complexity.Notif.Text == nil {
@@ -205,11 +248,19 @@ var sources = []*ast.Source{
 #
 # https://gqlgen.com/getting-started/
 
+type Map {
+  key: String!,
+  value: String!,
+}
+
 type Notif {
   id: String!
+  event: String!
+  read: Boolean!
   receiver: [String!]!
   text: String!
-  event: String!
+  params: [Map!]!
+  route: String!
 }
 
 type Query {
@@ -310,6 +361,76 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _Map_key(ctx context.Context, field graphql.CollectedField, obj *model.Map) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Map",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Map_value(ctx context.Context, field graphql.CollectedField, obj *model.Map) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Map",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Notif_id(ctx context.Context, field graphql.CollectedField, obj *model.Notif) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -343,6 +464,76 @@ func (ec *executionContext) _Notif_id(ctx context.Context, field graphql.Collect
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Notif_event(ctx context.Context, field graphql.CollectedField, obj *model.Notif) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Notif",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Event, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Notif_read(ctx context.Context, field graphql.CollectedField, obj *model.Notif) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Notif",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Read, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Notif_receiver(ctx context.Context, field graphql.CollectedField, obj *model.Notif) (ret graphql.Marshaler) {
@@ -415,7 +606,7 @@ func (ec *executionContext) _Notif_text(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Notif_event(ctx context.Context, field graphql.CollectedField, obj *model.Notif) (ret graphql.Marshaler) {
+func (ec *executionContext) _Notif_params(ctx context.Context, field graphql.CollectedField, obj *model.Notif) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -433,7 +624,42 @@ func (ec *executionContext) _Notif_event(ctx context.Context, field graphql.Coll
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Event, nil
+		return obj.Params, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Map)
+	fc.Result = res
+	return ec.marshalNMap2ᚕᚖnotifsᚑserviceᚋgraphᚋmodelᚐMapᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Notif_route(ctx context.Context, field graphql.CollectedField, obj *model.Notif) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Notif",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Route, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1745,6 +1971,38 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** object.gotpl ****************************
 
+var mapImplementors = []string{"Map"}
+
+func (ec *executionContext) _Map(ctx context.Context, sel ast.SelectionSet, obj *model.Map) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mapImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Map")
+		case "key":
+			out.Values[i] = ec._Map_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "value":
+			out.Values[i] = ec._Map_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var notifImplementors = []string{"Notif"}
 
 func (ec *executionContext) _Notif(ctx context.Context, sel ast.SelectionSet, obj *model.Notif) graphql.Marshaler {
@@ -1761,6 +2019,16 @@ func (ec *executionContext) _Notif(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "event":
+			out.Values[i] = ec._Notif_event(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "read":
+			out.Values[i] = ec._Notif_read(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "receiver":
 			out.Values[i] = ec._Notif_receiver(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -1771,8 +2039,13 @@ func (ec *executionContext) _Notif(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "event":
-			out.Values[i] = ec._Notif_event(ctx, field, obj)
+		case "params":
+			out.Values[i] = ec._Notif_params(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "route":
+			out.Values[i] = ec._Notif_route(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -2114,6 +2387,60 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNMap2ᚕᚖnotifsᚑserviceᚋgraphᚋmodelᚐMapᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Map) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMap2ᚖnotifsᚑserviceᚋgraphᚋmodelᚐMap(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMap2ᚖnotifsᚑserviceᚋgraphᚋmodelᚐMap(ctx context.Context, sel ast.SelectionSet, v *model.Map) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Map(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNNotif2notifsᚑserviceᚋgraphᚋmodelᚐNotif(ctx context.Context, sel ast.SelectionSet, v model.Notif) graphql.Marshaler {

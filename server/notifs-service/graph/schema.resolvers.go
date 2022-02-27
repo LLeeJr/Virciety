@@ -5,10 +5,11 @@ package graph
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"notifs-service/database"
 	"notifs-service/graph/generated"
 	"notifs-service/graph/model"
+
+	"github.com/google/uuid"
 )
 
 func (r *queryResolver) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error) {
@@ -52,7 +53,4 @@ func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
 
 type queryResolver struct{ *Resolver }
-
-type subscriptionResolver struct {
-	*Resolver
-}
+type subscriptionResolver struct{ *Resolver }

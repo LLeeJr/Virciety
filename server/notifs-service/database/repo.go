@@ -21,10 +21,13 @@ type Message struct {
 
 
 type NotifEvent struct {
-	EventTime time.Time `json:"eventtime"`
-	EventType string    `json:"eventtype"`
-	Receiver  []string  `json:"receiver"`
-	Text      string    `json:"text"`
+	EventTime time.Time   `json:"eventtime"`
+	EventType string      `json:"eventtype"`
+	Receiver  []string    `json:"receiver"`
+	Text      string      `json:"text"`
+	Read      bool        `json:"read"`
+	Route     string      `json:"route"`
+	Params    []*model.Map `json:"params"`
 }
 
 type ChatEvent struct {
@@ -37,7 +40,6 @@ type ChatEvent struct {
 }
 
 type Repository interface {
-	CreateNotif(ctx context.Context, notifEvent NotifEvent) (*model.Notif, error)
 	GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error)
 	CreateDmNotifFromConsumer(body []byte) error
 	GetSubscriptions() map[string]*Message
@@ -66,11 +68,29 @@ func (r repo) CreateDmNotifFromConsumer(data []byte) error {
 		return err
 	}
 
+	m := []*model.Map{
+		{
+			Key:   "from",
+			Value: s.From,
+		},
+		{
+			Key:   "roomName",
+			Value: s.RoomName,
+		},
+		{
+			Key:   "roomID",
+			Value: s.RoomID,
+		},
+	}
+
 	notifText := fmt.Sprintf("New message from %s in room %s", s.From, s.RoomName)
 	notifEvent := NotifEvent{
 		EventTime: s.EventTime,
 		EventType: "New DM",
+		Params:    m,
+		Read:      false,
 		Receiver:  s.Receivers,
+		Route:     "/chat",
 		Text:      notifText,
 	}
 
@@ -86,7 +106,10 @@ func (r repo) CreateDmNotifFromConsumer(data []byte) error {
 		if subscription != nil {
 			notif := &model.Notif{
 				ID:       insertedId,
+				Params:   notifEvent.Params,
 				Receiver: notifEvent.Receiver,
+				Read:     notifEvent.Read,
+				Route:    notifEvent.Route,
 				Text:     notifEvent.Text,
 				Event:    notifEvent.EventType,
 			}
@@ -108,30 +131,16 @@ func (r *repo) InsertNotifEvent(ctx context.Context, notifEvent NotifEvent) (str
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (r repo) CreateNotif(ctx context.Context, notifEvent NotifEvent) (*model.Notif, error) {
-	r.NotifEvents = append(r.NotifEvents, &notifEvent)
-
-	insertedId, err := r.InsertNotifEvent(ctx, notifEvent)
-	if err != nil {
-		return nil, err
-	}
-
-	return &model.Notif{
-		ID:       insertedId,
-		Receiver: notifEvent.Receiver,
-		Text:     notifEvent.Text,
-		Event:    notifEvent.EventType,
-	}, nil
-
-}
-
 func (r repo) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error) {
 
 	type Notif struct {
 		ID        primitive.ObjectID `bson:"_id"`
 		EventTime time.Time          `bson:"eventtime"`
 		EventType string             `bson:"eventtype"`
+		Params    []*model.Map       `bson:"params"`
 		Receiver  []string           `bson:"receiver"`
+		Read      bool               `bson:"read"`
+		Route     string             `bson:"route"`
 		Text      string             `bson:"text"`
 	}
 
@@ -154,7 +163,10 @@ func (r repo) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*mode
 	for _, notif := range result {
 		notifs = append(notifs, &model.Notif{
 			ID:       notif.ID.Hex(),
+			Params:   notif.Params,
 			Receiver: notif.Receiver,
+			Read:     notif.Read,
+			Route:    notif.Route,
 			Text:     notif.Text,
 			Event:    notif.EventType,
 		})

@@ -2,11 +2,19 @@
 #
 # https://gqlgen.com/getting-started/
 
+type Map {
+  key: String!,
+  value: String!,
+}
+
 type Notif {
   id: String!
+  event: String!
+  read: Boolean!
   receiver: [String!]!
   text: String!
-  event: String!
+  params: [Map!]!
+  route: String!
 }
 
 type Query {
