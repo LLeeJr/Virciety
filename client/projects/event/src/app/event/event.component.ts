@@ -25,10 +25,10 @@ export class EventComponent implements OnInit {
   upcomingEvents: Event[];
   ongoingEvents: Event[];
   pastEvents: Event[];
-  selectedEvents: Event[];
+  selectedEvents: Event[] = [];
 
   username: string;
-  selectedList: string = 'Ongoing events'; // TODO
+  selectedList: string = 'Upcoming events';
   lists: string[] = ['Upcoming events', 'Ongoing events', 'Past events'];
 
   asc = (a: Event, b: Event) => +new Date(a.startDate) - +new Date(b.startDate);
@@ -48,7 +48,7 @@ export class EventComponent implements OnInit {
             this.ongoingEvents = EventComponent.sortEvents(data.getEvents.ongoingEvents, this.asc);
             this.pastEvents = EventComponent.sortEvents(data.getEvents.pastEvents, this.desc);
             this.upcomingEvents = EventComponent.sortEvents(data.getEvents.upcomingEvents, this.asc);
-            this.selectedEvents = this.ongoingEvents; // TODO
+            this.selectedEvents = this.upcomingEvents;
           }, (error: any) => {
             console.error('there was an error sending the getEvents-query', error);
           });
@@ -63,7 +63,7 @@ export class EventComponent implements OnInit {
       this.ongoingEvents = EventComponent.sortEvents(data.getEvents.ongoingEvents, this.asc);
       this.pastEvents = EventComponent.sortEvents(data.getEvents.pastEvents, this.desc);
       this.upcomingEvents = EventComponent.sortEvents(data.getEvents.upcomingEvents, this.asc);
-      this.selectedEvents = this.ongoingEvents; // TODO
+      this.selectedEvents = this.ongoingEvents;
     }, (error: any) => {
       console.error('there was an error sending the getEvents-query', error);
     });*/
@@ -269,7 +269,6 @@ export class EventComponent implements OnInit {
     dialogRef.afterClosed().subscribe((covidCase: string | null) => {
       if (covidCase) {
         this.gqlService.notify(NOTIFY_CONTACT_PERSONS, covidCase, id).subscribe(({data}: any) => {
-
         });
       }
     });
