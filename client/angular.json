@@ -632,6 +632,119 @@
           }
         }
       }
+    },
+    "notification": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "style": "scss"
+        },
+        "@schematics/angular:application": {
+          "strict": true
+        }
+      },
+      "root": "projects/notification",
+      "sourceRoot": "projects/notification/src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "ngx-build-plus:browser",
+          "options": {
+            "outputPath": "dist/notification",
+            "index": "projects/notification/src/index.html",
+            "main": "projects/notification/src/main.ts",
+            "polyfills": "projects/notification/src/polyfills.ts",
+            "tsConfig": "projects/notification/tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "projects/notification/src/favicon.ico",
+              "projects/notification/src/assets"
+            ],
+            "styles": [
+              "projects/notification/src/styles.scss"
+            ],
+            "scripts": [],
+            "extraWebpackConfig": "projects/notification/webpack.config.js",
+            "commonChunk": false
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kb",
+                  "maximumError": "1mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "2kb",
+                  "maximumError": "4kb"
+                }
+              ],
+              "fileReplacements": [
+                {
+                  "replace": "projects/notification/src/environments/environment.ts",
+                  "with": "projects/notification/src/environments/environment.prod.ts"
+                }
+              ],
+              "outputHashing": "all",
+              "extraWebpackConfig": "projects/notification/webpack.prod.config.js"
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "ngx-build-plus:dev-server",
+          "configurations": {
+            "production": {
+              "browserTarget": "notification:build:production",
+              "extraWebpackConfig": "projects/notification/webpack.prod.config.js"
+            },
+            "development": {
+              "browserTarget": "notification:build:development"
+            }
+          },
+          "defaultConfiguration": "development",
+          "options": {
+            "extraWebpackConfig": "projects/notification/webpack.config.js",
+            "port": 5006
+          }
+        },
+        "extract-i18n": {
+          "builder": "ngx-build-plus:extract-i18n",
+          "options": {
+            "browserTarget": "notification:build",
+            "extraWebpackConfig": "projects/notification/webpack.config.js"
+          }
+        },
+        "test": {
+          "builder": "ngx-build-plus:karma",
+          "options": {
+            "main": "projects/notification/src/test.ts",
+            "polyfills": "projects/notification/src/polyfills.ts",
+            "tsConfig": "projects/notification/tsconfig.spec.json",
+            "karmaConfig": "projects/notification/karma.conf.js",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              "projects/notification/src/favicon.ico",
+              "projects/notification/src/assets"
+            ],
+            "styles": [
+              "projects/notification/src/styles.scss"
+            ],
+            "scripts": [],
+            "extraWebpackConfig": "projects/notification/webpack.config.js"
+          }
+        }
+      }
     }
   },
   "defaultProject": "shell"
