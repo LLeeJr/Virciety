@@ -11,6 +11,7 @@ import {MatDialogModule} from "@angular/material/dialog";
 import {MatFormFieldModule} from "@angular/material/form-field";
 import {MatInputModule} from "@angular/material/input";
 import {MatSelectModule} from "@angular/material/select";
+import {MatNativeDateModule} from "@angular/material/core";
 
 @NgModule({
   imports: [
@@ -24,8 +25,9 @@ import {MatSelectModule} from "@angular/material/select";
     MatFormFieldModule,
     MatSelectModule,
     MatInputModule,
-    // NgxMatTimepickerModule, // needed for timepicker in create event dialog
-    MatDatepickerModule, // needed for datepicker in create event dialog
+    NgxMatTimepickerModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ],
   exports: [
     MatToolbarModule,
@@ -38,8 +40,9 @@ import {MatSelectModule} from "@angular/material/select";
     MatFormFieldModule,
     MatSelectModule,
     MatInputModule,
-    // NgxMatTimepickerModule,
+    NgxMatTimepickerModule,
     MatDatepickerModule,
+    MatNativeDateModule
   ],
 })
 export class MaterialModule { }

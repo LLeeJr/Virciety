@@ -37,7 +37,7 @@
       <mat-checkbox [(ngModel)]="checked">Add specific time?</mat-checkbox>
     </p>
 
-    <!--<p *ngIf="checked">
+    <p *ngIf="checked">
       <mat-form-field appearance="fill">
         <mat-label>Start time</mat-label>
         <input matInput
@@ -70,7 +70,7 @@
         <mat-error *ngIf="endTime.hasError('required')">End time is <strong>required</strong></mat-error>
         <mat-error *ngIf="endTime.hasError('wrongTime')">End time is <strong>earlier</strong> than start time</mat-error>
       </mat-form-field>
-    </p>-->
+    </p>
 
   </div>
 
