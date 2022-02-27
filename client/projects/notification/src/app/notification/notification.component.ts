@@ -20,6 +20,10 @@ export class NotificationComponent implements OnInit {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
+          this.api.getNotifs(this.username).subscribe(value => {
+            console.log(value);
+          });
+
           this.api.subscribeToNotifications(this.username).subscribe(value => {
             if (value) {
               console.log(value);

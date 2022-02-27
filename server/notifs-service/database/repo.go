@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
 	"notifs-service/graph/model"
 	"time"
@@ -128,18 +129,20 @@ func (r repo) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*mode
 
 	type Notif struct {
 		ID        primitive.ObjectID `bson:"_id"`
-		EventTime string             `bson:"eventtime"`
+		EventTime time.Time          `bson:"eventtime"`
 		EventType string             `bson:"eventtype"`
 		Receiver  []string           `bson:"receiver"`
 		Text      string             `bson:"text"`
 	}
 
 	var result []*Notif
+
+	opts := options.Find().SetSort(bson.D{{"eventtime", -1}}).SetLimit(10)
 	cursor, err := r.notifCollection.Find(
 		ctx,
 		bson.D{
 			{"receiver", receiver},
-		})
+		}, opts)
 	if err != nil {
 		return nil, err
 	}

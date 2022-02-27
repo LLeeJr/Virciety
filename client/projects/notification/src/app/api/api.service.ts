@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {setContext} from "@apollo/client/link/context";
 import {ApolloLink, InMemoryCache, split} from "@apollo/client/core";
-import {Apollo, ApolloBase} from "apollo-angular";
+import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
 import {AuthLibService} from "auth-lib";
 import {HttpLink} from "apollo-angular/http";
 import {SubscriptionClient} from "subscriptions-transport-ws";
@@ -19,6 +19,7 @@ export class ApiService {
 
   private webSocketClient!: SubscriptionClient;
   private apollo!: ApolloBase;
+  private query: QueryRef<any>;
 
   constructor(private apolloProvider: Apollo,
               private auth: AuthLibService,
@@ -83,5 +84,28 @@ export class ApiService {
         userName: userName,
       },
     });
+  }
+
+  getNotifs(userName: string): Observable<any> {
+    const query = gql`
+    query getNotifsByReceiver($receiver: String!) {
+      getNotifsByReceiver(receiver: $receiver) {
+        id,
+        event,
+        text,
+        receiver
+      }
+    }
+    `;
+
+    this.query = this.apollo.watchQuery<any>({
+      fetchPolicy: 'network-only',
+      query: query,
+      variables: {
+        receiver: userName,
+      },
+    });
+
+    return this.query.valueChanges;
   }
 }
