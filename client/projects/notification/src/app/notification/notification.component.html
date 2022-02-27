@@ -1,4 +1,15 @@
 
 <button mat-icon-button (click)="showNotifications()">
-  <mat-icon>notifications</mat-icon>
+  <mat-icon matBadge="{{this.notifications.length}}" matBadgeSize="small">notifications</mat-icon>
 </button>
+
+
+<mat-card class="notifications-container" *ngIf="this.show">
+  <mat-card-title>Notifications</mat-card-title>
+  <mat-card-content>
+    <p *ngFor="let n of notifications" class="notification-content">{{n.text}}</p>
+  </mat-card-content>
+  <mat-card-actions>
+    <button mat-button (click)="showNotifications()" class="hide-button">Hide</button>
+  </mat-card-actions>
+</mat-card>

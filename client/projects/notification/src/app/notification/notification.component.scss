@@ -1,0 +1,14 @@
+.notifications-container {
+  position: fixed;
+  z-index: 2;
+  right: 1.1em;
+}
+
+.notification-content:hover {
+  color: #e91e63;
+  cursor: pointer;
+}
+
+.hide-button {
+  float: right;
+}

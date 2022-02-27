@@ -11,6 +11,8 @@ import {KeycloakService} from "keycloak-angular";
 export class NotificationComponent implements OnInit {
 
   private username: string;
+  show = false;
+  notifications: {event: string, id: string, receiver: string[], text: string}[] = [];
 
   constructor(private api: ApiService,
               private keycloak: KeycloakService) { }
@@ -21,7 +23,9 @@ export class NotificationComponent implements OnInit {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
           this.api.getNotifs(this.username).subscribe(value => {
-            console.log(value);
+            if (value && value.data && value.data.getNotifsByReceiver) {
+              this.notifications = value.data.getNotifsByReceiver;
+            }
           });
 
           this.api.subscribeToNotifications(this.username).subscribe(value => {
@@ -37,6 +41,6 @@ export class NotificationComponent implements OnInit {
   }
 
   showNotifications() {
-    console.log('Show Notifications!');
+    this.show = !this.show;
   }
 }

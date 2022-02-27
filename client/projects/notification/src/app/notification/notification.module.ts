@@ -5,6 +5,8 @@ import { NotificationRoutingModule } from './notification-routing.module';
 import { NotificationComponent } from './notification.component';
 import {MatIconModule} from "@angular/material/icon";
 import {MatButtonModule} from "@angular/material/button";
+import {MatCardModule} from "@angular/material/card";
+import {MatBadgeModule} from "@angular/material/badge";
 
 const EXPORTS = [
   NotificationComponent,
@@ -18,7 +20,9 @@ const EXPORTS = [
     CommonModule,
     NotificationRoutingModule,
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    MatCardModule,
+    MatBadgeModule
   ],
   exports: [...EXPORTS],
 })
