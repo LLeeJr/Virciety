@@ -58,4 +58,8 @@
       </mat-card-actions>
     </mat-card>
   </div>
+
+  <div *ngIf="selectedEvents && selectedEvents.length === 0">
+    <p style="text-align: center">No events found!</p>
+  </div>
 </div>
