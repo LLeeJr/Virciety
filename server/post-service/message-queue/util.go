@@ -13,7 +13,7 @@ type RabbitMsg struct {
 	Comment   model.Comment      `json:"comment"`
 	PostID    string             `json:"postID"`
 	CorrID    string             `json:"corrID"`
-	ReplyTo   string			 `json:"replyTo"`
+	ReplyTo   string             `json:"replyTo"`
 	Payload   []string           `json:"payload"`
 }
 

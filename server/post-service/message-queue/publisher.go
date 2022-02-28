@@ -46,10 +46,10 @@ func (publisher *PublisherConfig) ProfilePictureIdQuery(postId string, requestID
 
 func (publisher *PublisherConfig) AddMessageToQuery(postID string, requestID string) {
 	publisher.QueryChan <- RabbitMsg{
-		QueueName: 	QueryExchange,
-		PostID: 	postID,
-		CorrID: 	requestID,
-		ReplyTo: 	QueryExchange,
+		QueueName: QueryExchange,
+		PostID:    postID,
+		CorrID:    requestID,
+		ReplyTo:   QueryExchange,
 	}
 }
 
@@ -121,11 +121,11 @@ func (publisher *PublisherConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 		false,
 		false,
 		amqp.Publishing{
-			ContentType: 	"text/plain",
-			Body:        	body,
-			MessageId:   	"Post-Service",
-			ReplyTo: 	 	msg.ReplyTo,
-			CorrelationId: 	corrID,
+			ContentType:   "text/plain",
+			Body:          body,
+			MessageId:     "Post-Service",
+			ReplyTo:       msg.ReplyTo,
+			CorrelationId: corrID,
 		})
 	FailOnError(err, "Failed to publish a message")
 

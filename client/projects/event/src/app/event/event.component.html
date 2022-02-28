@@ -1,0 +1,65 @@
+<div class="container">
+  <div>
+    <mat-toolbar class="event-toolbar">
+      <span>{{this.selectedList}}</span>
+      <span class="spacer"></span>
+      <button mat-icon-button [matMenuTriggerFor]="menu">
+        <mat-icon>filter_list</mat-icon>
+        <mat-menu #menu="matMenu">
+          <mat-radio-group
+            class="filter-radio-group"
+            [(ngModel)]="selectedList"
+            (change)="changeList()">
+            <mat-radio-button class="filter-radio-button" *ngFor="let list of lists" [value]="list">
+              {{list}}
+            </mat-radio-button>
+          </mat-radio-group>
+        </mat-menu>
+      </button>
+      <button mat-icon-button (click)="openEventDialog(null, false)">
+        <mat-icon>add_circle</mat-icon>
+      </button>
+    </mat-toolbar>
+  </div>
+
+  <div *ngFor="let e of selectedEvents" class="all-events">
+    <mat-divider *ngIf="selectedEvents.indexOf(e) > 0" class="divider"></mat-divider>
+    <mat-card class="event-card">
+      <mat-card-header class="event-header">
+        {{e.startDate | date:'fullDate'}} - {{e.endDate | date:'fullDate'}}
+      </mat-card-header>
+      <mat-card-title-group>
+        <mat-card-title>{{e.title}}</mat-card-title>
+        <mat-card-subtitle *ngIf="e.startTime && e.endTime" class="event-time">
+          <mat-icon>schedule</mat-icon>
+          {{e.startTime}} - {{e.endTime}}
+        </mat-card-subtitle>
+        <mat-card-subtitle (click)="gotToMaps(e.location)" class="event-location-host">
+          <mat-icon>place</mat-icon>
+          {{e.location}}
+        </mat-card-subtitle>
+        <mat-card-subtitle routerLink="/profile" [queryParams]="{username: e.host}" class="event-location-host">
+          <mat-icon>self_improvement</mat-icon>
+          {{e.host}}
+        </mat-card-subtitle>
+      </mat-card-title-group>
+      <mat-card-content>
+        {{e.description}}
+      </mat-card-content>
+      <mat-card-actions>
+        <button mat-flat-button *ngIf="selectedList === 'Ongoing events'" [style]="!e.currentlyAttended ? {background:'rgb(92, 184, 92)'} : {background:'rgb(217,83,79)'}" (click)="checkUserData(e)">{{!e.currentlyAttended ? 'Attend' : 'Leave'}}</button>
+        <button mat-button *ngIf="e.host === username && e.subscribers.length > 0" (click)="showPeople(e.subscribers)">Show subscribers</button>
+        <button mat-button *ngIf="e.host !== username && selectedList === 'Upcoming events'" (click)="subscribeEvent(e)">{{e.subscribers.indexOf(username) < 0 ? 'Subscribe' : 'Unsubscribe'}}</button>
+        <button mat-button *ngIf="e.host === username && selectedList === 'Upcoming events'" (click)="openEventDialog(e, true)">Edit</button>
+        <button mat-button *ngIf="e.host === username && selectedList === 'Past events'" color="warn" (click)="removeEvent(e)">Remove</button>
+        <button mat-button *ngIf="e.host === username && selectedList === 'Past events' && e.attendees.length > 0" (click)="showPeople(e.attendees)">Show people who attended</button>
+        <button mat-button *ngIf="e.host === username && selectedList === 'Past events' && e.attendees.length > 0" (click)="reportCovidCase(e.attendees, e.id)">Report covid case</button>
+        <button mat-button *ngIf="e.host !== username && selectedList === 'Past events'" (click)="notifyHost(e.host, e.id)">Notify host (Covid)</button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div *ngIf="selectedEvents && selectedEvents.length === 0">
+    <p style="text-align: center">No events found!</p>
+  </div>
+</div>

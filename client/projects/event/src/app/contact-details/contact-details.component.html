@@ -1,0 +1,93 @@
+<h2 mat-dialog-title>Contact details</h2>
+<mat-dialog-content>
+  <div>
+    <mat-form-field appearance="fill">
+      <mat-label>Enter first Name</mat-label>
+      <input matInput [formControl]="firstname">
+      <mat-error *ngIf="firstname.hasError('required')">
+        First name is <strong>required</strong>
+      </mat-error>
+      <mat-error *ngIf="firstname.hasError('emptyText')">
+        First name can't be <strong>empty</strong>
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Enter last Name</mat-label>
+      <input matInput [formControl]="lastname">
+      <mat-error *ngIf="lastname.hasError('required')">
+        Last name is <strong>required</strong>
+      </mat-error>
+      <mat-error *ngIf="lastname.hasError('emptyText')">
+        Last name can't be <strong>empty</strong>
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <div>
+    <mat-form-field appearance="fill">
+      <mat-label>Enter street</mat-label>
+      <input matInput [formControl]="street">
+      <mat-error *ngIf="street.hasError('required')">
+        Street is <strong>required</strong>
+      </mat-error>
+      <mat-error *ngIf="street.hasError('emptyText')">
+        Street can't be <strong>empty</strong>
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Enter house number</mat-label>
+      <input matInput [formControl]="housenumber">
+      <mat-error *ngIf="housenumber.hasError('required')">
+        House number is <strong>required</strong>
+      </mat-error>
+      <mat-error *ngIf="housenumber.hasError('emptyText')">
+        House number can't be <strong>empty</strong>
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <div>
+    <mat-form-field appearance="fill">
+      <mat-label>Enter postal code</mat-label>
+      <input matInput [formControl]="postalcode">
+      <mat-error *ngIf="postalcode.hasError('required')">
+        Postal Code is <strong>required</strong>
+      </mat-error>
+      <mat-error *ngIf="postalcode.hasError('emptyText')">
+        Postal Code can't be <strong>empty</strong>
+      </mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+      <mat-label>Enter city</mat-label>
+      <input matInput [formControl]="city">
+      <mat-error *ngIf="city.hasError('required')">
+        City is <strong>required</strong>
+      </mat-error>
+      <mat-error *ngIf="city.hasError('emptyText')">
+        City can't be <strong>empty</strong>
+      </mat-error>
+    </mat-form-field>
+  </div>
+
+  <mat-form-field appearance="fill">
+    <mat-label>Enter email</mat-label>
+    <input matInput [formControl]="email">
+    <mat-error *ngIf="email.hasError('required')">
+      Email is <strong>required</strong>
+    </mat-error>
+    <mat-error *ngIf="email.hasError('email')">
+      Please enter a valid email
+    </mat-error>
+    <mat-error *ngIf="email.hasError('emptyText')">
+      Email can't be <strong>empty</strong>
+    </mat-error>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions class="mat-dialog-actions">
+  <button mat-button [disabled]="!fieldsValid()" (click)="submit()">Submit</button>
+  <button mat-button [mat-dialog-close]="false">Cancel</button>
+</mat-dialog-actions>

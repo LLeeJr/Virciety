@@ -19,7 +19,7 @@
       <a mat-list-item routerLink="/home" (click)="sidenav.toggle()">Home</a>
       <a mat-list-item routerLink="/profile" [queryParams]="{username: username}" (click)="sidenav.toggle()">Profile</a>
       <a mat-list-item routerLink="/chat" (click)="sidenav.toggle()">Chat</a>
-      <a mat-list-item (click)="sidenav.toggle()">Settings</a>
+      <a mat-list-item routerLink="/event" (click)="sidenav.toggle()">Event</a>
       <a mat-list-item [disabled]="!isLoggedIn" (click)="logout();sidenav.toggle()">Logout</a>
     </mat-nav-list>
   </mat-drawer>
