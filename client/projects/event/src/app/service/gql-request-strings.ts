@@ -84,6 +84,7 @@ export const CREATE_EVENT = gql`
           description
           startDate
           endDate
+          attendees
         }
         type
       }

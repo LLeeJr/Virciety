@@ -307,7 +307,8 @@ func (repo *Repo) EditEvent(ctx context.Context, event Event) (string, string, e
 }
 
 func (repo *Repo) AttendEvent(ctx context.Context, event Event, username string, left bool) (string, error) {
-	currentTime := time.Now()
+	// get utc time now because all events are timezone utc
+	currentTime := time.Now().UTC()
 
 	_, endTime, _, _ := formatDate(event.StartDate, event.EndDate)
 
