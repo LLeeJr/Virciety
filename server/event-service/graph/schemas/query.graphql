@@ -1,0 +1,6 @@
+type Query {
+    getEvents(username: String): GetEventsResponse
+    userDataExists(username: String): UserData
+    notifyHostOfEvent(username: String, eventID: String): Boolean
+    notifyContactPersons(username: String, eventID: String): Boolean
+}

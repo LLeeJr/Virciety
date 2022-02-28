@@ -1,0 +1,70 @@
+input CreateEventRequest {
+    title:          String!
+    host:           String!
+    description:    String!
+    startDate:      String!
+    endDate:        String!
+    location:       String!
+}
+
+input EditEventRequest {
+    eventID: String!
+    title: String!
+    description: String!
+    subscribers: [String!]!
+    startDate: String!
+    endDate: String!
+    location: String!
+    attendees: [String!]!
+}
+
+type Event {
+    id: String!
+    title: String!
+    startDate: String!
+    endDate: String!
+    location: String!
+    description: String!
+    subscribers: [String!]!
+    host: String!
+    attendees: [String!]!
+    currentlyAttended: Boolean
+}
+
+type GetEventsResponse {
+    upcomingEvents: [Event!]!
+    ongoingEvents: [Event!]!
+    pastEvents: [Event!]!
+}
+
+type CreateEventResponse {
+    event: Event!
+    type: String!
+}
+
+type EditEventResponse {
+    ok: String!
+    type: String!
+}
+
+input UserDataRequest {
+    username: String!
+    firstname: String!
+    lastname: String!
+    street: String!
+    housenumber: String!
+    postalcode: String!
+    city: String!
+    email: String!
+}
+
+type UserData {
+    username: String!
+    firstname: String!
+    lastname: String!
+    street: String!
+    housenumber: String!
+    postalcode: String!
+    city: String!
+    email: String!
+}

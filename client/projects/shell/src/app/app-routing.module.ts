@@ -29,13 +29,13 @@ const routes: Routes = [
       }).then(m => m.PostModule),
   },
   {
-    path: 'user',
+    path: 'event',
     canActivate: [AuthGuard],
     loadChildren: () =>
       loadRemoteModule({
-        remoteName: 'user',
-        exposedModule: './UserModule',
-      }).then(m => m.UserModule),
+        remoteName: 'event',
+        exposedModule: './EventModule',
+      }).then(m => m.EventModule),
   },
   {
     path: 'profile',

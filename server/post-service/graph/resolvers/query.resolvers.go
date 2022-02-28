@@ -14,12 +14,6 @@ import (
 )
 
 func (r *queryResolver) GetPosts(ctx context.Context, id string, fetchLimit int, filter *string) ([]*model.Post, error) {
-	if filter == nil {
-		log.Println("Filter == nil")
-	} else {
-		log.Printf("Filter != nil: %s", *filter)
-	}
-
 	currentPosts, err := r.repo.GetPosts(id, fetchLimit, filter)
 	if err != nil {
 		return nil, err

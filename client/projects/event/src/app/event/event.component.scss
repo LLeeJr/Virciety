@@ -1,0 +1,63 @@
+.divider {
+  margin-bottom: 5px;
+  margin-top: 5px;
+}
+
+.event-header {
+  margin-bottom: 10px;
+  display: block;
+}
+
+.event-location-host {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.event-time {
+  display: flex;
+  align-items: center;
+}
+
+.event-toolbar {
+  width: 23em;
+  //align-items: baseline;
+  max-width: 100%;
+  background: #42424200;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.container {
+  //height: 100%;
+  //width: 100%;
+  //display: flex;
+  //flex-direction: column;
+  //align-items: center;
+  //overflow-y: scroll;
+  //max-width: 32em;
+  //min-width: 32em;
+}
+
+:host {
+  overflow-y: auto;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  // height: 100%; <--- muss manchmal auch hinzugefügt werden damit der Scroll funktioniert
+}
+
+.filter-radio-group {
+  display: flex;
+  flex-direction: column;
+  margin: 15px 0;
+  align-items: flex-start;
+}
+
+.filter-radio-button {
+  margin: 5px;
+}
