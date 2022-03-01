@@ -20,7 +20,7 @@ export class NotificationComponent implements OnInit {
       value: string,
     }[],
     read: boolean,
-    receiver: string[],
+    receiver: string,
     route: string,
     text: string,
   }[] = [];
@@ -33,13 +33,13 @@ export class NotificationComponent implements OnInit {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
-          this.api.getNotifs(this.username).subscribe(value => {
+          this.api.getNotifs(this.username).subscribe((value: any) => {
             if (value && value.data && value.data.getNotifsByReceiver) {
               this.notifications = value.data.getNotifsByReceiver;
             }
           });
 
-          this.api.subscribeToNotifications(this.username).subscribe(value => {
+          this.api.subscribeToNotifications(this.username).subscribe((value: any) => {
             if (value) {
               console.log(value);
             }

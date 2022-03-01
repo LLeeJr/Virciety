@@ -8,11 +8,11 @@ type Map struct {
 }
 
 type Notif struct {
-	ID       string   `json:"id"`
-	Event    string   `json:"event"`
-	Read     bool     `json:"read"`
-	Receiver []string `json:"receiver"`
-	Text     string   `json:"text"`
-	Params   []*Map   `json:"params"`
-	Route    string   `json:"route"`
+	ID       string `json:"id"`
+	Event    string `json:"event"`
+	Read     bool   `json:"read"`
+	Receiver string `json:"receiver"`
+	Text     string `json:"text"`
+	Params   []*Map `json:"params"`
+	Route    string `json:"route"`
 }

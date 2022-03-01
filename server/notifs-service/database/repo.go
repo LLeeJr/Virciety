@@ -23,7 +23,7 @@ type Message struct {
 type NotifEvent struct {
 	EventTime time.Time   `json:"eventtime"`
 	EventType string      `json:"eventtype"`
-	Receiver  []string    `json:"receiver"`
+	Receiver  string      `json:"receiver"`
 	Text      string      `json:"text"`
 	Read      bool        `json:"read"`
 	Route     string      `json:"route"`
@@ -48,7 +48,6 @@ type Repository interface {
 
 type repo struct {
 	notifCollection *mongo.Collection
-	NotifEvents []*NotifEvent
 	Subscriptions map[string]*Message
 }
 
@@ -89,19 +88,18 @@ func (r repo) CreateDmNotifFromConsumer(data []byte) error {
 		EventType: "New DM",
 		Params:    m,
 		Read:      false,
-		Receiver:  s.Receivers,
 		Route:     "/chat",
 		Text:      notifText,
 	}
 
-	insertedId, err := r.InsertNotifEvent(context.Background(), notifEvent)
-	if err != nil {
-		return err
-	}
-	log.Println("new notif: ", insertedId)
-	r.NotifEvents = append(r.NotifEvents, &notifEvent)
-
 	for _, receiver := range s.Receivers {
+
+		notifEvent.Receiver = receiver
+		insertedId, err := r.InsertNotifEvent(context.Background(), notifEvent)
+		if err != nil {
+			return err
+		}
+
 		subscription := r.Subscriptions[receiver]
 		if subscription != nil {
 			notif := &model.Notif{
@@ -138,7 +136,7 @@ func (r repo) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*mode
 		EventTime time.Time          `bson:"eventtime"`
 		EventType string             `bson:"eventtype"`
 		Params    []*model.Map       `bson:"params"`
-		Receiver  []string           `bson:"receiver"`
+		Receiver  string           `bson:"receiver"`
 		Read      bool               `bson:"read"`
 		Route     string             `bson:"route"`
 		Text      string             `bson:"text"`
@@ -185,7 +183,6 @@ func NewRepo() (Repository, error) {
 
 	return &repo{
 		notifCollection: db.Collection("notif-events"),
-		NotifEvents: make([]*NotifEvent, 0),
 		Subscriptions: map[string]*Message{},
 	}, nil
 }

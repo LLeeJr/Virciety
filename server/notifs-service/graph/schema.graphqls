@@ -11,7 +11,7 @@ type Notif {
   id: String!
   event: String!
   read: Boolean!
-  receiver: [String!]!
+  receiver: String!
   text: String!
   params: [Map!]!
   route: String!
