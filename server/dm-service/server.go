@@ -32,6 +32,7 @@ func main() {
 		rabbitmqURL = defaultRabbitMQUrl
 	}
 
+	// rabbitmq connection
 	conn, err := amqp.Dial(rabbitmqURL)
 	queue.FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()

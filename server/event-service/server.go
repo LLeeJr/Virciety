@@ -6,21 +6,18 @@ import (
 	"event-service/graph/resolvers"
 	messagequeue "event-service/message-queue"
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/extension"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
 	"github.com/streadway/amqp"
 	"log"
 	"net/http"
 	_ "net/http"
 	"os"
-	"time"
 )
 
 const defaultPort = "8086"
+const defaultRabbitMQUrl = "amqp://guest:guest@localhost:5672"
 
 func main() {
 	port := os.Getenv("PORT")
@@ -28,16 +25,22 @@ func main() {
 		port = defaultPort
 	}
 
-	repo, _ := database.NewRepo()
+	rabbitmqURL := os.Getenv("RABBITMQ_URL")
+	if rabbitmqURL == "" {
+		rabbitmqURL = defaultRabbitMQUrl
+	}
 
 	// rabbitmq connection
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn, err := amqp.Dial(rabbitmqURL)
 	messagequeue.FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	messagequeue.FailOnError(err, "Failed to open a channel")
 	defer ch.Close()
+
+	repo, err := database.NewRepo()
+	messagequeue.FailOnError(err, "Failed to connect to DB")
 
 	producerQueue, _ := messagequeue.NewPublisher()
 	go producerQueue.InitPublisher(ch)
@@ -46,20 +49,7 @@ func main() {
 	go consumerQueue.InitConsumer(ch)
 
 	// graphql init
-	// srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
-
-	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
-
-	srv.AddTransport(transport.POST{})
-	srv.AddTransport(transport.Websocket{
-		KeepAlivePingInterval: 10 * time.Second,
-		Upgrader: websocket.Upgrader{
-			CheckOrigin: func(r *http.Request) bool {
-				return true
-			},
-		},
-	})
-	srv.Use(extension.Introspection{})
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue)}))
 
 	r := mux.NewRouter()
 	r.Use(cors.New(cors.Options{
