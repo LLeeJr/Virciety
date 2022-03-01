@@ -17,6 +17,10 @@ type Notif {
   route: String!
 }
 
+type Mutation {
+  setReadStatus(id: String!, status: Boolean!): Notif!
+}
+
 type Query {
   getNotifsByReceiver(receiver: String!): [Notif!]!
 }

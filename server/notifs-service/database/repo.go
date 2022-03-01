@@ -44,11 +44,72 @@ type Repository interface {
 	CreateDmNotifFromConsumer(body []byte) error
 	GetSubscriptions() map[string]*Message
 	AddSubscription(name string, subscription *Message)
+	GetNotification(ctx context.Context, id string) (*model.Notif, error)
+	UpdateNotification(ctx context.Context, id string, status bool) (string, error)
 }
 
 type repo struct {
 	notifCollection *mongo.Collection
 	Subscriptions map[string]*Message
+}
+
+func (r repo) UpdateNotification(ctx context.Context, id string, status bool) (string, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return "", err
+	}
+
+	query := bson.M{
+		"_id": objID,
+	}
+
+	update := bson.M{
+		"$set": bson.D{{"read", status}},
+	}
+
+	_, err = r.notifCollection.UpdateOne(ctx, query, update)
+	if err != nil {
+		return "", err
+	}
+
+	return "success", nil
+}
+
+type Notif struct {
+	ID        primitive.ObjectID `bson:"_id"`
+	EventTime time.Time          `bson:"eventtime"`
+	EventType string             `bson:"eventtype"`
+	Params    []*model.Map       `bson:"params"`
+	Receiver  string             `bson:"receiver"`
+	Read      bool               `bson:"read"`
+	Route     string             `bson:"route"`
+	Text      string             `bson:"text"`
+}
+
+func (r repo) GetNotification(ctx context.Context, id string) (*model.Notif, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+	
+	var result *Notif
+	if err := r.notifCollection.FindOne(ctx, bson.D{
+		{"_id", objID},
+	}).Decode(&result); err != nil {
+		return nil, err
+	}
+	
+	notif := &model.Notif{
+		ID:       id,
+		Event:    result.EventType,
+		Read:     result.Read,
+		Receiver: result.Receiver,
+		Text:     result.Text,
+		Params:   result.Params,
+		Route:    result.Route,
+	}
+
+	return notif, nil
 }
 
 func (r repo) AddSubscription(name string, subscription *Message) {
@@ -130,17 +191,6 @@ func (r *repo) InsertNotifEvent(ctx context.Context, notifEvent NotifEvent) (str
 }
 
 func (r repo) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error) {
-
-	type Notif struct {
-		ID        primitive.ObjectID `bson:"_id"`
-		EventTime time.Time          `bson:"eventtime"`
-		EventType string             `bson:"eventtype"`
-		Params    []*model.Map       `bson:"params"`
-		Receiver  string           `bson:"receiver"`
-		Read      bool               `bson:"read"`
-		Route     string             `bson:"route"`
-		Text      string             `bson:"text"`
-	}
 
 	var result []*Notif
 

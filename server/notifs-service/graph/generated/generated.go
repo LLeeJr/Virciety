@@ -36,6 +36,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	Mutation() MutationResolver
 	Query() QueryResolver
 	Subscription() SubscriptionResolver
 }
@@ -47,6 +48,10 @@ type ComplexityRoot struct {
 	Map struct {
 		Key   func(childComplexity int) int
 		Value func(childComplexity int) int
+	}
+
+	Mutation struct {
+		SetReadStatus func(childComplexity int, id string, status bool) int
 	}
 
 	Notif struct {
@@ -68,6 +73,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type MutationResolver interface {
+	SetReadStatus(ctx context.Context, id string, status bool) (*model.Notif, error)
+}
 type QueryResolver interface {
 	GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error)
 }
@@ -103,6 +111,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Map.Value(childComplexity), true
+
+	case "Mutation.setReadStatus":
+		if e.complexity.Mutation.SetReadStatus == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setReadStatus_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetReadStatus(childComplexity, args["id"].(string), args["status"].(bool)), true
 
 	case "Notif.event":
 		if e.complexity.Notif.Event == nil {
@@ -201,6 +221,20 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				Data: buf.Bytes(),
 			}
 		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
 	case ast.Subscription:
 		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
 
@@ -263,6 +297,10 @@ type Notif {
   route: String!
 }
 
+type Mutation {
+  setReadStatus(id: String!, status: Boolean!): Notif!
+}
+
 type Query {
   getNotifsByReceiver(receiver: String!): [Notif!]!
 }
@@ -277,6 +315,30 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_setReadStatus_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 bool
+	if tmp, ok := rawArgs["status"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("status"))
+		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["status"] = arg1
+	return args, nil
+}
 
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -429,6 +491,48 @@ func (ec *executionContext) _Map_value(ctx context.Context, field graphql.Collec
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_setReadStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_setReadStatus_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SetReadStatus(rctx, args["id"].(string), args["status"].(bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Notif)
+	fc.Result = res
+	return ec.marshalNNotif2ᚖnotifsᚑserviceᚋgraphᚋmodelᚐNotif(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Notif_id(ctx context.Context, field graphql.CollectedField, obj *model.Notif) (ret graphql.Marshaler) {
@@ -1989,6 +2093,37 @@ func (ec *executionContext) _Map(ctx context.Context, sel ast.SelectionSet, obj 
 			}
 		case "value":
 			out.Values[i] = ec._Map_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "setReadStatus":
+			out.Values[i] = ec._Mutation_setReadStatus(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
