@@ -4,11 +4,30 @@
   right: 1.1em;
 }
 
+.notification-content {
+  display: flex;
+  flex-direction: column;
+}
+
 .notification-content:hover {
   color: #e91e63;
   cursor: pointer;
 }
 
+.notification-text {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1em;
+}
+
 .hide-button {
   float: right;
+}
+
+.circle {
+  height: 8px;
+  width: 8px;
+  border-radius: 4px;
+  background-color: #0095f6;
 }

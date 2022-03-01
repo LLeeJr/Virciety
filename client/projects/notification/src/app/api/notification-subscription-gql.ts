@@ -14,6 +14,7 @@ export class NotificationSubscriptionGql extends Subscription {
       read,
       receiver,
       text,
+      timestamp,
       params{
         key,
         value

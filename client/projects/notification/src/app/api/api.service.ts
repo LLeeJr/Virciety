@@ -86,7 +86,7 @@ export class ApiService {
     });
   }
 
-  getNotifs(userName: string): Observable<any> {
+  getNotifications(userName: string): Observable<any> {
     const query = gql`
     query getNotifsByReceiver($receiver: String!) {
       getNotifsByReceiver(receiver: $receiver) {
@@ -95,6 +95,7 @@ export class ApiService {
         read,
         receiver,
         text,
+        timestamp,
         params{
           key,
           value

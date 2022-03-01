@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import {ApiService} from "../api/api.service";
 import {KeycloakService} from "keycloak-angular";
+import {DatePipe} from "@angular/common";
 
 @Component({
   selector: 'app-notification',
@@ -23,9 +24,11 @@ export class NotificationComponent implements OnInit {
     receiver: string,
     route: string,
     text: string,
+    timestamp: string,
   }[] = [];
 
   constructor(private api: ApiService,
+              private datePipe: DatePipe,
               private keycloak: KeycloakService) { }
 
   async ngOnInit(): Promise<void> {
@@ -33,7 +36,7 @@ export class NotificationComponent implements OnInit {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {
           this.username = this.keycloak.getUsername();
-          this.api.getNotifs(this.username).subscribe((value: any) => {
+          this.api.getNotifications(this.username).subscribe((value: any) => {
             if (value && value.data && value.data.getNotifsByReceiver) {
               this.notifications = value.data.getNotifsByReceiver;
             }
@@ -53,5 +56,9 @@ export class NotificationComponent implements OnInit {
 
   showNotifications() {
     this.show = !this.show;
+  }
+
+  transformDate(date: string) {
+    return this.datePipe.transform(date, 'short')
   }
 }
