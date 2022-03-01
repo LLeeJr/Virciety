@@ -105,6 +105,7 @@ func (r repo) GetNotification(ctx context.Context, id string) (*model.Notif, err
 		Read:     result.Read,
 		Receiver: result.Receiver,
 		Text:     result.Text,
+		Timestamp: result.EventTime,
 		Params:   result.Params,
 		Route:    result.Route,
 	}
@@ -170,6 +171,7 @@ func (r repo) CreateDmNotifFromConsumer(data []byte) error {
 				Read:     notifEvent.Read,
 				Route:    notifEvent.Route,
 				Text:     notifEvent.Text,
+				Timestamp: notifEvent.EventTime,
 				Event:    notifEvent.EventType,
 			}
 			for _, observer := range subscription.Observers {
@@ -216,6 +218,7 @@ func (r repo) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*mode
 			Read:     notif.Read,
 			Route:    notif.Route,
 			Text:     notif.Text,
+			Timestamp: notif.EventTime,
 			Event:    notif.EventType,
 		})
 	}

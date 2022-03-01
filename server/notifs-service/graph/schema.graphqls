@@ -10,12 +10,15 @@ type Map {
 type Notif {
   id: String!
   event: String!
+  timestamp: Time!
   read: Boolean!
   receiver: String!
   text: String!
   params: [Map!]!
   route: String!
 }
+
+scalar Time
 
 type Mutation {
   setReadStatus(id: String!, status: Boolean!): Notif!

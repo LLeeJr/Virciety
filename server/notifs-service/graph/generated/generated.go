@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -55,13 +56,14 @@ type ComplexityRoot struct {
 	}
 
 	Notif struct {
-		Event    func(childComplexity int) int
-		ID       func(childComplexity int) int
-		Params   func(childComplexity int) int
-		Read     func(childComplexity int) int
-		Receiver func(childComplexity int) int
-		Route    func(childComplexity int) int
-		Text     func(childComplexity int) int
+		Event     func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Params    func(childComplexity int) int
+		Read      func(childComplexity int) int
+		Receiver  func(childComplexity int) int
+		Route     func(childComplexity int) int
+		Text      func(childComplexity int) int
+		Timestamp func(childComplexity int) int
 	}
 
 	Query struct {
@@ -172,6 +174,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Notif.Text(childComplexity), true
+
+	case "Notif.timestamp":
+		if e.complexity.Notif.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.Notif.Timestamp(childComplexity), true
 
 	case "Query.getNotifsByReceiver":
 		if e.complexity.Query.GetNotifsByReceiver == nil {
@@ -290,12 +299,15 @@ type Map {
 type Notif {
   id: String!
   event: String!
+  timestamp: Time!
   read: Boolean!
   receiver: String!
   text: String!
   params: [Map!]!
   route: String!
 }
+
+scalar Time
 
 type Mutation {
   setReadStatus(id: String!, status: Boolean!): Notif!
@@ -603,6 +615,41 @@ func (ec *executionContext) _Notif_event(ctx context.Context, field graphql.Coll
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Notif_timestamp(ctx context.Context, field graphql.CollectedField, obj *model.Notif) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Notif",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Timestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Notif_read(ctx context.Context, field graphql.CollectedField, obj *model.Notif) (ret graphql.Marshaler) {
@@ -2159,6 +2206,11 @@ func (ec *executionContext) _Notif(ctx context.Context, sel ast.SelectionSet, ob
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "timestamp":
+			out.Values[i] = ec._Notif_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "read":
 			out.Values[i] = ec._Notif_read(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -2643,6 +2695,21 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+	res, err := graphql.UnmarshalTime(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
