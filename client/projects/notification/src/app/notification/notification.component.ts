@@ -64,7 +64,11 @@ export class NotificationComponent implements OnInit {
         this.router.navigate([`${n.route}/${n.params[1].value}`]).then(() => this.show = !this.show);
         break;
       case '/profile':
-        this.router.navigate([`${n.route}`], { queryParams: {username: n.receiver}}).then(() => this.show = !this.show);
+        let user = n.params[0].key == "newFollower" ? n.params[0].value : n.receiver;
+        this.router.navigate([n.route], { queryParams: {username: user}}).then(() => this.show = !this.show);
+        break;
+      case '/event':
+        this.router.navigate([n.route], { queryParams: {eventId: n.params[0].value}}).then(() => this.show = !this.show);
         break;
       default:
         break;
