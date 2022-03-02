@@ -31,7 +31,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserData)
 		return nil, err
 	}
 
-	r.publisher.AddMessageToEvent(userEvent, "User-Service")
+	//r.publisher.AddMessageToEvent(userEvent, "User-Service")
 	r.publisher.AddMessageToCommand("User-Service")
 	//r.publisher.AddMessageToQuery()
 
@@ -44,6 +44,15 @@ func (r *mutationResolver) AddFollow(ctx context.Context, id *string, username *
 	if err != nil {
 		return nil, err
 	}
+
+	followEvent := &database.FollowEvent{
+		EventType: "New Follower",
+		EventTime: time.Now(),
+		Username:  *toAdd,
+		NewFollower: *username,
+	}
+
+	r.publisher.AddMessageToEvent(followEvent, "User-Service")
 
 	return user, nil
 }
