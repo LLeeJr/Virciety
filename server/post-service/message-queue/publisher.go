@@ -5,7 +5,6 @@ import (
 	"github.com/streadway/amqp"
 	"log"
 	"post-service/database"
-	"post-service/graph/model"
 )
 
 const QueryExchange = "query-exchange"
@@ -15,7 +14,7 @@ const EventExchange = "event-exchange"
 type Publisher interface {
 	InitPublisher(ch *amqp.Channel)
 	AddMessageToQuery(postID string, requestID string)
-	AddMessageToCommand(comment model.Comment)
+	AddMessageToCommand(comment database.CommentEvent)
 	AddMessageToEvent(postEvent database.PostEvent)
 	ProfilePictureIdQuery(postId string, requestID string, users []string)
 }
@@ -53,10 +52,10 @@ func (publisher *PublisherConfig) AddMessageToQuery(postID string, requestID str
 	}
 }
 
-func (publisher *PublisherConfig) AddMessageToCommand(comment model.Comment) {
+func (publisher *PublisherConfig) AddMessageToCommand(comment database.CommentEvent) {
 	publisher.CommandChan <- RabbitMsg{
-		QueueName: CommandExchange,
-		Comment:   comment,
+		QueueName:    CommandExchange,
+		CommentEvent: comment,
 	}
 }
 
@@ -108,7 +107,11 @@ func (publisher *PublisherConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 			body, err = json.Marshal(b)
 		}
 	} else if msg.QueueName == CommandExchange {
-		body, err = json.Marshal(msg.Comment)
+		if msg.Comment.ID == "" {
+			body, err = json.Marshal(msg.CommentEvent)
+		} else {
+			body, err = json.Marshal(msg.Comment)
+		}
 	} else {
 		body, err = json.Marshal(msg.PostEvent)
 	}

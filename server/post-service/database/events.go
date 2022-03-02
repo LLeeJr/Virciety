@@ -1,6 +1,9 @@
 package database
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+	"post-service/graph/model"
+)
 
 type PostEvent struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty"`
@@ -12,4 +15,9 @@ type PostEvent struct {
 	FileID      string             `bson:"fileID,omitempty"`
 	LikedBy     []string           `bson:"liked_by,omitempty"`
 	Comments    []string           `bson:"comments,omitempty"`
+}
+
+type CommentEvent struct {
+	Comment *model.Comment `json:"comment"`
+	Post    *model.Post    `json:"post"`
 }

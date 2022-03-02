@@ -121,7 +121,17 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.AddComm
 		Event:     "CreateComment",
 	}
 
-	r.producerQueue.AddMessageToCommand(*newComment)
+	post, err := r.repo.GetPost(ctx, comment.PostID)
+	if err != nil {
+		return nil, err
+	}
+
+	c := database.CommentEvent{
+		Comment: newComment,
+		Post: post,
+	}
+
+	r.producerQueue.AddMessageToCommand(c)
 
 	return newComment, nil
 }
