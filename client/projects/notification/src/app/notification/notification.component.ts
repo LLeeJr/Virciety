@@ -4,6 +4,7 @@ import {KeycloakService} from "keycloak-angular";
 import {DatePipe} from "@angular/common";
 import {Notification} from "../data/notification";
 import {Router} from "@angular/router";
+import {take} from "rxjs";
 
 @Component({
   selector: 'app-notification',
@@ -34,8 +35,11 @@ export class NotificationComponent implements OnInit {
           });
 
           this.api.subscribeToNotifications(this.username).subscribe((value: any) => {
-            if (value) {
-              console.log(value);
+            if (value && value.data && value.data.notifAdded) {
+              if (this.notifications.length == 10) {
+                this.notifications.pop();
+              }
+              this.notifications = [value.data.notifAdded, ...this.notifications];
             }
           });
         })
@@ -55,7 +59,7 @@ export class NotificationComponent implements OnInit {
 
   clickNotification(n: Notification) {
     if (!n.read) {
-      this.api.setReadStatus(n.id, !n.read).subscribe(value => console.log(value));
+      this.api.setReadStatus(n.id, !n.read).pipe(take(1)).subscribe();
     }
     switch (n.route) {
       case '/chat':
