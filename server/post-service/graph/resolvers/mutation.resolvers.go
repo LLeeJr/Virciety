@@ -96,6 +96,7 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   event,
 		PostID:      like.ID,
+		Username:    like.PostOwner,
 		Description: like.Description,
 		LikedBy:     like.NewLikedBy,
 		Comments:    like.Comments,
@@ -107,8 +108,10 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 		return "failed", err
 	}
 
-	// put event on queue for notifications
-	r.producerQueue.AddMessageToEvent(postEvent)
+	if like.Liked {
+		// put event on queue for notifications
+		r.producerQueue.AddMessageToEvent(postEvent)
+	}
 
 	return "success", nil
 }
@@ -128,7 +131,7 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.AddComm
 
 	postCommentEvent := database.PostCommentEvent{
 		Comment: newComment,
-		Post: post,
+		Post:    post,
 	}
 
 	r.producerQueue.AddMessageToCommand(postCommentEvent)

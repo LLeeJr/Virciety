@@ -285,6 +285,7 @@ export class GQLService {
         id: post.id,
         description: post.description,
         newLikedBy: post.likedBy,
+        postOwner: post.username,
         comments: post.comments,
         liked: liked,
       }
