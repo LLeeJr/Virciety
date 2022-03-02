@@ -391,14 +391,18 @@ func (r repo) CreateEventNotifFromConsumer(body []byte) error {
 		return err
 	}
 
-	m := []*model.Map{
-		{
-			Key: "notifiedBy",
-			Value: s.ReportedBy,
-		},
+	var m []*model.Map
+	notifText := s.Message
+	if s.ReportedBy != "" {
+		m = []*model.Map{
+			{
+				Key: "notifiedBy",
+				Value: s.ReportedBy,
+			},
+		}
+		notifText = fmt.Sprintf("%s by %s", s.Message, s.ReportedBy)
 	}
 
-	notifText := fmt.Sprintf("%s by %s", s.Message, s.ReportedBy)
 	notifEvent := NotifEvent{
 		EventTime: time.Now(),
 		EventType: "Covid Report",

@@ -8,7 +8,6 @@ import (
 	"event-service/graph/generated"
 	"event-service/graph/model"
 	message_queue "event-service/message-queue"
-	"strings"
 )
 
 func (r *queryResolver) GetEvents(ctx context.Context, username *string) (*model.GetEventsResponse, error) {
@@ -49,7 +48,6 @@ func (r *queryResolver) NotifyHostOfEvent(ctx context.Context, username *string,
 }
 
 func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *string, eventID *string) (*bool, error) {
-	// TODO notification service
 	notified := true
 
 	contactPersons, err := r.repo.DetermineContactPersons(ctx, *username, *eventID)
@@ -57,7 +55,14 @@ func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *stri
 		return nil, err
 	}
 
-	println(*username + " was in contact with " + strings.Join(contactPersons, ","))
+	eventNotification := message_queue.EventNotification{
+		EventId:    *eventID,
+		Message:    "A covid case was reported",
+	}
+	for _, person := range contactPersons {
+		eventNotification.Username = person
+		r.producerQueue.AddMessageToEvent(eventNotification)
+	}
 
 	return &notified, nil
 }
