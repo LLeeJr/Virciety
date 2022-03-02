@@ -57,6 +57,18 @@ type CommentEvent struct {
 	Post    Post    `json:"post"`
 }
 
+type PostEvent struct {
+	ID          primitive.ObjectID `bson:"_id,omitempty"`
+	EventTime   string             `bson:"event_time,omitempty"`
+	EventType   string             `bson:"event_type,omitempty"`
+	PostID      string             `bson:"id,omitempty"`
+	Username    string             `bson:"username,omitempty"`
+	Description string             `bson:"description,omitempty"`
+	FileID      string             `bson:"fileID,omitempty"`
+	LikedBy     []string           `bson:"liked_by,omitempty"`
+	Comments    []string           `bson:"comments,omitempty"`
+}
+
 type Repository interface {
 	GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error)
 	CreateDmNotifFromConsumer(body []byte) error
@@ -65,6 +77,7 @@ type Repository interface {
 	GetNotification(ctx context.Context, id string) (*model.Notif, error)
 	UpdateNotification(ctx context.Context, id string, status bool) (string, error)
 	CreateCommentNotifFromConsumer(body []byte) error
+	CreateLikeNotifFromConsumer(body []byte) error
 }
 
 type repo struct {
@@ -224,6 +237,56 @@ func (r repo) CreateCommentNotifFromConsumer(body []byte) error {
 		EventTime: time.Now(),
 		EventType: "New Comment",
 		Receiver:  s.Post.Username,
+		Text:      notifText,
+		Read:      false,
+		Route:     "/profile",
+		Params:    m,
+	}
+
+	insertedId, err := r.InsertNotifEvent(context.Background(), notifEvent)
+	if err != nil {
+		return err
+	}
+
+	subscription := r.Subscriptions[notifEvent.Receiver]
+	if subscription != nil {
+		notif := &model.Notif{
+			ID:        insertedId,
+			Event:     notifEvent.EventType,
+			Timestamp: notifEvent.EventTime,
+			Read:      notifEvent.Read,
+			Receiver:  notifEvent.Receiver,
+			Text:      notifEvent.Text,
+			Params:    notifEvent.Params,
+			Route:     notifEvent.Route,
+		}
+		for _, observer := range subscription.Observers {
+			observer.Message <- notif
+		}
+	}
+
+	return nil
+}
+
+func (r repo) CreateLikeNotifFromConsumer(body []byte) error {
+	var s *PostEvent
+	err := json.Unmarshal(body, &s)
+	if err != nil {
+		return err
+	}
+
+	m := []*model.Map{
+		{
+			Key: "postId",
+			Value: s.PostID,
+		},
+	}
+
+	notifText := fmt.Sprintf("You have a new like!")
+	notifEvent := NotifEvent{
+		EventTime: time.Now(),
+		EventType: "New Like",
+		Receiver:  s.Username,
 		Text:      notifText,
 		Read:      false,
 		Route:     "/profile",
