@@ -54,6 +54,9 @@ export class NotificationComponent implements OnInit {
   }
 
   clickNotification(n: Notification) {
+    if (!n.read) {
+      this.api.setReadStatus(n.id, !n.read).subscribe(value => console.log(value));
+    }
     switch (n.route) {
       case '/chat':
         let room = {
@@ -73,5 +76,9 @@ export class NotificationComponent implements OnInit {
       default:
         break;
     }
+  }
+
+  countUnread() {
+    return this.notifications.filter(n => !n.read).length;
   }
 }

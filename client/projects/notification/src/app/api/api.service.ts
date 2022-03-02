@@ -115,4 +115,32 @@ export class ApiService {
 
     return this.query.valueChanges;
   }
+
+  setReadStatus(id: string, status: boolean): Observable<any> {
+    const mutation = gql`
+    mutation setReadStatus($id: String!, $status: Boolean!) {
+      setReadStatus(id: $id, status: $status) {
+        id,
+        event,
+        read,
+        receiver,
+        text,
+        timestamp,
+        params{
+          key,
+          value
+        },
+        route
+      }
+    }
+    `;
+
+    return this.apollo.mutate<any>({
+      mutation: mutation,
+      variables: {
+        id: id,
+        status: status,
+      },
+    });
+  }
 }

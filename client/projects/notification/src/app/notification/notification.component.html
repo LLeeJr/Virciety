@@ -1,12 +1,12 @@
 
 <button mat-icon-button (click)="showNotifications()">
-  <mat-icon matBadge="{{this.notifications.length}}" matBadgeSize="small">notifications</mat-icon>
+  <mat-icon matBadge="{{countUnread()}}" matBadgeSize="small" [matBadgeHidden]="this.countUnread() == 0">notifications</mat-icon>
 </button>
 
 
 <mat-card class="notifications-container" *ngIf="this.show">
   <mat-card-title>Notifications</mat-card-title>
-  <mat-card-content>
+  <mat-card-content *ngIf="this.notifications.length != 0; else empty">
     <div *ngFor="let n of notifications" class="notification-content" (click)="clickNotification(n)">
       <div class="notification-text">{{n.text}} <div *ngIf="!n.read" class="circle"></div></div>
       <div [style]="n.read ? {color: 'rgba(255,255,255,0.6)'} : {color: '#0095f6'}">{{transformDate(n.timestamp)}}</div>
@@ -16,3 +16,7 @@
     <button mat-button (click)="showNotifications()" class="hide-button">Hide</button>
   </mat-card-actions>
 </mat-card>
+
+<ng-template #empty>
+  <mat-card-content>No new Notifications</mat-card-content>
+</ng-template>
