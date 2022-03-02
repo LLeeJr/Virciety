@@ -7,6 +7,7 @@ import (
 	"context"
 	"event-service/graph/generated"
 	"event-service/graph/model"
+	message_queue "event-service/message-queue"
 	"strings"
 )
 
@@ -32,8 +33,16 @@ func (r *queryResolver) UserDataExists(ctx context.Context, username *string) (*
 	return userData, nil
 }
 
-func (r *queryResolver) NotifyHostOfEvent(ctx context.Context, username *string, eventID *string) (*bool, error) {
-	// TODO notification service
+func (r *queryResolver) NotifyHostOfEvent(ctx context.Context, username *string, eventID *string, reportedBy *string) (*bool, error) {
+	eventNotification := message_queue.EventNotification{
+		EventId:    *eventID,
+		Message:    "A covid case was reported",
+		ReportedBy: *reportedBy,
+		Username:   *username,
+	}
+
+	r.producerQueue.AddMessageToEvent(eventNotification)
+
 	notified := true
 
 	return &notified, nil

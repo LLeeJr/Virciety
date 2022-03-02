@@ -2,7 +2,6 @@ package message_queue
 
 import (
 	"encoding/json"
-	"event-service/database"
 	"github.com/streadway/amqp"
 	"log"
 )
@@ -11,11 +10,18 @@ const QueryExchange = "query-exchange"
 const CommandExchange = "command-exchange"
 const EventExchange = "event-exchange"
 
+type EventNotification struct {
+	EventId string `json:"eventID"`
+	Message string `json:"message"`
+	ReportedBy string `json:"reportedBy"`
+	Username string `json:"username"`
+}
+
 type Publisher interface {
 	InitPublisher(ch *amqp.Channel)
 	AddMessageToQuery(postID string, requestID string)
 	AddMessageToCommand()
-	AddMessageToEvent(postEvent database.Event)
+	AddMessageToEvent(eventNotification EventNotification)
 }
 
 type PublisherConfig struct {
@@ -47,10 +53,10 @@ func (publisher *PublisherConfig) AddMessageToCommand() {
 	}
 }
 
-func (publisher *PublisherConfig) AddMessageToEvent(postEvent database.Event) {
+func (publisher *PublisherConfig) AddMessageToEvent(eventNotification EventNotification) {
 	publisher.EventChan <- RabbitMsg{
 		QueueName:  EventExchange,
-		EventEvent: postEvent,
+		EventNotification: eventNotification,
 	}
 }
 
@@ -79,8 +85,8 @@ func (publisher *PublisherConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 		corrID = msg.CorrID
 		body, err = json.Marshal(msg.PostID)
 	} else if msg.QueueName == CommandExchange {
-	} else {
-		body, err = json.Marshal(msg.EventEvent)
+	} else if msg.QueueName == EventExchange {
+		body, err = json.Marshal(msg.EventNotification)
 	}
 	FailOnError(err, "Failed to json.marshal request")
 
@@ -93,7 +99,7 @@ func (publisher *PublisherConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 		amqp.Publishing{
 			ContentType:   "text/plain",
 			Body:          body,
-			MessageId:     "Post-Service",
+			MessageId:     "Event-Service",
 			ReplyTo:       msg.ReplyTo,
 			CorrelationId: corrID,
 		})
