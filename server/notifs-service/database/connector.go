@@ -12,7 +12,7 @@ import (
 const defaultMongoDBUrl = "mongodb://user:pass@localhost:27022/"
 
 func Connect() (*mongo.Client, error) {
-	url := os.Getenv("DM_MONGODB_URL")
+	url := os.Getenv("NOTIFS_MONGODB_URL")
 	if url == "" {
 		url = defaultMongoDBUrl
 	}
