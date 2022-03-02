@@ -61,8 +61,8 @@ export const USER_DATA_EXISTS = gql`
 `;
 
 export const NOTIFY_HOST_OF_EVENT = gql`
-  query notifyHostOfEvent($username: String!, $eventID: String!) {
-    notifyHostOfEvent(username: $username, eventID: $eventID)
+  query notifyHostOfEvent($username: String!, $eventID: String!, $reportedBy: String!) {
+    notifyHostOfEvent(username: $username, eventID: $eventID, reportedBy: $reportedBy)
   }
 `;
 
