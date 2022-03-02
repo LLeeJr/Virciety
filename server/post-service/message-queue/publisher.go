@@ -14,7 +14,7 @@ const EventExchange = "event-exchange"
 type Publisher interface {
 	InitPublisher(ch *amqp.Channel)
 	AddMessageToQuery(postID string, requestID string)
-	AddMessageToCommand(comment database.CommentEvent)
+	AddMessageToCommand(comment database.PostCommentEvent)
 	AddMessageToEvent(postEvent database.PostEvent)
 	ProfilePictureIdQuery(postId string, requestID string, users []string)
 }
@@ -52,7 +52,7 @@ func (publisher *PublisherConfig) AddMessageToQuery(postID string, requestID str
 	}
 }
 
-func (publisher *PublisherConfig) AddMessageToCommand(comment database.CommentEvent) {
+func (publisher *PublisherConfig) AddMessageToCommand(comment database.PostCommentEvent) {
 	publisher.CommandChan <- RabbitMsg{
 		QueueName:    CommandExchange,
 		CommentEvent: comment,

@@ -9,9 +9,9 @@ import (
 
 type RabbitMsg struct {
 	QueueName string                   `json:"queueName"`
-	PostEvent database.PostEvent       `json:"postEvent"`
-	CommentEvent database.CommentEvent `json:"comment_event"`
-	Comment   model.Comment            `json:"comment"`
+	PostEvent database.PostEvent           `json:"postEvent"`
+	CommentEvent database.PostCommentEvent `json:"comment_event"`
+	Comment   model.Comment                `json:"comment"`
 	PostID    string                   `json:"postID"`
 	CorrID    string                   `json:"corrID"`
 	ReplyTo   string                   `json:"replyTo"`

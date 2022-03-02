@@ -108,7 +108,7 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 	}
 
 	// put event on queue for notifications
-	// r.producerQueue.AddMessageToQuery(postEvent)
+	r.producerQueue.AddMessageToEvent(postEvent)
 
 	return "success", nil
 }
@@ -126,12 +126,12 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.AddComm
 		return nil, err
 	}
 
-	c := database.CommentEvent{
+	postCommentEvent := database.PostCommentEvent{
 		Comment: newComment,
 		Post: post,
 	}
 
-	r.producerQueue.AddMessageToCommand(c)
+	r.producerQueue.AddMessageToCommand(postCommentEvent)
 
 	return newComment, nil
 }

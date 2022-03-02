@@ -17,7 +17,7 @@ type PostEvent struct {
 	Comments    []string           `bson:"comments,omitempty"`
 }
 
-type CommentEvent struct {
+type PostCommentEvent struct {
 	Comment *model.Comment `json:"comment"`
 	Post    *model.Post    `json:"post"`
 }
