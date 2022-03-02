@@ -69,6 +69,13 @@ type PostEvent struct {
 	Comments    []string           `bson:"comments,omitempty"`
 }
 
+type FollowEvent struct {
+	EventType   string    `json:"event_type"`
+	EventTime   time.Time `json:"event_time"`
+	Username    string    `json:"username"`
+	NewFollower string    `json:"new_follower"`
+}
+
 type Repository interface {
 	GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error)
 	CreateDmNotifFromConsumer(body []byte) error
@@ -78,6 +85,7 @@ type Repository interface {
 	UpdateNotification(ctx context.Context, id string, status bool) (string, error)
 	CreateCommentNotifFromConsumer(body []byte) error
 	CreateLikeNotifFromConsumer(body []byte) error
+	CreateFollowNotifFromConsumer(body []byte) error
 }
 
 type repo struct {
@@ -286,6 +294,56 @@ func (r repo) CreateLikeNotifFromConsumer(body []byte) error {
 	notifEvent := NotifEvent{
 		EventTime: time.Now(),
 		EventType: "New Like",
+		Receiver:  s.Username,
+		Text:      notifText,
+		Read:      false,
+		Route:     "/profile",
+		Params:    m,
+	}
+
+	insertedId, err := r.InsertNotifEvent(context.Background(), notifEvent)
+	if err != nil {
+		return err
+	}
+
+	subscription := r.Subscriptions[notifEvent.Receiver]
+	if subscription != nil {
+		notif := &model.Notif{
+			ID:        insertedId,
+			Event:     notifEvent.EventType,
+			Timestamp: notifEvent.EventTime,
+			Read:      notifEvent.Read,
+			Receiver:  notifEvent.Receiver,
+			Text:      notifEvent.Text,
+			Params:    notifEvent.Params,
+			Route:     notifEvent.Route,
+		}
+		for _, observer := range subscription.Observers {
+			observer.Message <- notif
+		}
+	}
+
+	return nil
+}
+
+func (r repo) CreateFollowNotifFromConsumer(body []byte) error {
+	var s *FollowEvent
+	err := json.Unmarshal(body, &s)
+	if err != nil {
+		return err
+	}
+
+	m := []*model.Map{
+		{
+			Key: "newFollower",
+			Value: s.NewFollower,
+		},
+	}
+
+	notifText := fmt.Sprintf("%s just followed you", s.NewFollower)
+	notifEvent := NotifEvent{
+		EventTime: s.EventTime,
+		EventType: s.EventType,
 		Receiver:  s.Username,
 		Text:      notifText,
 		Read:      false,
