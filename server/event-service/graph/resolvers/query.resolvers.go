@@ -35,6 +35,7 @@ func (r *queryResolver) UserDataExists(ctx context.Context, username *string) (*
 func (r *queryResolver) NotifyHostOfEvent(ctx context.Context, username *string, eventID *string, reportedBy *string) (*bool, error) {
 	eventNotification := message_queue.EventNotification{
 		EventId:    *eventID,
+		EditFlag:   false,
 		Message:    "A covid case was reported",
 		ReportedBy: *reportedBy,
 		Username:   *username,
@@ -57,6 +58,7 @@ func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *stri
 
 	eventNotification := message_queue.EventNotification{
 		EventId:    *eventID,
+		EditFlag:   false,
 		Message:    "A covid case was reported",
 	}
 	for _, person := range contactPersons {

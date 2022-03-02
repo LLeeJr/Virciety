@@ -8,6 +8,8 @@ import (
 	"event-service/database"
 	"event-service/graph/generated"
 	"event-service/graph/model"
+	message_queue "event-service/message-queue"
+	"fmt"
 	"time"
 )
 
@@ -53,6 +55,17 @@ func (r *mutationResolver) EditEvent(ctx context.Context, edit model.EditEventRe
 		EndDate:     edit.EndDate,
 		Location:    edit.Location,
 		Attendees:   edit.Attendees,
+	}
+
+	message := fmt.Sprintf("Changes on event %s", edit.Title)
+	eventNotification := message_queue.EventNotification{
+		EventId:    edit.EventID,
+		Message:    message,
+		EditFlag:   true,
+	}
+	for _, attendee := range edit.Subscribers {
+		eventNotification.Username = attendee
+		r.producerQueue.AddMessageToEvent(eventNotification)
 	}
 
 	// save event in database

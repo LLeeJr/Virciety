@@ -15,6 +15,7 @@ type EventNotification struct {
 	Message string `json:"message"`
 	ReportedBy string `json:"reportedBy"`
 	Username string `json:"username"`
+	EditFlag bool `json:"edit_flag"`
 }
 
 type Publisher interface {

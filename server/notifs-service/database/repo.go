@@ -106,6 +106,7 @@ type Notif struct {
 }
 
 type EventNotification struct {
+	EditFlag bool `json:"edit_flag"`
 	EventId string `json:"eventID"`
 	Message string `json:"message"`
 	ReportedBy string `json:"reportedBy"`
@@ -391,21 +392,28 @@ func (r repo) CreateEventNotifFromConsumer(body []byte) error {
 		return err
 	}
 
-	var m []*model.Map
+	m := []*model.Map{
+		{
+			Key: "eventId",
+			Value: s.EventId,
+		},
+	}
 	notifText := s.Message
 	if s.ReportedBy != "" {
-		m = []*model.Map{
-			{
-				Key: "notifiedBy",
-				Value: s.ReportedBy,
-			},
-		}
+		m = append(m, &model.Map{
+			Key: "notifiedBy",
+			Value: s.ReportedBy,
+		})
 		notifText = fmt.Sprintf("%s by %s", s.Message, s.ReportedBy)
 	}
 
+	eventType := "Covid Report"
+	if s.EditFlag {
+		eventType = "Changes on Event"
+	}
 	notifEvent := NotifEvent{
 		EventTime: time.Now(),
-		EventType: "Covid Report",
+		EventType: eventType,
 		Receiver:  s.Username,
 		Text:      notifText,
 		Read:      false,
