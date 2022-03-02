@@ -63,6 +63,9 @@ export class NotificationComponent implements OnInit {
         sessionStorage.setItem("room", JSON.stringify(room));
         this.router.navigate([`${n.route}/${n.params[1].value}`]).then(() => this.show = !this.show);
         break;
+      case '/profile':
+        this.router.navigate([`${n.route}`], { queryParams: {username: n.receiver}}).then(() => this.show = !this.show);
+        break;
       default:
         break;
     }
