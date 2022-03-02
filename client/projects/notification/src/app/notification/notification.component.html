@@ -7,7 +7,7 @@
 <mat-card class="notifications-container" *ngIf="this.show">
   <mat-card-title>Notifications</mat-card-title>
   <mat-card-content>
-    <div *ngFor="let n of notifications" class="notification-content">
+    <div *ngFor="let n of notifications" class="notification-content" (click)="clickNotification(n)">
       <div class="notification-text">{{n.text}} <div *ngIf="!n.read" class="circle"></div></div>
       <div [style]="n.read ? {color: 'rgba(255,255,255,0.6)'} : {color: '#0095f6'}">{{transformDate(n.timestamp)}}</div>
     </div>
