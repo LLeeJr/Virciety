@@ -88,6 +88,9 @@ func (c *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 			if data.MessageId == "Dm-Service" {
 				c.Repo.CreateDmNotifFromConsumer(data.Body)
 			}
+			if data.MessageId == "Comment-Service" {
+				c.Repo.CreateCommentNotifFromConsumer(data.Body)
+			}
 		}
 	}()
 

@@ -8,7 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
 	"notifs-service/graph/model"
 	"time"
 )
@@ -39,6 +38,25 @@ type ChatEvent struct {
 	Receivers []string  `json:"receivers"`
 }
 
+type Comment struct {
+	ID        string `json:"id"`
+	PostID    string `json:"postID"`
+	Comment   string `json:"comment"`
+	CreatedBy string `json:"createdBy"`
+	Event     string `json:"event"`
+}
+
+type Post struct {
+	ID          string   `json:"id"`
+	Description string   `json:"description"`
+	Username    string   `json:"username"`
+}
+
+type CommentEvent struct {
+	Comment Comment `json:"comment"`
+	Post    Post    `json:"post"`
+}
+
 type Repository interface {
 	GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error)
 	CreateDmNotifFromConsumer(body []byte) error
@@ -46,11 +64,23 @@ type Repository interface {
 	AddSubscription(name string, subscription *Message)
 	GetNotification(ctx context.Context, id string) (*model.Notif, error)
 	UpdateNotification(ctx context.Context, id string, status bool) (string, error)
+	CreateCommentNotifFromConsumer(body []byte) error
 }
 
 type repo struct {
 	notifCollection *mongo.Collection
 	Subscriptions map[string]*Message
+}
+
+type Notif struct {
+	ID        primitive.ObjectID `bson:"_id"`
+	EventTime time.Time          `bson:"eventtime"`
+	EventType string             `bson:"eventtype"`
+	Params    []*model.Map       `bson:"params"`
+	Receiver  string             `bson:"receiver"`
+	Read      bool               `bson:"read"`
+	Route     string             `bson:"route"`
+	Text      string             `bson:"text"`
 }
 
 func (r repo) UpdateNotification(ctx context.Context, id string, status bool) (string, error) {
@@ -75,30 +105,19 @@ func (r repo) UpdateNotification(ctx context.Context, id string, status bool) (s
 	return "success", nil
 }
 
-type Notif struct {
-	ID        primitive.ObjectID `bson:"_id"`
-	EventTime time.Time          `bson:"eventtime"`
-	EventType string             `bson:"eventtype"`
-	Params    []*model.Map       `bson:"params"`
-	Receiver  string             `bson:"receiver"`
-	Read      bool               `bson:"read"`
-	Route     string             `bson:"route"`
-	Text      string             `bson:"text"`
-}
-
 func (r repo) GetNotification(ctx context.Context, id string) (*model.Notif, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var result *Notif
 	if err := r.notifCollection.FindOne(ctx, bson.D{
 		{"_id", objID},
 	}).Decode(&result); err != nil {
 		return nil, err
 	}
-	
+
 	notif := &model.Notif{
 		ID:       id,
 		Event:    result.EventType,
@@ -125,7 +144,6 @@ func (r repo) CreateDmNotifFromConsumer(data []byte) error {
 	var s *ChatEvent
 	err := json.Unmarshal(data, &s)
 	if err != nil {
-		log.Println("err", err)
 		return err
 	}
 
@@ -177,6 +195,60 @@ func (r repo) CreateDmNotifFromConsumer(data []byte) error {
 			for _, observer := range subscription.Observers {
 				observer.Message <- notif
 			}
+		}
+	}
+
+	return nil
+}
+
+func (r repo) CreateCommentNotifFromConsumer(body []byte) error {
+	var s *CommentEvent
+	err := json.Unmarshal(body, &s)
+	if err != nil {
+		return err
+	}
+	
+	m := []*model.Map{
+		{
+			Key: "commentBy",
+			Value: s.Comment.CreatedBy,
+		},
+		{
+			Key: "postID",
+			Value: s.Comment.PostID,
+		},
+	}
+	
+	notifText := fmt.Sprintf("New Comment from %s", s.Comment.CreatedBy)
+	notifEvent := NotifEvent{
+		EventTime: time.Now(),
+		EventType: "New Comment",
+		Receiver:  s.Post.Username,
+		Text:      notifText,
+		Read:      false,
+		Route:     "/profile",
+		Params:    m,
+	}
+
+	insertedId, err := r.InsertNotifEvent(context.Background(), notifEvent)
+	if err != nil {
+		return err
+	}
+
+	subscription := r.Subscriptions[notifEvent.Receiver]
+	if subscription != nil {
+		notif := &model.Notif{
+			ID:        insertedId,
+			Event:     notifEvent.EventType,
+			Timestamp: notifEvent.EventTime,
+			Read:      notifEvent.Read,
+			Receiver:  notifEvent.Receiver,
+			Text:      notifEvent.Text,
+			Params:    notifEvent.Params,
+			Route:     notifEvent.Route,
+		}
+		for _, observer := range subscription.Observers {
+			observer.Message <- notif
 		}
 	}
 
