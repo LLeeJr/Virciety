@@ -97,6 +97,9 @@ func (c *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 			if data.MessageId == "User-Service" {
 				c.Repo.CreateFollowNotifFromConsumer(data.Body)
 			}
+			if data.MessageId == "Event-Service" {
+				c.Repo.CreateEventNotifFromConsumer(data.Body)
+			}
 		}
 	}()
 

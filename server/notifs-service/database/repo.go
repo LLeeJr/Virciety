@@ -86,6 +86,7 @@ type Repository interface {
 	CreateCommentNotifFromConsumer(body []byte) error
 	CreateLikeNotifFromConsumer(body []byte) error
 	CreateFollowNotifFromConsumer(body []byte) error
+	CreateEventNotifFromConsumer(body []byte) error
 }
 
 type repo struct {
@@ -102,6 +103,13 @@ type Notif struct {
 	Read      bool               `bson:"read"`
 	Route     string             `bson:"route"`
 	Text      string             `bson:"text"`
+}
+
+type EventNotification struct {
+	EventId string `json:"eventID"`
+	Message string `json:"message"`
+	ReportedBy string `json:"reportedBy"`
+	Username string `json:"username"`
 }
 
 func (r repo) UpdateNotification(ctx context.Context, id string, status bool) (string, error) {
@@ -348,6 +356,56 @@ func (r repo) CreateFollowNotifFromConsumer(body []byte) error {
 		Text:      notifText,
 		Read:      false,
 		Route:     "/profile",
+		Params:    m,
+	}
+
+	insertedId, err := r.InsertNotifEvent(context.Background(), notifEvent)
+	if err != nil {
+		return err
+	}
+
+	subscription := r.Subscriptions[notifEvent.Receiver]
+	if subscription != nil {
+		notif := &model.Notif{
+			ID:        insertedId,
+			Event:     notifEvent.EventType,
+			Timestamp: notifEvent.EventTime,
+			Read:      notifEvent.Read,
+			Receiver:  notifEvent.Receiver,
+			Text:      notifEvent.Text,
+			Params:    notifEvent.Params,
+			Route:     notifEvent.Route,
+		}
+		for _, observer := range subscription.Observers {
+			observer.Message <- notif
+		}
+	}
+
+	return nil
+}
+
+func (r repo) CreateEventNotifFromConsumer(body []byte) error {
+	var s *EventNotification
+	err := json.Unmarshal(body, &s)
+	if err != nil {
+		return err
+	}
+
+	m := []*model.Map{
+		{
+			Key: "notifiedBy",
+			Value: s.ReportedBy,
+		},
+	}
+
+	notifText := fmt.Sprintf("%s by %s", s.Message, s.ReportedBy)
+	notifEvent := NotifEvent{
+		EventTime: time.Now(),
+		EventType: "Covid Report",
+		Receiver:  s.Username,
+		Text:      notifText,
+		Read:      false,
+		Route:     "/event",
 		Params:    m,
 	}
 
