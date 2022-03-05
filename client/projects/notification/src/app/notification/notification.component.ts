@@ -37,7 +37,8 @@ export class NotificationComponent implements OnInit {
           this.api.subscribeToNotifications(this.username).subscribe((value: any) => {
             if (value && value.data && value.data.notifAdded) {
               if (this.notifications.length == 10) {
-                this.notifications.pop();
+                let slice = this.notifications.slice(0, this.notifications.length-1);
+                this.notifications = [...slice];
               }
               this.notifications = [value.data.notifAdded, ...this.notifications];
             }
@@ -59,7 +60,19 @@ export class NotificationComponent implements OnInit {
 
   clickNotification(n: Notification) {
     if (!n.read) {
-      this.api.setReadStatus(n.id, !n.read).pipe(take(1)).subscribe();
+      this.api.setReadStatus(n.id, !n.read).pipe(take(1)).subscribe(value => {
+        if (value && value.data && value.data.setReadStatus) {
+          let {id, read} = value.data.setReadStatus;
+          let arr = [];
+          for (let n of this.notifications) {
+            if (n.id === id) {
+              n = { ...n, read: read};
+            }
+            arr.push(n);
+          }
+          this.notifications = [...arr];
+        }
+      });
     }
     switch (n.route) {
       case '/chat':
