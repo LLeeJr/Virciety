@@ -108,7 +108,8 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 		return "failed", err
 	}
 
-	if like.Liked {
+	// only send notification on like-post by different person than the post owner
+	if like.Liked && like.PostOwner != like.LikedBy {
 		// put event on queue for notifications
 		r.producerQueue.AddMessageToEvent(postEvent)
 	}

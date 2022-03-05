@@ -464,6 +464,7 @@ input LikePostRequest {
     postOwner: String!
     comments: [String!]!
     liked: Boolean!
+    likedBy: String!
 }
 
 input RemovePostRequest {
@@ -3096,6 +3097,14 @@ func (ec *executionContext) unmarshalInputLikePostRequest(ctx context.Context, o
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("liked"))
 			it.Liked, err = ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "likedBy":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("likedBy"))
+			it.LikedBy, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

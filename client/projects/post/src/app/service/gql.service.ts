@@ -278,7 +278,7 @@ export class GQLService {
     });
   }
 
-  likePost(post: Post, liked: boolean) {
+  likePost(post: Post, liked: boolean, username: string) {
     this.apollo.mutate({
       mutation: LIKE_POST,
       variables: {
@@ -288,6 +288,7 @@ export class GQLService {
         postOwner: post.username,
         comments: post.comments,
         liked: liked,
+        likedBy: username,
       }
     }).subscribe(({data}: any) => {
       // console.log('LikePostData: ', data);

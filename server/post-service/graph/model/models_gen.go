@@ -47,6 +47,7 @@ type LikePostRequest struct {
 	PostOwner   string   `json:"postOwner"`
 	Comments    []string `json:"comments"`
 	Liked       bool     `json:"liked"`
+	LikedBy     string   `json:"likedBy"`
 }
 
 type Post struct {
