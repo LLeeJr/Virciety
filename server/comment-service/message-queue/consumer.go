@@ -133,21 +133,24 @@ func (channel *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 					log.Fatalln(err)
 				}
 
-				commentNotification.Comment.ID = commentDB.ID
-				commentNotification.Post.ID = commentDB.PostID
-				body, err := json.Marshal(commentNotification)
+				// only publish if the comment's author is not the post's owner
+				if commentNotification.Comment.CreatedBy != commentNotification.Post.Username  {
+					commentNotification.Comment.ID = commentDB.ID
+					commentNotification.Post.ID = commentDB.PostID
+					body, err := json.Marshal(commentNotification)
 
-				err = ch.Publish(
-					EventExchange,
-					"",
-					false,
-					false,
-					amqp.Publishing{
-						ContentType: 	"application/json",
-						MessageId: 		"Comment-Service",
-						Body: 			body,
-					})
-				FailOnError(err, "Failed to publish a message")
+					err = ch.Publish(
+						EventExchange,
+						"",
+						false,
+						false,
+						amqp.Publishing{
+							ContentType: 	"application/json",
+							MessageId: 		"Comment-Service",
+							Body: 			body,
+						})
+					FailOnError(err, "Failed to publish a message")
+				}
 
 				log.Printf("CommentDB: %v", commentDB)
 			}

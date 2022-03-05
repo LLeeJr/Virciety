@@ -59,7 +59,7 @@ func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *stri
 	eventNotification := message_queue.EventNotification{
 		EventId:    *eventID,
 		EditFlag:   false,
-		Message:    "A covid case was reported",
+		Message:    "You were in contact with a person who was tested positive for covid. Please, get yourself tested.",
 	}
 	for _, person := range contactPersons {
 		eventNotification.Username = person
