@@ -96,6 +96,7 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 		EventTime:   time.Now().Format("2006-01-02 15:04:05"),
 		EventType:   event,
 		PostID:      like.ID,
+		Username:    like.PostOwner,
 		Description: like.Description,
 		LikedBy:     like.NewLikedBy,
 		Comments:    like.Comments,
@@ -107,8 +108,11 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 		return "failed", err
 	}
 
-	// put event on queue for notifications
-	// r.producerQueue.AddMessageToQuery(postEvent)
+	// only send notification on like-post by different person than the post owner
+	if like.Liked && like.PostOwner != like.LikedBy {
+		// put event on queue for notifications
+		r.producerQueue.AddMessageToEvent(postEvent)
+	}
 
 	return "success", nil
 }
@@ -121,7 +125,17 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.AddComm
 		Event:     "CreateComment",
 	}
 
-	r.producerQueue.AddMessageToCommand(*newComment)
+	post, err := r.repo.GetPost(ctx, comment.PostID)
+	if err != nil {
+		return nil, err
+	}
+
+	postCommentEvent := database.PostCommentEvent{
+		Comment: newComment,
+		Post:    post,
+	}
+
+	r.producerQueue.AddMessageToCommand(postCommentEvent)
 
 	return newComment, nil
 }

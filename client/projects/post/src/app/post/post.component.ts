@@ -101,7 +101,7 @@ export class PostComponent implements OnInit, OnDestroy {
       post.likedBy = newLikedBy;
     }
 
-    this.gqlService.likePost(post, liked);
+    this.gqlService.likePost(post, liked, this.username);
   }
 
   editPost(post: Post) {

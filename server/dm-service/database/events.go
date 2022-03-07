@@ -20,3 +20,12 @@ type ChatroomEvent struct {
 	MemberSize int      `json:"membersize"`
 	IsDirect   *bool    `json:"isdirect"`
 }
+
+type ChatEvent struct {
+	EventTime time.Time `json:"eventTime"`
+	From      string    `json:"from"`
+	Msg       string    `json:"msg"`
+	RoomID    string    `json:"roomId"`
+	RoomName  string    `json:"roomName"`
+	Receivers []string  `json:"receivers"`
+}

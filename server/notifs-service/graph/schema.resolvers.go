@@ -5,36 +5,60 @@ package graph
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"notifs-service/database"
 	"notifs-service/graph/generated"
 	"notifs-service/graph/model"
-	"time"
+
+	"github.com/google/uuid"
 )
 
-func (r *mutationResolver) CreateNotif(ctx context.Context, input model.CreateNotifRequest) (*model.Notif, error) {
-	id := fmt.Sprintf("%s__%s__%s", input.Event, time.Now().Format("2006-01-02 15:04:05"), input.Receiver)
-
-	notifEvent := database.NotifEvent{
-		EventTime: time.Now().Format("2006-01-02 15:04:05"),
-		EventType: input.Event,
-		NotifId:   id,
-		Receiver:  input.Receiver,
-		Text:      input.Text,
-	}
-	log.Println("notifEvent", notifEvent)
-
-	notif, err := r.repo.CreateNotif(ctx, notifEvent)
+func (r *mutationResolver) SetReadStatus(ctx context.Context, id string, status bool) (*model.Notif, error) {
+	notification, err := r.repo.GetNotification(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return notif, nil
+	_, err = r.repo.UpdateNotification(ctx, id, status)
+	if err != nil {
+		return nil, err
+	}
+
+	notification.Read = status
+	return notification, nil
 }
 
 func (r *queryResolver) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error) {
 	return r.repo.GetNotifsByReceiver(ctx, receiver)
+}
+
+func (r *subscriptionResolver) NotifAdded(ctx context.Context, userName string) (<-chan *model.Notif, error) {
+	r.mu.Lock()
+	subscription := r.repo.GetSubscriptions()[userName]
+	if subscription == nil {
+		subscription = &database.Message{
+			Observers: map[string]struct {
+				Message chan *model.Notif
+			}{},
+		}
+		r.repo.AddSubscription(userName, subscription)
+	}
+	r.mu.Unlock()
+
+	id := uuid.NewString()
+	events := make(chan *model.Notif, 1)
+
+	go func() {
+		<-ctx.Done()
+		r.mu.Lock()
+		delete(subscription.Observers, id)
+		r.mu.Unlock()
+	}()
+
+	r.mu.Lock()
+	subscription.Observers[id] = struct{ Message chan *model.Notif }{Message: events}
+	r.mu.Unlock()
+
+	return events, nil
 }
 
 // Mutation returns generated.MutationResolver implementation.
@@ -43,5 +67,9 @@ func (r *Resolver) Mutation() generated.MutationResolver { return &mutationResol
 // Query returns generated.QueryResolver implementation.
 func (r *Resolver) Query() generated.QueryResolver { return &queryResolver{r} }
 
+// Subscription returns generated.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() generated.SubscriptionResolver { return &subscriptionResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }

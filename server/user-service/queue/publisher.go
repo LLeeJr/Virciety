@@ -15,7 +15,7 @@ type Publisher interface {
 	InitPublisher(ch *amqp.Channel)
 	AddMessageToQuery()
 	AddMessageToCommand(messageId string)
-	AddMessageToEvent(userEvent database.UserEvent, messageId string)
+	AddMessageToEvent(followEvent *database.FollowEvent, messageId string)
 }
 
 func NewPublisher() (Publisher, error) {
@@ -57,16 +57,23 @@ func (c *ChannelConfig) AddMessageToCommand(messageId string) {
 	}
 }
 
-func (c *ChannelConfig) AddMessageToEvent(userEvent database.UserEvent, messageId string) {
+func (c *ChannelConfig) AddMessageToEvent(followEvent *database.FollowEvent, messageId string) {
 	c.EventChan <- RabbitMsg{
 		QueueName: EventExchange,
-		UserEvent: userEvent,
+		FollowEvent: followEvent,
 		MessageId: messageId,
 	}
 }
 
 func (c *ChannelConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
-	body, err := json.Marshal(msg.UserEvent)
+	var body []byte
+	var err error
+	if msg.UserEvent != nil {
+		body, err = json.Marshal(msg.UserEvent)
+	}
+	if msg.FollowEvent != nil {
+		body, err = json.Marshal(msg.FollowEvent)
+	}
 
 	err = ch.Publish(
 		msg.QueueName,
@@ -80,5 +87,5 @@ func (c *ChannelConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 		})
 	FailOnError(err, "Failed to publish a message")
 
-	log.Printf(" [*] published msg on %s: %v", msg.QueueName, msg.UserEvent)
+	log.Printf(" [*] published msg on %s: %v", msg.QueueName, msg)
 }

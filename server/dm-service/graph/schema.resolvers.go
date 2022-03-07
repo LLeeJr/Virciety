@@ -67,8 +67,18 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName st
 	}
 	r.mu.Unlock()
 
+	receivers := util.Remove(room.Member, dmEvent.CreatedBy)
+	chatEvent := database.ChatEvent{
+		EventTime: dmEvent.CreatedAt,
+		From:      dmEvent.CreatedBy,
+		Msg:       dmEvent.Msg,
+		RoomID:    room.Id,
+		RoomName:  room.Name,
+		Receivers: receivers,
+	}
+
 	// post message on queue
-	r.publisher.AddMessageToEvent(dmEvent, "Dm-Service")
+	r.publisher.AddMessageToEvent(chatEvent, "Dm-Service")
 	r.publisher.AddMessageToCommand("Dm-Service")
 	//r.publisher.AddMessageToQuery()
 

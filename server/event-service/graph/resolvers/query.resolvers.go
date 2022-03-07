@@ -7,7 +7,7 @@ import (
 	"context"
 	"event-service/graph/generated"
 	"event-service/graph/model"
-	"strings"
+	message_queue "event-service/message-queue"
 )
 
 func (r *queryResolver) GetEvents(ctx context.Context, username *string) (*model.GetEventsResponse, error) {
@@ -32,15 +32,23 @@ func (r *queryResolver) UserDataExists(ctx context.Context, username *string) (*
 	return userData, nil
 }
 
-func (r *queryResolver) NotifyHostOfEvent(ctx context.Context, username *string, eventID *string) (*bool, error) {
-	// TODO notification service
+func (r *queryResolver) NotifyHostOfEvent(ctx context.Context, username *string, eventID *string, reportedBy *string) (*bool, error) {
+	eventNotification := message_queue.EventNotification{
+		EventId:    *eventID,
+		EditFlag:   false,
+		Message:    "A covid case was reported",
+		ReportedBy: *reportedBy,
+		Username:   *username,
+	}
+
+	r.producerQueue.AddMessageToEvent(eventNotification)
+
 	notified := true
 
 	return &notified, nil
 }
 
 func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *string, eventID *string) (*bool, error) {
-	// TODO notification service
 	notified := true
 
 	contactPersons, err := r.repo.DetermineContactPersons(ctx, *username, *eventID)
@@ -48,7 +56,15 @@ func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *stri
 		return nil, err
 	}
 
-	println(*username + " was in contact with " + strings.Join(contactPersons, ","))
+	eventNotification := message_queue.EventNotification{
+		EventId:    *eventID,
+		EditFlag:   false,
+		Message:    "You were in contact with a person who was tested positive for covid. Please, get yourself tested.",
+	}
+	for _, person := range contactPersons {
+		eventNotification.Username = person
+		r.producerQueue.AddMessageToEvent(eventNotification)
+	}
 
 	return &notified, nil
 }

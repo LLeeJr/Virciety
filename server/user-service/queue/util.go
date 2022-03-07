@@ -9,7 +9,8 @@ import (
 type (
 	RabbitMsg struct {
 		QueueName string             `json:"queueName"`
-		UserEvent database.UserEvent `json:"userEvent"`
+		UserEvent *database.UserEvent `json:"userEvent"`
+		FollowEvent *database.FollowEvent `json:"follow_event"`
 		MessageId string             `json:"messageId"`
 	}
 

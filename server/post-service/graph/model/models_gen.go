@@ -44,8 +44,10 @@ type LikePostRequest struct {
 	ID          string   `json:"id"`
 	Description string   `json:"description"`
 	NewLikedBy  []string `json:"newLikedBy"`
+	PostOwner   string   `json:"postOwner"`
 	Comments    []string `json:"comments"`
 	Liked       bool     `json:"liked"`
+	LikedBy     string   `json:"likedBy"`
 }
 
 type Post struct {

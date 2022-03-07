@@ -21,8 +21,10 @@ input LikePostRequest {
     id: String!
     description: String!
     newLikedBy: [String!]!
+    postOwner: String!
     comments: [String!]!
     liked: Boolean!
+    likedBy: String!
 }
 
 input RemovePostRequest {

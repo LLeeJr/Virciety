@@ -2,6 +2,7 @@ package database
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,6 +24,7 @@ type Repository interface {
 	EditPost(postEvent PostEvent) (string, error)
 	LikePost(postEvent PostEvent) error
 	GetData(fileID string) (string, error)
+	GetPost(ctx context.Context, id string) (*model.Post, error)
 }
 
 type Repo struct {
@@ -112,6 +114,30 @@ func (repo *Repo) CreatePost(postEvent PostEvent, base64File string) (*model.Pos
 
 	return post, nil
 }
+
+func (repo *Repo) GetPost(ctx context.Context, id string) (*model.Post, error) {
+	objID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	var result *PostEvent
+	err = repo.postCollection.FindOne(ctx, bson.D{
+		{"_id", objID},
+	}).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	post := &model.Post{
+		ID:          result.PostID,
+		Description: result.Description,
+		Username:    result.Username,
+	}
+
+	return post, nil
+}
+
 
 func (repo *Repo) GetPosts(id string, fetchLimit int, filter *string) ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
