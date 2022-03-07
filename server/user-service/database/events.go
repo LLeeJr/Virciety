@@ -21,3 +21,10 @@ type ProfilePictureEvent struct {
 	FileId    string    `json:"fileID"`
 	Username  string    `json:"username"`
 }
+
+type FollowEvent struct {
+	EventType   string    `json:"event_type"`
+	EventTime   time.Time `json:"event_time"`
+	Username    string    `json:"username"`
+	NewFollower string    `json:"new_follower"`
+}

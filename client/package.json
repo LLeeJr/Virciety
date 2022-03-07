@@ -9,6 +9,7 @@
     "start-user": "ng serve user",
     "start-event": "ng serve event",
     "start-profile-viewer": "ng serve profile-viewer",
+    "start-notification": "ng serve notification",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",

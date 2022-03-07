@@ -2,7 +2,6 @@ package message_queue
 
 import (
 	"comment-service/database"
-	"comment-service/model"
 	"encoding/json"
 	"github.com/streadway/amqp"
 	"log"
@@ -101,37 +100,56 @@ func (channel *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 		for data := range commands {
 			log.Printf("Received a command message with messageID %s : %s", data.MessageId, data.Body)
 			if data.MessageId == "Post-Service" {
-				var comment model.Comment
-				err := json.Unmarshal(data.Body, &comment)
+				var commentNotification *database.CommentNotificationEvent
+				err := json.Unmarshal(data.Body, &commentNotification)
 				if err != nil {
 					log.Fatalln(err)
 				}
 
-				log.Printf("Comment: %v", comment)
+				log.Printf("Comment: %v", commentNotification)
 
 				var commentEvent database.CommentEvent
-				if comment.Event == "CreateComment" {
+				if commentNotification.Comment.Event == "CreateComment" {
 					commentEvent = database.CommentEvent{
 						EventTime: time.Now().Format("2006-01-02 15:04:05"),
-						EventType: comment.Event,
-						PostID:    comment.PostID,
-						Comment:   comment.Comment,
-						CreatedBy: comment.CreatedBy,
+						EventType: commentNotification.Comment.Event,
+						PostID:    commentNotification.Comment.PostID,
+						Comment:   commentNotification.Comment.Comment,
+						CreatedBy: commentNotification.Comment.CreatedBy,
 					}
 				} else {
 					commentEvent = database.CommentEvent{
 						EventTime: time.Now().Format("2006-01-02 15:04:05"),
-						EventType: comment.Event,
-						CommentID: comment.ID,
-						PostID:    comment.PostID,
-						Comment:   comment.Comment,
-						CreatedBy: comment.CreatedBy,
+						EventType: commentNotification.Comment.Event,
+						CommentID: commentNotification.Comment.ID,
+						PostID:    commentNotification.Comment.PostID,
+						Comment:   commentNotification.Comment.Comment,
+						CreatedBy: commentNotification.Comment.CreatedBy,
 					}
 				}
 
 				commentDB, err := channel.Repo.CreateComment(commentEvent)
 				if err != nil {
 					log.Fatalln(err)
+				}
+
+				// only publish if the comment's author is not the post's owner
+				if commentNotification.Comment.CreatedBy != commentNotification.Post.Username  {
+					commentNotification.Comment.ID = commentDB.ID
+					commentNotification.Post.ID = commentDB.PostID
+					body, err := json.Marshal(commentNotification)
+
+					err = ch.Publish(
+						EventExchange,
+						"",
+						false,
+						false,
+						amqp.Publishing{
+							ContentType: 	"application/json",
+							MessageId: 		"Comment-Service",
+							Body: 			body,
+						})
+					FailOnError(err, "Failed to publish a message")
 				}
 
 				log.Printf("CommentDB: %v", commentDB)

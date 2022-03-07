@@ -2,23 +2,32 @@
 #
 # https://gqlgen.com/getting-started/
 
+type Map {
+  key: String!,
+  value: String!,
+}
+
 type Notif {
   id: String!
+  event: String!
+  timestamp: Time!
+  read: Boolean!
   receiver: String!
   text: String!
-  event: String!
+  params: [Map!]!
+  route: String!
+}
+
+scalar Time
+
+type Mutation {
+  setReadStatus(id: String!, status: Boolean!): Notif!
 }
 
 type Query {
   getNotifsByReceiver(receiver: String!): [Notif!]!
 }
 
-input CreateNotifRequest {
-  receiver: String!
-  text: String!
-  event: String!
-}
-
-type Mutation {
-  createNotif(input: CreateNotifRequest!): Notif!
+type Subscription {
+  notifAdded(userName: String!): Notif!
 }

@@ -151,12 +151,13 @@ export class GQLService {
     });
   }
 
-  notify(query: DocumentNode, username: string, eventID: string) {
+  notify(query: DocumentNode, username: string, eventID: string, reportedBy?: string) {
     return this.apollo.query({
       query: query,
       variables: {
         username: username,
-        eventID: eventID
+        eventID: eventID,
+        reportedBy: reportedBy,
       }
     });
   }

@@ -3,6 +3,7 @@ package graph
 import (
 	"notifs-service/database"
 	"notifs-service/queue"
+	"sync"
 )
 
 // This file will not be regenerated automatically.
@@ -19,4 +20,5 @@ func NewResolver(repo database.Repository, publisher queue.Publisher) *Resolver 
 type Resolver struct {
 	repo		database.Repository
 	publisher	queue.Publisher
+	mu sync.Mutex
 }

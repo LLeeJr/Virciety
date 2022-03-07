@@ -83,7 +83,7 @@ type ComplexityRoot struct {
 	Query struct {
 		GetEvents            func(childComplexity int, username *string) int
 		NotifyContactPersons func(childComplexity int, username *string, eventID *string) int
-		NotifyHostOfEvent    func(childComplexity int, username *string, eventID *string) int
+		NotifyHostOfEvent    func(childComplexity int, username *string, eventID *string, reportedBy *string) int
 		UserDataExists       func(childComplexity int, username *string) int
 	}
 
@@ -110,7 +110,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	GetEvents(ctx context.Context, username *string) (*model.GetEventsResponse, error)
 	UserDataExists(ctx context.Context, username *string) (*model.UserData, error)
-	NotifyHostOfEvent(ctx context.Context, username *string, eventID *string) (*bool, error)
+	NotifyHostOfEvent(ctx context.Context, username *string, eventID *string, reportedBy *string) (*bool, error)
 	NotifyContactPersons(ctx context.Context, username *string, eventID *string) (*bool, error)
 }
 
@@ -354,7 +354,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.NotifyHostOfEvent(childComplexity, args["username"].(*string), args["eventID"].(*string)), true
+		return e.complexity.Query.NotifyHostOfEvent(childComplexity, args["username"].(*string), args["eventID"].(*string), args["reportedBy"].(*string)), true
 
 	case "Query.userDataExists":
 		if e.complexity.Query.UserDataExists == nil {
@@ -570,7 +570,7 @@ type UserData {
 	{Name: "graph/schemas/query.graphql", Input: `type Query {
     getEvents(username: String): GetEventsResponse
     userDataExists(username: String): UserData
-    notifyHostOfEvent(username: String, eventID: String): Boolean
+    notifyHostOfEvent(username: String, eventID: String, reportedBy: String): Boolean
     notifyContactPersons(username: String, eventID: String): Boolean
 }
 `, BuiltIn: false},
@@ -764,6 +764,15 @@ func (ec *executionContext) field_Query_notifyHostOfEvent_args(ctx context.Conte
 		}
 	}
 	args["eventID"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["reportedBy"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reportedBy"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["reportedBy"] = arg2
 	return args, nil
 }
 
@@ -1767,7 +1776,7 @@ func (ec *executionContext) _Query_notifyHostOfEvent(ctx context.Context, field 
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().NotifyHostOfEvent(rctx, args["username"].(*string), args["eventID"].(*string))
+		return ec.resolvers.Query().NotifyHostOfEvent(rctx, args["username"].(*string), args["eventID"].(*string), args["reportedBy"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

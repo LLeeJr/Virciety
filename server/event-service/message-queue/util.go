@@ -7,11 +7,12 @@ import (
 )
 
 type RabbitMsg struct {
-	QueueName  string         `json:"queueName"`
-	EventEvent database.Event `json:"eventEvent"`
-	PostID     string         `json:"postID"`
-	CorrID     string         `json:"corrID"`
-	ReplyTo    string         `json:"replyTo"`
+	QueueName         string         `json:"queueName"`
+	EventEvent        database.Event `json:"eventEvent"`
+	PostID            string         `json:"postID"`
+	CorrID            string         `json:"corrID"`
+	ReplyTo           string         `json:"replyTo"`
+	EventNotification EventNotification `json:"event_notification"`
 }
 
 func initExchange(queueName string, ch *amqp.Channel) {

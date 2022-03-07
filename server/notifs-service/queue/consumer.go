@@ -11,7 +11,7 @@ const CommandQueue = "notif-service-command"
 const EventQueue = "notif-service-event"
 
 type Consumer interface {
-	InitConsumer()
+	InitConsumer(ch *amqp.Channel)
 }
 
 func NewConsumer(repo database.Repository) (Consumer, error) {
@@ -20,14 +20,7 @@ func NewConsumer(repo database.Repository) (Consumer, error) {
 	}, nil
 }
 
-func (c *ChannelConfig) InitConsumer() {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	failOnError(err, "Failed to connect to RabbitMQ")
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
-	defer ch.Close()
+func (c *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 
 	initQueue(QueryQueue, QueryExchange, ch)
 	initQueue(CommandQueue, CommandExchange, ch)
@@ -43,6 +36,10 @@ func (c *ChannelConfig) InitConsumer() {
 		nil,
 	)
 
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	commands, err := ch.Consume(
 		CommandQueue,
 		"",
@@ -53,6 +50,10 @@ func (c *ChannelConfig) InitConsumer() {
 		nil,
 	)
 
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	events, err := ch.Consume(
 		EventQueue,
 		"",
@@ -62,6 +63,10 @@ func (c *ChannelConfig) InitConsumer() {
 		false,
 		nil,
 	)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	forever := make(chan bool)
 
@@ -82,6 +87,18 @@ func (c *ChannelConfig) InitConsumer() {
 			log.Printf("Event: Received a query with messageID %s : %s", data.MessageId, data.Body)
 			if data.MessageId == "Dm-Service" {
 				c.Repo.CreateDmNotifFromConsumer(data.Body)
+			}
+			if data.MessageId == "Comment-Service" {
+				c.Repo.CreateCommentNotifFromConsumer(data.Body)
+			}
+			if data.MessageId == "Post-Service" {
+				c.Repo.CreateLikeNotifFromConsumer(data.Body)
+			}
+			if data.MessageId == "User-Service" {
+				c.Repo.CreateFollowNotifFromConsumer(data.Body)
+			}
+			if data.MessageId == "Event-Service" {
+				c.Repo.CreateEventNotifFromConsumer(data.Body)
 			}
 		}
 	}()

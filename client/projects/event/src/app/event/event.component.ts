@@ -287,7 +287,7 @@ export class EventComponent implements OnInit {
   }
 
   notifyHost(host: string, id: string) {
-    this.gqlService.notify(NOTIFY_HOST_OF_EVENT, host, id).subscribe(({data}: any) => {
+    this.gqlService.notify(NOTIFY_HOST_OF_EVENT, host, id, this.username).subscribe(({data}: any) => {
       console.log(data);
     });
   }

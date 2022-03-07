@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit} from '@angular/core';
+import {Component, ElementRef, OnDestroy, OnInit} from '@angular/core';
 import {ApiService} from "../../api/api.service";
 import {Dm} from "../../data/dm";
 import {KeycloakService} from "keycloak-angular";
@@ -59,24 +59,27 @@ export class OpenChatComponent implements OnInit, OnDestroy {
             // id is empty, so request comes from a direct chat call
             this.api.getDirectRoom(users[0], users[1])
               .pipe(take(1))
-              .subscribe(value => {
-              if (value && value.data && value.data.getDirectRoom) {
-                this.room = value.data.getDirectRoom;
-                this.storeRoom(this.room);
-                this.getMessagesAndSubscribe(this.room.id, roomName);
-              }
-            }, () => {
-              // room was not found, so a new one needs to be created
-              this.api.createRoom(users, roomName, this.username, true)
-                .pipe(take(1))
-                .subscribe(value => {
-                if (value && value.data && value.data.createRoom) {
-                  this.room = value.data.createRoom;
-                  this.storeRoom(this.room);
-                  this.getMessagesAndSubscribe(this.room.id, roomName);
+              .subscribe({
+                next: (value) => {
+                  if (value && value.data && value.data.getDirectRoom) {
+                    this.room = value.data.getDirectRoom;
+                    this.storeRoom(this.room);
+                    this.getMessagesAndSubscribe(this.room.id, roomName);
+                  }
+                },
+                error: () => {
+                  // room was not found, so a new one needs to be created
+                  this.api.createRoom(users, roomName, this.username, true)
+                    .pipe(take(1))
+                    .subscribe(value => {
+                      if (value && value.data && value.data.createRoom) {
+                        this.room = value.data.createRoom;
+                        this.storeRoom(this.room);
+                        this.getMessagesAndSubscribe(this.room.id, roomName);
+                      }
+                    })
                 }
-              })
-            });
+              });
           }
         });
       }
