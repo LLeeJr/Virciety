@@ -1,0 +1,21 @@
+FROM node:15-alpine as builder
+
+COPY package.json ./
+
+COPY package-lock.json ./
+
+RUN npm install
+
+RUN mkdir /profile-viewer
+
+WORKDIR /profile-viewer
+
+COPY . .
+
+RUN node_modules/.bin/ng build --prod --project=profile-viewer
+
+FROM nginx
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /profile-viewer/dist/profile-viewer /usr/share/nginx/html
+
+CMD ["nginx", "-g", "daemon off;"]
