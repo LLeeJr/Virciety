@@ -169,39 +169,39 @@ services:
       - mongodb_user:/data/user-db
     command: mongod --port 27020
 
-#  notifs-service:
-#    depends_on:
-#      - notifs-db
-#      - rabbitmq
-#    build:
-#      context:
-#        notifs-service/
-#    container_name: notifs-service
-#    hostname: notifs-service
-#    networks:
-#      - mynet
-#    ports:
-#      - "8082:8082"
-#    env_file:
-#      - notifs-service/config.env
-#    deploy:
-#      restart_policy:
-#        condition: on-failure
-#
-#  notifs-db:
-#    image: mongo:latest
-#    container_name: notifs-db
-#    hostname: notifs-db
-#    networks:
-#      - mynet
-#    ports:
-#      - "27022:27022"
-#    environment:
-#      MONGO_INITDB_ROOT_USERNAME: admin
-#      MONGO_INITDB_ROOT_PASSWORD: admin
-#    volumes:
-#      - mongodb_notifs:/data/notifs-db
-#    command: mongod --port 27022
+  notifs-service:
+    depends_on:
+      - notifs-db
+      - rabbitmq
+    build:
+      context:
+        notifs-service/
+    container_name: notifs-service
+    hostname: notifs-service
+    networks:
+      - mynet
+    ports:
+      - "8082:8082"
+    env_file:
+      - notifs-service/config.env
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  notifs-db:
+    image: mongo:latest
+    container_name: notifs-db
+    hostname: notifs-db
+    networks:
+      - mynet
+    ports:
+      - "27022:27022"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb_notifs:/data/notifs-db
+    command: mongod --port 27022
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -222,7 +222,7 @@ volumes:
   mongodb_dm:
   mongodb_event:
   mongodb_user:
-#  mongodb_notifs:
+  mongodb_notifs:
 
 networks:
   mynet:
