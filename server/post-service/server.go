@@ -56,8 +56,6 @@ func main() {
 	go consumerQueue.InitConsumer(ch)
 
 	// graphql init
-	//srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue, responses, userResponses)}))
-
 	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue, responses, userResponses)}))
 
 	srv.AddTransport(transport.POST{})

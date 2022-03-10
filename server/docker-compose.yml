@@ -1,132 +1,229 @@
-version: "3.2"
+version: '3.8'
 services:
   post-service:
-    container_name: 'post-service'
-    image: 'post-service'
-    restart: on-failure
-    build: post-service/
+    depends_on:
+      - post-db
+      - rabbitmq
+    build:
+      context:
+        post-service/
+    container_name: post-service
+    hostname: post-service
+    networks:
+      - mynet
     ports:
       - "8083:8083"
     env_file:
       - post-service/config.env
-    volumes:
-      - .:/app/post-service
-    depends_on:
-      - rabbitmq
-      - post-db
-    links:
-      - rabbitmq
-      - post-db
-    #command: ["sh", "./wait-for-it.sh", "rabbitmq:5672", "--", "./out"]
-    networks:
-      main:
-      post:
+    deploy:
+      restart_policy:
+        condition: on-failure
 
   post-db:
-    container_name: 'post-db'
     image: mongo:latest
+    container_name: post-db
+    hostname: post-db
+    networks:
+      - mynet
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
     volumes:
-      - mongodb_post:/data/db
-    command: mongod
-    networks:
-      post:
+      - mongodb_post:/data/post-db
 
   comment-service:
-    container_name: 'comment-service'
-    image: 'comment-service'
-    restart: on-failure
-    build: comment-service/
+    depends_on:
+      - comment-db
+      - rabbitmq
+    build:
+      context:
+        comment-service/
+    container_name: comment-service
+    hostname: comment-service
+    networks:
+      - mynet
     ports:
       - "8084:8084"
     env_file:
       - comment-service/config.env
-    volumes:
-      - .:/app/comment-service
-    depends_on:
-      - rabbitmq
-      - comment-db
-    links:
-      - rabbitmq
-      - comment-db
-    networks:
-      main:
-      comment:
+    deploy:
+      restart_policy:
+        condition: on-failure
 
   comment-db:
-    container_name: 'comment-db'
     image: mongo:latest
+    container_name: comment-db
+    hostname: comment-db
+    networks:
+      - mynet
     ports:
-      - "27019:27017"
+      - "27019:27019"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
     volumes:
-      - mongodb_comment:/data/db
-    command: mongod
-    networks:
-      comment:
-
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    #restart: always
-    container_name: 'rabbitmq'
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    volumes:
-      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq
-      - ~/.docker-conf/rabbitmq/log/:/var/log/rabittmq
-    networks:
-      main:
+      - mongodb_comment:/data/comment-db
+    command: mongod --port 27019
 
   dm-service:
-    container_name: 'dm-service'
-    image: 'dm-service'
-    restart: on-failure
-    build: dm-service/
+    depends_on:
+      - dm-db
+      - rabbitmq
+    build:
+      context:
+        dm-service/
+    container_name: dm-service
+    hostname: dm-service
+    networks:
+      - mynet
     ports:
       - "8081:8081"
     env_file:
       - dm-service/config.env
-    volumes:
-      - .:/app/dm-service
-    depends_on:
-      - rabbitmq
-      - dm-db
-    links:
-      - rabbitmq
-      - dm-db
-    #command: ["sh", "./wait-for-it.sh", "rabbitmq:5672", "--", "./out"]
-    networks:
-      main:
-      dm:
+    deploy:
+      restart_policy:
+        condition: on-failure
 
   dm-db:
-    container_name: 'dm-db'
     image: mongo:latest
+    container_name: dm-db
+    hostname: dm-db
+    networks:
+      - mynet
     ports:
-      - "27018:27017"
+      - "27018:27018"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin
     volumes:
-      - mongodb_dm:/data/db
-    command: mongod
+      - mongodb_dm:/data/dm-db
+    command: mongod --port 27018
+
+  event-service:
+    depends_on:
+      - event-db
+      - rabbitmq
+    build:
+      context:
+        event-service/
+    container_name: event-service
+    hostname: event-service
     networks:
-      dm:
+      - mynet
+    ports:
+      - "8086:8086"
+    env_file:
+      - event-service/config.env
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  event-db:
+    image: mongo:latest
+    container_name: event-db
+    hostname: event-db
+    networks:
+      - mynet
+    ports:
+      - "27021:27021"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb_event:/data/event-db
+    command: mongod --port 27021
+
+  user-service:
+    depends_on:
+      - user-db
+      - rabbitmq
+    build:
+      context:
+        user-service/
+    container_name: user-service
+    hostname: user-service
+    networks:
+      - mynet
+    ports:
+      - "8085:8085"
+    env_file:
+      - user-service/config.env
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  user-db:
+    image: mongo:latest
+    container_name: user-db
+    hostname: user-db
+    networks:
+      - mynet
+    ports:
+      - "27020:27020"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb_user:/data/user-db
+    command: mongod --port 27020
+
+  notifs-service:
+    depends_on:
+      - notifs-db
+      - rabbitmq
+    build:
+      context:
+        notifs-service/
+    container_name: notifs-service
+    hostname: notifs-service
+    networks:
+      - mynet
+    ports:
+      - "8082:8082"
+    env_file:
+      - notifs-service/config.env
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  notifs-db:
+    image: mongo:latest
+    container_name: notifs-db
+    hostname: notifs-db
+    networks:
+      - mynet
+    ports:
+      - "27022:27022"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin
+    volumes:
+      - mongodb_notifs:/data/notifs-db
+    command: mongod --port 27022
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    hostname: rabbitmq
+    networks:
+      - mynet
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/mnesia
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabittmq/mnesia
 
 volumes:
   mongodb_post:
   mongodb_comment:
   mongodb_dm:
+  mongodb_event:
+  mongodb_user:
+  mongodb_notifs:
 
 networks:
-  main:
-  post:
-  comment:
-  dm:
+  mynet:
+    driver: bridge

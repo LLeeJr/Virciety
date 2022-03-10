@@ -17,6 +17,7 @@ import (
 )
 
 const defaultPort = "8085"
+const defaultRabbitMQUrl = "amqp://guest:guest@localhost:5672"
 
 func main() {
 	port := os.Getenv("PORT")
@@ -24,18 +25,24 @@ func main() {
 		port = defaultPort
 	}
 
-	repo, err := database.NewRepo()
-	if err != nil {
-		log.Fatal("err", err)
+	rabbitmqURL := os.Getenv("RABBITMQ_URL")
+	if rabbitmqURL == "" {
+		rabbitmqURL = defaultRabbitMQUrl
 	}
 
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	// rabbitmq connection
+	conn, err := amqp.Dial(rabbitmqURL)
 	queue.FailOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	queue.FailOnError(err, "Failed to open a channel")
 	defer ch.Close()
+
+	repo, err := database.NewRepo()
+	if err != nil {
+		log.Fatal("err", err)
+	}
 
 	publisher, _ := queue.NewPublisher()
 	go publisher.InitPublisher(ch)
@@ -47,9 +54,9 @@ func main() {
 
 	r := mux.NewRouter()
 	r.Use(cors.New(cors.Options{
-		AllowedMethods: []string{"GET","POST", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
 		AllowedOrigins:   []string{"http://localhost:*"},
-		AllowedHeaders: []string{"Authorization","Content-Type","Bearer","Bearer ","content-type","Origin","Accept"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type", "Bearer", "Bearer ", "content-type", "Origin", "Accept"},
 		AllowCredentials: true,
 		Debug:            true,
 	}).Handler)
