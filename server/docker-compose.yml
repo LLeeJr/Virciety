@@ -213,8 +213,8 @@ services:
       - "5672:5672"
       - "15672:15672"
     volumes:
-      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq
-      - ~/.docker-conf/rabbitmq/log/:/var/log/rabittmq
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/mnesia
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabittmq/mnesia
 
 volumes:
   mongodb_post:
