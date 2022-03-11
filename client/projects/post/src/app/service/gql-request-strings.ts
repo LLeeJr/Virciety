@@ -58,14 +58,14 @@ export const CREATE_POST = gql`
   `;
 
 export const LIKE_POST = gql`
-    mutation likePost($id: String!, $description: String!, $newLikedBy: [String!]!, $postOwner: String!, $comments: [String!]!, $liked: Boolean!, $likedBy: String!) {
-      likePost(like: {id: $id, description: $description, newLikedBy: $newLikedBy, postOwner: $postOwner, comments: $comments, liked: $liked, likedBy: $likedBy})
+    mutation likePost($id: String!, $description: String!, $newLikedBy: [String!]!, $postOwner: String!, $liked: Boolean!, $likedBy: String!) {
+      likePost(like: {id: $id, description: $description, newLikedBy: $newLikedBy, postOwner: $postOwner, liked: $liked, likedBy: $likedBy})
     }
   `;
 
 export const EDIT_POST = gql`
-    mutation editPost($id: String!, $newDescription: String!, $likedBy: [String!]!, $comments: [String!]!) {
-      editPost(edit: {id: $id, newDescription: $newDescription, likedBy: $likedBy, comments: $comments})
+    mutation editPost($id: String!, $newDescription: String!, $likedBy: [String!]!) {
+      editPost(edit: {id: $id, newDescription: $newDescription, likedBy: $likedBy})
     }
   `;
 

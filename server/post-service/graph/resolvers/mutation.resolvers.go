@@ -50,7 +50,6 @@ func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequ
 		PostID:      edit.ID,
 		Description: edit.NewDescription,
 		LikedBy:     edit.LikedBy,
-		Comments:    edit.Comments,
 	}
 
 	// save event in database
@@ -99,7 +98,6 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 		Username:    like.PostOwner,
 		Description: like.Description,
 		LikedBy:     like.NewLikedBy,
-		Comments:    like.Comments,
 	}
 
 	// save event in database

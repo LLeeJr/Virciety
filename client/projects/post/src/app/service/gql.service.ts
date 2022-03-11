@@ -286,7 +286,6 @@ export class GQLService {
         description: post.description,
         newLikedBy: post.likedBy,
         postOwner: post.username,
-        comments: post.comments,
         liked: liked,
         likedBy: username,
       }
@@ -304,7 +303,6 @@ export class GQLService {
         id: post.id,
         newDescription: post.description,
         likedBy: post.likedBy,
-        comments: post.comments,
       }
     }).subscribe(({data}: any) => {
       // console.log('EditPostData: ', data)

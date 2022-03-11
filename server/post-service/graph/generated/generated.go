@@ -454,7 +454,6 @@ input EditPostRequest {
     id: String!
     newDescription: String!
     likedBy: [String!]!
-    comments: [String!]!
 }
 
 input LikePostRequest {
@@ -462,7 +461,6 @@ input LikePostRequest {
     description: String!
     newLikedBy: [String!]!
     postOwner: String!
-    comments: [String!]!
     liked: Boolean!
     likedBy: String!
 }
@@ -3029,14 +3027,6 @@ func (ec *executionContext) unmarshalInputEditPostRequest(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "comments":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comments"))
-			it.Comments, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -3081,14 +3071,6 @@ func (ec *executionContext) unmarshalInputLikePostRequest(ctx context.Context, o
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postOwner"))
 			it.PostOwner, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "comments":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comments"))
-			it.Comments, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
