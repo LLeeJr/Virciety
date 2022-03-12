@@ -1,0 +1,32 @@
+<div class="post_comments_container" *ngIf="valid && post">
+  <div class="post">
+    <ng-container [ngTemplateOutlet]="post.data.content !== '' ? media_tp : loading_tp"></ng-container>
+  </div>
+
+  <div class="info">
+
+  </div>
+</div>
+
+<div *ngIf="!valid">
+  <h2>Your link may be broken. No post could be found.</h2>
+  <a routerLink="/home">Return to home</a>
+</div>
+
+<ng-template #loading_tp>
+  <mat-spinner style="margin:0 auto;"></mat-spinner>
+</ng-template>
+
+<ng-template #media_tp>
+  <ng-container *ngIf="post" [ngTemplateOutlet]="post.data.contentType.startsWith('image') ? image_tp : video_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
+</ng-template>
+
+<ng-template #image_tp>
+  <img mat-card-image src="{{post ? post.data.content : ''}}" alt="{{post ? post.description : ''}}">
+</ng-template>
+
+<ng-template #video_tp>
+  <video mat-card-image controls>
+    <source src="{{post ? post.data.content : ''}}">
+  </video>
+</ng-template>

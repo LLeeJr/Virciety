@@ -8,9 +8,11 @@ import {MaterialModule} from "../material.module";
 import {FormsModule} from "@angular/forms";
 import {MediaComponent, DialogLikedBy} from './media/media.component';
 import { CommentComponent } from './comment/comment.component';
+import { SinglePostComponent } from './single-post/single-post.component';
 
 const EXPORTS = [
-  PostComponent
+  PostComponent,
+  SinglePostComponent
 ]
 
 @NgModule({

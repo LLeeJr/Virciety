@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import {AuthGuard} from "./guard/auth.guard";
 import {loadRemoteModule} from "@angular-architects/module-federation";
 import {ProfileComponent} from "./profile/profile.component";
+import {SinglePostComponent} from "./single-post/single-post.component";
 
 const routes: Routes = [
   {
@@ -42,6 +43,11 @@ const routes: Routes = [
     canActivate: [AuthGuard],
     component: ProfileComponent
   },
+  {
+    path: 'p/:id',
+    canActivate: [AuthGuard],
+    component: SinglePostComponent
+  }
 ];
 
 @NgModule({

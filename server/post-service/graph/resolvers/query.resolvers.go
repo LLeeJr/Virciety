@@ -5,7 +5,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"post-service/graph/generated"
 	"post-service/graph/model"
@@ -82,7 +81,17 @@ func (r *queryResolver) GetPostComments(ctx context.Context, id string) (*model.
 }
 
 func (r *queryResolver) GetPost(ctx context.Context, id string) (*model.Post, error) {
-	panic(fmt.Errorf("not implemented"))
+	post, err := r.repo.GetPost(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	post.Data.Content, err = r.GetData(ctx, post.Data.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return post, nil
 }
 
 // Query returns generated.QueryResolver implementation.

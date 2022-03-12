@@ -41,6 +41,23 @@ export const GET_POST_COMMENTS = gql`
     }
   `;
 
+export const GET_POST = gql`
+    query getPost($id: String!) {
+      getPost(id: $id) {
+        id
+        data {
+          name
+          content
+          contentType
+        }
+        description
+        username
+        comments
+        likedBy
+      }
+    }
+  `;
+
 export const CREATE_POST = gql`
     mutation createPost($username: String!, $description: String!, $data: String!) {
       createPost(newPost: {username: $username, description: $description, data: $data}) {

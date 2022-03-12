@@ -11,6 +11,7 @@ import {
   CREATE_POST,
   EDIT_POST,
   GET_DATA,
+  GET_POST,
   GET_POST_COMMENTS,
   GET_POSTS,
   LIKE_POST,
@@ -20,7 +21,7 @@ import {
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
 import {SubscriptionClient} from "subscriptions-transport-ws";
-import {Subject} from "rxjs";
+import {Observable, Subject} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -398,5 +399,21 @@ export class GQLService {
     }, (error: any) => {
       console.error('there was an error sending the addComment-mutation', error);
     });
+  }
+
+  getPostByID(postID: string): Post | Observable<any> {
+    // check if post exists locally
+    let post = this.dataService.getPost(postID);
+
+    // if not then fetch from server
+    if (post === undefined) {
+      return this.apollo.watchQuery({
+        query: GET_POST,
+        variables: {
+          id: postID,
+        },
+      }).valueChanges
+    }
+    return post
   }
 }

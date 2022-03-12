@@ -17,7 +17,7 @@ export class Post {
   constructor(data: any) {
     this.data = {
       name: data.data.name,
-      content: '',
+      content: data.data.content,
       contentType: data.data.contentType,
     };
 

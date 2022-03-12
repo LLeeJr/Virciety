@@ -27,4 +27,8 @@ export class DataLibService {
     this._posts.reverse();
     return true;
   }
+
+  getPost(postID: string): Post | undefined {
+    return this._posts.find(post => post.id === postID);
+  }
 }
