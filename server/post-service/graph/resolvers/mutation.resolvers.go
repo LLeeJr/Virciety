@@ -25,7 +25,7 @@ func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreateP
 	}
 
 	// save event in database
-	post, err := r.repo.CreatePost(postEvent, newPost.Data)
+	post, err := r.repo.CreatePost(ctx, postEvent, newPost.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (r *mutationResolver) EditPost(ctx context.Context, edit model.EditPostRequ
 	}
 
 	// save event in database
-	ok, err := r.repo.EditPost(postEvent)
+	ok, err := r.repo.EditPost(ctx, postEvent)
 	if err != nil {
 		return ok, err
 	}
@@ -71,7 +71,7 @@ func (r *mutationResolver) RemovePost(ctx context.Context, remove model.RemovePo
 	}
 
 	// save event in database
-	ok, err := r.repo.RemovePost(postEvent)
+	ok, err := r.repo.RemovePost(ctx, postEvent)
 	if err != nil {
 		return ok, err
 	}
@@ -101,7 +101,7 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 	}
 
 	// save event in database
-	err := r.repo.LikePost(postEvent)
+	err := r.repo.LikePost(ctx, postEvent)
 	if err != nil {
 		return "failed", err
 	}

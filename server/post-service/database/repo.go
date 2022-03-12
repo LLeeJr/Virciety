@@ -16,14 +16,14 @@ import (
 )
 
 type Repository interface {
-	InsertPostEvent(post PostEvent) (string, error)
-	InsertFile(base64File string) (*model.File, error)
-	CreatePost(postEvent PostEvent, base64File string) (*model.Post, error)
-	GetPosts(id string, fetchLimit int, filter *string) ([]*model.Post, error)
-	RemovePost(postEvent PostEvent) (string, error)
-	EditPost(postEvent PostEvent) (string, error)
-	LikePost(postEvent PostEvent) error
-	GetData(fileID string) (string, error)
+	InsertPostEvent(ctx context.Context, post PostEvent) (string, error)
+	InsertFile(ctx context.Context, base64File string) (*model.File, error)
+	CreatePost(ctx context.Context, postEvent PostEvent, base64File string) (*model.Post, error)
+	GetPosts(ctx context.Context, id string, fetchLimit int, filter *string) ([]*model.Post, error)
+	RemovePost(ctx context.Context, postEvent PostEvent) (string, error)
+	EditPost(ctx context.Context, postEvent PostEvent) (string, error)
+	LikePost(ctx context.Context, postEvent PostEvent) error
+	GetData(ctx context.Context, fileID string) (string, error)
 	GetPost(ctx context.Context, id string) (*model.Post, error)
 }
 
@@ -54,7 +54,7 @@ func NewRepo() (Repository, error) {
 	}, nil
 }
 
-func (repo *Repo) InsertPostEvent(postEvent PostEvent) (string, error) {
+func (repo *Repo) InsertPostEvent(ctx context.Context, postEvent PostEvent) (string, error) {
 	inserted, err := repo.postCollection.InsertOne(ctx, postEvent)
 	if err != nil {
 		return "", err
@@ -63,7 +63,7 @@ func (repo *Repo) InsertPostEvent(postEvent PostEvent) (string, error) {
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
-func (repo *Repo) InsertFile(base64File string) (*model.File, error) {
+func (repo *Repo) InsertFile(_ context.Context, base64File string) (*model.File, error) {
 	fileName := uuid.NewString()
 
 	properties := strings.Split(base64File, ";base64,")
@@ -90,15 +90,15 @@ func (repo *Repo) InsertFile(base64File string) (*model.File, error) {
 	}, nil
 }
 
-func (repo *Repo) CreatePost(postEvent PostEvent, base64File string) (*model.Post, error) {
-	file, err := repo.InsertFile(base64File)
+func (repo *Repo) CreatePost(ctx context.Context, postEvent PostEvent, base64File string) (*model.Post, error) {
+	file, err := repo.InsertFile(ctx, base64File)
 	if err != nil {
 		return nil, err
 	}
 
 	postEvent.FileID = file.Name
 
-	insertedID, err := repo.InsertPostEvent(postEvent)
+	insertedID, err := repo.InsertPostEvent(ctx, postEvent)
 	if err != nil {
 		return nil, err
 	}
@@ -121,25 +121,73 @@ func (repo *Repo) GetPost(ctx context.Context, id string) (*model.Post, error) {
 		return nil, err
 	}
 
-	var result *PostEvent
+	var postEvent *PostEvent
 	err = repo.postCollection.FindOne(ctx, bson.D{
 		{"_id", objID},
-	}).Decode(&result)
+	}).Decode(&postEvent)
 	if err != nil {
 		return nil, err
 	}
 
+	// get file contentType
+	var file bson.M
+	if err = repo.fileCollection.FindOne(ctx, bson.M{"filename": postEvent.FileID}).Decode(&file); err != nil {
+		return nil, err
+	}
+
+	// convert interface{} to map and get contentType
+	var contentType reflect.Value
+	metaData := file["metadata"]
+	v := reflect.ValueOf(metaData)
+	if v.Kind() == reflect.Map {
+		for _, key := range v.MapKeys() {
+			contentType = v.MapIndex(key)
+		}
+	}
+
 	post := &model.Post{
-		ID:          result.PostID,
-		Description: result.Description,
-		Username:    result.Username,
+		ID:          postEvent.ID.Hex(),
+		Description: postEvent.Description,
+		Data: &model.File{
+			Name:        postEvent.FileID,
+			ContentType: fmt.Sprint(contentType.Interface()),
+		},
+		Username: postEvent.Username,
+		LikedBy:  postEvent.LikedBy,
+		Comments: postEvent.Comments,
+	}
+
+	max := int64(1)
+	// Sort event_time and get one element which will be the most recent edited post in relation to liked, unliked and description
+	opts := options.Find()
+	opts.SetSort(bson.D{{"event_time", -1}})
+	opts.Limit = &max
+	cursor, err := repo.postCollection.Find(ctx, bson.D{
+		{"id", post.ID},
+		{"event_type", bson.D{
+			{"$in", bson.A{"EditPost", "LikePost", "UnlikePost"}},
+		}},
+	}, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(ctx) {
+		var postEvent PostEvent
+		if err = cursor.Decode(&postEvent); err != nil {
+			return nil, err
+		}
+
+		// Add editable data
+		post.LikedBy = postEvent.LikedBy
+		post.Description = postEvent.Description
+		post.Comments = postEvent.Comments
 	}
 
 	return post, nil
 }
 
-
-func (repo *Repo) GetPosts(id string, fetchLimit int, filter *string) ([]*model.Post, error) {
+func (repo *Repo) GetPosts(ctx context.Context, id string, fetchLimit int, filter *string) ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
 	limit := int64(fetchLimit)
 
@@ -261,7 +309,7 @@ func (repo *Repo) GetPosts(id string, fetchLimit int, filter *string) ([]*model.
 	return currentPosts, nil
 }
 
-func (repo *Repo) GetData(fileID string) (string, error) {
+func (repo *Repo) GetData(_ context.Context, fileID string) (string, error) {
 	// get file content for post
 	var buf bytes.Buffer
 	_, err := repo.bucket.DownloadToStreamByName(fileID, &buf)
@@ -272,7 +320,7 @@ func (repo *Repo) GetData(fileID string) (string, error) {
 	return string(buf.Bytes()), nil
 }
 
-func (repo *Repo) RemovePost(postEvent PostEvent) (string, error) {
+func (repo *Repo) RemovePost(ctx context.Context, postEvent PostEvent) (string, error) {
 	// get fileID for deleting all chunks
 	projection := bson.D{
 		{"_id", 1},
@@ -328,7 +376,7 @@ func (repo *Repo) RemovePost(postEvent PostEvent) (string, error) {
 	}
 
 	// new current post events
-	_, err = repo.InsertPostEvent(postEvent)
+	_, err = repo.InsertPostEvent(ctx, postEvent)
 	if err != nil {
 		return "failed", err
 	}
@@ -336,8 +384,8 @@ func (repo *Repo) RemovePost(postEvent PostEvent) (string, error) {
 	return "success", nil
 }
 
-func (repo *Repo) EditPost(postEvent PostEvent) (string, error) {
-	_, err := repo.InsertPostEvent(postEvent)
+func (repo *Repo) EditPost(ctx context.Context, postEvent PostEvent) (string, error) {
+	_, err := repo.InsertPostEvent(ctx, postEvent)
 	if err != nil {
 		return "failed", err
 	}
@@ -345,8 +393,8 @@ func (repo *Repo) EditPost(postEvent PostEvent) (string, error) {
 	return "success", nil
 }
 
-func (repo *Repo) LikePost(postEvent PostEvent) error {
-	_, err := repo.InsertPostEvent(postEvent)
+func (repo *Repo) LikePost(ctx context.Context, postEvent PostEvent) error {
+	_, err := repo.InsertPostEvent(ctx, postEvent)
 	if err != nil {
 		return err
 	}
