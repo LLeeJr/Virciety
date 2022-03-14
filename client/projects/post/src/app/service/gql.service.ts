@@ -220,8 +220,6 @@ export class GQLService {
       this.userProfilePictureIds.next(userProfilePictureIdMap);
 
       post.comments = commentList;
-
-      post.commentMode = true;
     }, (error: any) => {
       console.error('there was an error sending the getPostComments-query', error);
     })
@@ -385,19 +383,11 @@ export class GQLService {
   }
 
   addComment(post: Post, addCommentRequest: { createdBy: string; comment: string; postID: string }) {
-    this.apollo.mutate({
+    return this.apollo.mutate({
       mutation: ADD_COMMENT,
       variables: {
         comment: addCommentRequest,
       }
-    }).subscribe(({data}: any) => {
-      const comment = new Comment(data.addComment);
-
-      post.comments = [comment, ...post.comments];
-
-      // console.log('AddCommentData: ', data)
-    }, (error: any) => {
-      console.error('there was an error sending the addComment-mutation', error);
     });
   }
 

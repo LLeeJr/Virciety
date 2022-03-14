@@ -9,22 +9,19 @@
   </mat-card-title>
 </mat-card-header>
 
-<ng-container [ngTemplateOutlet]="post.data.content !== '' ? media_tp : loading_tp"></ng-container>
+<ng-container [ngTemplateOutlet]="post.data.content !== undefined ? media_tp : loading_tp"></ng-container>
 
 <mat-card-content>
   <p *ngIf="post.likedBy.length !== 0">
     <a (click)="openLikedByDialog(post.likedBy)">{{post.likedBy.length > 1 ? post.likedBy.length + ' likes' : '1 like'}}</a>
   </p>
-  <div *ngIf="!post.editMode">{{post.description}}</div>
+  <div *ngIf="!post.editMode && post.description !== ''">{{post.description}}</div>
   <div *ngIf="post.editMode">
     <mat-form-field appearance="fill">
       <mat-label>New Description</mat-label>
       <input matInput placeholder="new description" [(ngModel)]="post.description">
     </mat-form-field>
   </div>
-  <p *ngIf="post.comments.length > 0">
-    <a (click)="post.commentMode = true">Show comments...</a>
-  </p>
 </mat-card-content>
 
 <mat-card-actions>
@@ -36,7 +33,6 @@
     <mat-icon>favorite</mat-icon>
     Like
   </button>
-<!--  <button mat-button (click)="triggerEvent('comments')">-->
   <button mat-button (click)="openPostDialog(post)">
     <mat-icon>add_comment</mat-icon>
     Comment
@@ -62,7 +58,7 @@
 </ng-template>
 
 <ng-template #image_tp>
-  <img mat-card-image src="{{post.data.content}}" alt="{{post.id}}">
+  <img mat-card-image src="{{post.data.content}}" alt="{{post.description}}">
 </ng-template>
 
 <ng-template #video_tp>
@@ -72,7 +68,7 @@
 </ng-template>
 
 <ng-template #placeholder>
-  <div class="user-image" >
+  <div class="user-image">
     <span class="material-icons" style="font-size: 40px;">
     account_circle
   </span>

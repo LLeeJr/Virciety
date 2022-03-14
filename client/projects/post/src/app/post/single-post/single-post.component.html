@@ -4,7 +4,44 @@
   </div>
 
   <div class="info">
+    <div class="info-header">
+      <div mat-list-avatar>
+        <div *ngIf="this.source !== ''; else placeholder">
+          <img src="{{this.source}}"
+               alt="{{this.post.username}}"
+               class="user-image">
+        </div>
+      </div>
+      <div style="margin-left: 10px">
+        <div mat-line>{{post.username}}</div>
+        <mat-card-subtitle>{{post.description}}</mat-card-subtitle>
+      </div>
+    </div>
 
+    <div>
+      <mat-list class="comment-list">
+        <mat-list-item *ngFor="let comment of post.comments">
+          <div mat-list-avatar>
+            <div *ngIf="this.nameSourceMap.get(comment.createdBy) !== ''; else placeholder">
+              <img src="{{this.nameSourceMap.get(comment.createdBy)}}"
+                   alt="{{comment.createdBy}}" class="user-image">
+            </div>
+          </div>
+          <div mat-line> {{comment.comment}} </div>
+          <mat-card-subtitle mat-line>{{comment.createdBy}}</mat-card-subtitle>
+        </mat-list-item>
+      </mat-list>
+
+      <mat-form-field [style.fontSize.px]="14" appearance="fill">
+        <mat-label>New Comment</mat-label>
+        <input matInput [(ngModel)]="comment">
+      </mat-form-field>
+    </div>
+
+    <button mat-button (click)="addComment()">
+      <mat-icon>add_comment</mat-icon>
+      Post
+    </button>
   </div>
 </div>
 
@@ -22,11 +59,19 @@
 </ng-template>
 
 <ng-template #image_tp>
-  <img mat-card-image src="{{post ? post.data.content : ''}}" alt="{{post ? post.description : ''}}">
+  <img class="media" src="{{post ? post.data.content : ''}}" alt="{{post ? post.description : ''}}">
 </ng-template>
 
 <ng-template #video_tp>
-  <video mat-card-image controls>
+  <video class="media" controls>
     <source src="{{post ? post.data.content : ''}}">
   </video>
+</ng-template>
+
+<ng-template #placeholder>
+  <div class="user-image">
+    <span class="material-icons" style="font-size: 40px">
+      account_circle
+    </span>
+  </div>
 </ng-template>

@@ -90,6 +90,14 @@ export class NotificationComponent implements OnInit {
       case '/event':
         this.router.navigate([n.route], { queryParams: {eventId: n.params[0].value}}).then(() => this.show = !this.show);
         break;
+      case '/p/':
+        let postIDIndex = n.params.length > 1 ? 1 : 0;
+        this.router.navigateByUrl('/', {skipLocationChange: true}).then(() =>
+          this.router.navigate([n.route+n.params[postIDIndex].value]).then(() =>
+            this.show = !this.show
+          )
+        );
+        break;
       default:
         break;
     }
