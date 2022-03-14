@@ -59,9 +59,9 @@ func (r *mutationResolver) EditEvent(ctx context.Context, edit model.EditEventRe
 
 	message := fmt.Sprintf("Changes on event %s", edit.Title)
 	eventNotification := message_queue.EventNotification{
-		EventId:    edit.EventID,
-		Message:    message,
-		EditFlag:   true,
+		EventId:  edit.EventID,
+		Message:  message,
+		EditFlag: true,
 	}
 	for _, attendee := range edit.Subscribers {
 		eventNotification.Username = attendee

@@ -81,6 +81,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		GetEvent             func(childComplexity int, eventID *string) int
 		GetEvents            func(childComplexity int, username *string) int
 		NotifyContactPersons func(childComplexity int, username *string, eventID *string) int
 		NotifyHostOfEvent    func(childComplexity int, username *string, eventID *string, reportedBy *string) int
@@ -112,6 +113,7 @@ type QueryResolver interface {
 	UserDataExists(ctx context.Context, username *string) (*model.UserData, error)
 	NotifyHostOfEvent(ctx context.Context, username *string, eventID *string, reportedBy *string) (*bool, error)
 	NotifyContactPersons(ctx context.Context, username *string, eventID *string) (*bool, error)
+	GetEvent(ctx context.Context, eventID *string) (*model.Event, error)
 }
 
 type executableSchema struct {
@@ -319,6 +321,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.SubscribeEvent(childComplexity, args["subscribe"].(model.EditEventRequest)), true
+
+	case "Query.getEvent":
+		if e.complexity.Query.GetEvent == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getEvent_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetEvent(childComplexity, args["eventID"].(*string)), true
 
 	case "Query.getEvents":
 		if e.complexity.Query.GetEvents == nil {
@@ -572,6 +586,7 @@ type UserData {
     userDataExists(username: String): UserData
     notifyHostOfEvent(username: String, eventID: String, reportedBy: String): Boolean
     notifyContactPersons(username: String, eventID: String): Boolean
+    getEvent(eventID: String): Event
 }
 `, BuiltIn: false},
 }
@@ -701,6 +716,21 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		}
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["eventID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventID"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["eventID"] = arg0
 	return args, nil
 }
 
@@ -1827,6 +1857,45 @@ func (ec *executionContext) _Query_notifyContactPersons(ctx context.Context, fie
 	res := resTmp.(*bool)
 	fc.Result = res
 	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getEvent_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetEvent(rctx, args["eventID"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Event)
+	fc.Result = res
+	return ec.marshalOEvent2ᚖeventᚑserviceᚋgraphᚋmodelᚐEvent(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3772,6 +3841,17 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				res = ec._Query_notifyContactPersons(ctx, field)
 				return res
 			})
+		case "getEvent":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getEvent(ctx, field)
+				return res
+			})
 		case "__type":
 			out.Values[i] = ec._Query___type(ctx, field)
 		case "__schema":
@@ -4509,6 +4589,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
+}
+
+func (ec *executionContext) marshalOEvent2ᚖeventᚑserviceᚋgraphᚋmodelᚐEvent(ctx context.Context, sel ast.SelectionSet, v *model.Event) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Event(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOGetEventsResponse2ᚖeventᚑserviceᚋgraphᚋmodelᚐGetEventsResponse(ctx context.Context, sel ast.SelectionSet, v *model.GetEventsResponse) graphql.Marshaler {

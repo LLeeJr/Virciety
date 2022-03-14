@@ -87,8 +87,12 @@ export class NotificationComponent implements OnInit {
         let user = n.params[0].key == "newFollower" ? n.params[0].value : n.receiver;
         this.router.navigate([n.route], { queryParams: {username: user}}).then(() => this.show = !this.show);
         break;
-      case '/event':
-        this.router.navigate([n.route], { queryParams: {eventId: n.params[0].value}}).then(() => this.show = !this.show);
+      case '/e/':
+        this.router.navigateByUrl('/', {skipLocationChange: true}).then(() =>
+          this.router.navigate([n.route+n.params[0].value]).then(() =>
+            this.show = !this.show
+          )
+        );
         break;
       case '/p/':
         let postIDIndex = n.params.length > 1 ? 1 : 0;

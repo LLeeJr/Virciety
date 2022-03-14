@@ -4,6 +4,7 @@ import {AuthGuard} from "./guard/auth.guard";
 import {loadRemoteModule} from "@angular-architects/module-federation";
 import {ProfileComponent} from "./profile/profile.component";
 import {SinglePostComponent} from "./single-post/single-post.component";
+import {SingleEventComponent} from "./single-event/single-event.component";
 
 const routes: Routes = [
   {
@@ -47,6 +48,11 @@ const routes: Routes = [
     path: 'p/:id',
     canActivate: [AuthGuard],
     component: SinglePostComponent
+  },
+  {
+    path: 'e/:id',
+    canActivate: [AuthGuard],
+    component: SingleEventComponent
   }
 ];
 

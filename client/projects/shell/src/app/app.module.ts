@@ -12,13 +12,15 @@ import { FederatedComponent } from './federated/federated.component';
 import { ProfileComponent } from './profile/profile.component';
 import {ReactiveFormsModule} from "@angular/forms";
 import {SinglePostComponent} from "./single-post/single-post.component";
+import { SingleEventComponent } from './single-event/single-event.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     FederatedComponent,
     ProfileComponent,
-    SinglePostComponent
+    SinglePostComponent,
+    SingleEventComponent
   ],
   imports: [
     BrowserModule,

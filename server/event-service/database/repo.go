@@ -26,6 +26,7 @@ type Repository interface {
 	CheckIfCurrentlyAttended(ctx context.Context, username, eventID string) (bool, error)
 	SetLeaveTimeAfterEventEnded(ctx context.Context, username string, event *model.Event) error
 	DetermineContactPersons(ctx context.Context, username, eventID string) ([]string, error)
+	GetEvent(ctx context.Context, eventID string) (*model.Event, error)
 }
 
 type Repo struct {
@@ -206,6 +207,64 @@ func (repo *Repo) GetEvents(ctx context.Context, username string) ([]*model.Even
 	}
 
 	return upcomingEvents, ongoingEvents, pastEvents, nil
+}
+
+func (repo *Repo) GetEvent(ctx context.Context, eventID string) (*model.Event, error) {
+	objID, err := primitive.ObjectIDFromHex(eventID)
+	if err != nil {
+		return nil, err
+	}
+
+	var event Event
+	err = repo.eventCollection.FindOne(ctx, bson.D{{"_id", objID}}).Decode(&event)
+	if err != nil {
+		return nil, err
+	}
+
+	eventModel := &model.Event{
+		ID:          event.ID.Hex(),
+		Title:       event.Title,
+		StartDate:   event.StartDate,
+		EndDate:     event.EndDate,
+		Location:    event.Location,
+		Description: event.Description,
+		Subscribers: event.Subscribers,
+		Host:        event.Host,
+		Attendees:   event.Attendees,
+	}
+
+	max := int64(1)
+	// Sort event_time and get one element which will be the most recent edited event in relation to liked, unliked and description
+	opts := options.Find()
+	opts.SetSort(bson.D{{"event_time", -1}})
+	opts.Limit = &max
+	cursor, err := repo.eventCollection.Find(ctx, bson.D{
+		{"id", eventID},
+		{"event_type", bson.D{
+			{"$in", bson.A{"EditEvent", "SubscribeEvent", "AttendEvent"}},
+		}},
+	}, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(ctx) {
+		var event Event
+		if err = cursor.Decode(&event); err != nil {
+			return nil, err
+		}
+
+		// Add editable data
+		eventModel.Title = event.Title
+		eventModel.Description = event.Description
+		eventModel.Subscribers = event.Subscribers
+		eventModel.EndDate = event.EndDate
+		eventModel.StartDate = event.StartDate
+		eventModel.Location = event.Location
+		eventModel.Attendees = event.Attendees
+	}
+
+	return eventModel, nil
 }
 
 func formatDate(startDate string, endDate string) (time.Time, time.Time, bool, error) {

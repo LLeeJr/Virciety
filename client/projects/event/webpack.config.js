@@ -6,7 +6,9 @@ const share = mf.share;
 const sharedMappings = new mf.SharedMappings();
 sharedMappings.register(
   path.join(__dirname, '../../tsconfig.json'),
-  [/* mapped paths to share */]);
+  [
+    'auth-lib',
+  ]);
 
 module.exports = {
   output: {
@@ -28,6 +30,7 @@ module.exports = {
       name: "event",
       filename: "remoteEntry.js",
       exposes: {
+        EventModule: './projects/event/src/app/event/event.module.ts',
         './EventModule': './projects/event/src/app/event/event.module.ts',
       },
 

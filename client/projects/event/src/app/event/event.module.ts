@@ -6,15 +6,21 @@ import {MaterialModule} from "../material.module";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import { CreateEventComponent } from '../create-event/create-event.component';
 import { ContactDetailsComponent } from '../contact-details/contact-details.component';
+import { SingleEventComponent } from '../single-event/single-event.component';
 
+
+const EXPORTS = [
+  SingleEventComponent
+]
 
 @NgModule({
   declarations: [
+    ...EXPORTS,
     EventComponent,
     CreateEventComponent,
     DialogSubscribersComponent,
     ContactDetailsComponent,
-    DialogReportCovidCaseComponent
+    DialogReportCovidCaseComponent,
   ],
   imports: [
     CommonModule,
@@ -25,4 +31,6 @@ import { ContactDetailsComponent } from '../contact-details/contact-details.comp
     MaterialModule,
   ]
 })
-export class EventModule { }
+export class EventModule {
+  static exports = EXPORTS
+}

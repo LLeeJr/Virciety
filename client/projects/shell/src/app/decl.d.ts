@@ -1,7 +1,3 @@
 declare module 'chat/ChatModule'
 declare module 'post/PostModule'
-declare module 'create-post/CreatePostModule'
-declare module 'user/UserModule'
 declare module 'event/EventModule'
-declare module 'profile-viewer/ProfileViewerModule'
-declare module 'notification/NotificationModule'

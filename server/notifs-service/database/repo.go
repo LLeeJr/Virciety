@@ -412,8 +412,8 @@ func (r repo) CreateEventNotifFromConsumer(body []byte) error {
 		eventType = "Changes on Event"
 	}
 
-	route := "/event"
-	if s.ReportedBy == "" && !s.EditFlag {
+	route := "/e/"
+	if !s.EditFlag {
 		route = ""
 	}
 	notifEvent := NotifEvent{

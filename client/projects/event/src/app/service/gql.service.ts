@@ -7,6 +7,7 @@ import {
   ATTEND_EVENT,
   CREATE_EVENT,
   EDIT_EVENT,
+  GET_EVENT,
   GET_EVENTS,
   REMOVE_EVENT,
   SUBSCRIBE_EVENT,
@@ -158,6 +159,15 @@ export class GQLService {
         username: username,
         eventID: eventID,
         reportedBy: reportedBy,
+      }
+    });
+  }
+
+  getEventByID(eventID: string) {
+    return this.apollo.query({
+      query: GET_EVENT,
+      variables: {
+        eventID: eventID,
       }
     });
   }
