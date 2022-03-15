@@ -10,7 +10,7 @@ services:
     image: postgres
     restart: always
     ports:
-      - 5431:5432
+      - "5431:5432"
     expose:
       - 5431
     container_name: keycloak-db
@@ -35,7 +35,69 @@ services:
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: admin
     ports:
-      - 8080:8080
+      - "8080:8080"
     depends_on:
       - postgres
 
+  shell:
+    container_name: shell
+    build:
+      context: .
+      args:
+        - APPLICATION=shell
+    ports:
+      - "4200:80"
+
+  chat:
+    container_name: chat
+    build:
+      context: .
+      args:
+        - APPLICATION=chat
+    ports:
+      - "5001:80"
+
+  post:
+    container_name: post
+    build:
+      context: .
+      args:
+        - APPLICATION=post
+    ports:
+      - "5002:80"
+
+  user:
+    container_name: user
+    build:
+      context: .
+      args:
+        - APPLICATION=user
+    ports:
+      - "5003:80"
+
+  event:
+    container_name: event
+    build:
+      context: .
+      args:
+        - APPLICATION=event
+    ports:
+      - "5004:80"
+
+  profile-viewer:
+    container_name: profile-viewer
+    build:
+      context: .
+      args:
+        - APPLICATION=profile-viewer
+    ports:
+      - "5005:80"
+
+  notification:
+    container_name: notification
+    build:
+      context: .
+      args:
+        - APPLICATION=notification
+    ports:
+      - "5006:80"
