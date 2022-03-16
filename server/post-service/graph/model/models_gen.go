@@ -31,7 +31,6 @@ type EditPostRequest struct {
 	ID             string   `json:"id"`
 	NewDescription string   `json:"newDescription"`
 	LikedBy        []string `json:"likedBy"`
-	Comments       []string `json:"comments"`
 }
 
 type File struct {
@@ -45,7 +44,6 @@ type LikePostRequest struct {
 	Description string   `json:"description"`
 	NewLikedBy  []string `json:"newLikedBy"`
 	PostOwner   string   `json:"postOwner"`
-	Comments    []string `json:"comments"`
 	Liked       bool     `json:"liked"`
 	LikedBy     string   `json:"likedBy"`
 }

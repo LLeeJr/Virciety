@@ -11,6 +11,7 @@ import {
   CREATE_POST,
   EDIT_POST,
   GET_DATA,
+  GET_POST,
   GET_POST_COMMENTS,
   GET_POSTS,
   LIKE_POST,
@@ -20,7 +21,7 @@ import {
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
 import {SubscriptionClient} from "subscriptions-transport-ws";
-import {Subject} from "rxjs";
+import {Observable, Subject} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
@@ -219,8 +220,6 @@ export class GQLService {
       this.userProfilePictureIds.next(userProfilePictureIdMap);
 
       post.comments = commentList;
-
-      post.commentMode = true;
     }, (error: any) => {
       console.error('there was an error sending the getPostComments-query', error);
     })
@@ -286,7 +285,6 @@ export class GQLService {
         description: post.description,
         newLikedBy: post.likedBy,
         postOwner: post.username,
-        comments: post.comments,
         liked: liked,
         likedBy: username,
       }
@@ -304,7 +302,6 @@ export class GQLService {
         id: post.id,
         newDescription: post.description,
         likedBy: post.likedBy,
-        comments: post.comments,
       }
     }).subscribe(({data}: any) => {
       // console.log('EditPostData: ', data)
@@ -386,19 +383,27 @@ export class GQLService {
   }
 
   addComment(post: Post, addCommentRequest: { createdBy: string; comment: string; postID: string }) {
-    this.apollo.mutate({
+    return this.apollo.mutate({
       mutation: ADD_COMMENT,
       variables: {
         comment: addCommentRequest,
       }
-    }).subscribe(({data}: any) => {
-      const comment = new Comment(data.addComment);
-
-      post.comments = [comment, ...post.comments];
-
-      // console.log('AddCommentData: ', data)
-    }, (error: any) => {
-      console.error('there was an error sending the addComment-mutation', error);
     });
+  }
+
+  getPostByID(postID: string): Post | Observable<any> {
+    // check if post exists locally
+    let post = this.dataService.getPost(postID);
+
+    // if not then fetch from server
+    if (post === undefined) {
+      return this.apollo.watchQuery({
+        query: GET_POST,
+        variables: {
+          id: postID,
+        },
+      }).valueChanges
+    }
+    return post
   }
 }

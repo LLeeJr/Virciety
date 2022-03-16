@@ -12,12 +12,11 @@ export class Post {
   public comments: Comment[];
   public username: string;
   public editMode: boolean;
-  public commentMode: boolean;
 
   constructor(data: any) {
     this.data = {
       name: data.data.name,
-      content: '',
+      content: data.data.content,
       contentType: data.data.contentType,
     };
 
@@ -27,6 +26,5 @@ export class Post {
     this.description = data.description;
     this.username = data.username;
     this.editMode = false;
-    this.commentMode = false;
   }
 }

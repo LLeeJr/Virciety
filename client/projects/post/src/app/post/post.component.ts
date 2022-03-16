@@ -75,8 +75,6 @@ export class PostComponent implements OnInit, OnDestroy {
       this.editPost(post);
     } else if (event === 'remove') {
       this.removePost(post);
-    } else {
-      this.showComments(post);
     }
   }
 
@@ -112,10 +110,5 @@ export class PostComponent implements OnInit, OnDestroy {
   removePost(post: Post) {
     post.editMode = false;
     this.gqlService.removePost(post);
-  }
-
-  showComments(post: Post) {
-    post.commentMode = true;
-    this.gqlService.getPostComments(post);
   }
 }

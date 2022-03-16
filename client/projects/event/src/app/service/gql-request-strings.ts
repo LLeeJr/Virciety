@@ -45,6 +45,23 @@ export const GET_EVENTS = gql`
   }
 `
 
+export const GET_EVENT = gql`
+    query getEvent($eventID: String!) {
+      getEvent(eventID: $eventID) {
+        id
+        title
+        host
+        location
+        description
+        startDate
+        endDate
+        subscribers
+        attendees
+        currentlyAttended
+      }
+    }
+  `;
+
 export const USER_DATA_EXISTS = gql`
   query userDataExists($username: String!) {
     userDataExists(username: $username) {

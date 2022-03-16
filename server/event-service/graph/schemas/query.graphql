@@ -3,4 +3,5 @@ type Query {
     userDataExists(username: String): UserData
     notifyHostOfEvent(username: String, eventID: String, reportedBy: String): Boolean
     notifyContactPersons(username: String, eventID: String): Boolean
+    getEvent(eventID: String): Event
 }
