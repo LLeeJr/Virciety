@@ -83,6 +83,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		GetData         func(childComplexity int, fileID string) int
+		GetPost         func(childComplexity int, id string) int
 		GetPostComments func(childComplexity int, id string) int
 		GetPosts        func(childComplexity int, id string, fetchLimit int, filter *string) int
 	}
@@ -108,6 +109,7 @@ type QueryResolver interface {
 	GetPosts(ctx context.Context, id string, fetchLimit int, filter *string) ([]*model.Post, error)
 	GetData(ctx context.Context, fileID string) (string, error)
 	GetPostComments(ctx context.Context, id string) (*model.CommentsWithProfileIds, error)
+	GetPost(ctx context.Context, id string) (*model.Post, error)
 }
 type SubscriptionResolver interface {
 	NewPostCreated(ctx context.Context) (<-chan *model.Post, error)
@@ -312,6 +314,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.GetData(childComplexity, args["fileID"].(string)), true
 
+	case "Query.getPost":
+		if e.complexity.Query.GetPost == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getPost_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetPost(childComplexity, args["id"].(string)), true
+
 	case "Query.getPostComments":
 		if e.complexity.Query.GetPostComments == nil {
 			break
@@ -454,7 +468,6 @@ input EditPostRequest {
     id: String!
     newDescription: String!
     likedBy: [String!]!
-    comments: [String!]!
 }
 
 input LikePostRequest {
@@ -462,7 +475,6 @@ input LikePostRequest {
     description: String!
     newLikedBy: [String!]!
     postOwner: String!
-    comments: [String!]!
     liked: Boolean!
     likedBy: String!
 }
@@ -515,6 +527,7 @@ type UserIdMap {
     getPosts(id: String!, fetchLimit: Int!, filter: String): [Post!]!
     getData(fileID: String!): String!
     getPostComments(id: String!): CommentsWithProfileIds!
+    getPost(id: String!): Post!
 }`, BuiltIn: false},
 	{Name: "graph/schemas/subscription.graphql", Input: `type Subscription {
     newPostCreated: Post!
@@ -632,6 +645,21 @@ func (ec *executionContext) field_Query_getData_args(ctx context.Context, rawArg
 }
 
 func (ec *executionContext) field_Query_getPostComments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getPost_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -1608,6 +1636,48 @@ func (ec *executionContext) _Query_getPostComments(ctx context.Context, field gr
 	res := resTmp.(*model.CommentsWithProfileIds)
 	fc.Result = res
 	return ec.marshalNCommentsWithProfileIds2ᚖpostᚑserviceᚋgraphᚋmodelᚐCommentsWithProfileIds(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_getPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_getPost_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetPost(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Post)
+	fc.Result = res
+	return ec.marshalNPost2ᚖpostᚑserviceᚋgraphᚋmodelᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3029,14 +3099,6 @@ func (ec *executionContext) unmarshalInputEditPostRequest(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-		case "comments":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comments"))
-			it.Comments, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		}
 	}
 
@@ -3081,14 +3143,6 @@ func (ec *executionContext) unmarshalInputLikePostRequest(ctx context.Context, o
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("postOwner"))
 			it.PostOwner, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "comments":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("comments"))
-			it.Comments, err = ec.unmarshalNString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3549,6 +3603,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getPostComments(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "getPost":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getPost(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

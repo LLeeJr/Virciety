@@ -13,8 +13,6 @@ import (
 
 const defaultMongoDBUrl = "mongodb://admin:admin@localhost:27017/"
 
-var ctx context.Context
-
 func dbConnect() (*mongo.Client, error) {
 	url := os.Getenv("POST_MONGODB_URL")
 	if url == "" {

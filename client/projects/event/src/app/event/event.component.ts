@@ -53,6 +53,10 @@ export class EventComponent implements OnInit {
             this.selectedEvents = this.upcomingEvents;
           }, (error: any) => {
             console.error('there was an error sending the getEvents-query', error);
+            this.ongoingEvents = [];
+            this.pastEvents = [];
+            this.upcomingEvents = [];
+            this.selectedEvents = [];
           });
         })
       } else {

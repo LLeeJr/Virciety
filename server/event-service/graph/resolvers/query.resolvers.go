@@ -57,9 +57,9 @@ func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *stri
 	}
 
 	eventNotification := message_queue.EventNotification{
-		EventId:    *eventID,
-		EditFlag:   false,
-		Message:    "You were in contact with a person who was tested positive for covid. Please, get yourself tested.",
+		EventId:  *eventID,
+		EditFlag: false,
+		Message:  "You were in contact with a person who was tested positive for covid. Please, get yourself tested.",
 	}
 	for _, person := range contactPersons {
 		eventNotification.Username = person
@@ -67,6 +67,10 @@ func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *stri
 	}
 
 	return &notified, nil
+}
+
+func (r *queryResolver) GetEvent(ctx context.Context, eventID *string) (*model.Event, error) {
+	return r.repo.GetEvent(ctx, *eventID);
 }
 
 // Query returns generated.QueryResolver implementation.

@@ -2,6 +2,8 @@ import {Component, EventEmitter, Inject, Input, OnInit, Output} from '@angular/c
 import {Post} from "../../model/post";
 import {MAT_DIALOG_DATA, MatDialog} from "@angular/material/dialog";
 import {AuthLibService} from "auth-lib";
+import {SinglePostComponent} from "../single-post/single-post.component";
+import { Location } from '@angular/common'
 
 @Component({
   selector: 'post-media',
@@ -17,7 +19,8 @@ export class MediaComponent implements OnInit {
   source: string = '';
 
   constructor(private auth: AuthLibService,
-              private dialog: MatDialog) { }
+              private dialog: MatDialog,
+              private location: Location) { }
 
   ngOnInit(): void {
     this.auth.getUserByName(this.post.username).subscribe(value => {
@@ -42,6 +45,22 @@ export class MediaComponent implements OnInit {
     this.dialog.open(DialogLikedBy, {
       data: likedBy
     });
+  }
+
+  openPostDialog(post: Post) {
+    let state = this.location.path();
+    this.location.replaceState(`/p/${post.id}`);
+    let dialogRef = this.dialog.open(SinglePostComponent, {
+      data: {
+        post: post
+      }
+    })
+
+    dialogRef.afterClosed().subscribe({
+      next: _ => {
+        this.location.replaceState(state);
+      }
+    })
   }
 }
 

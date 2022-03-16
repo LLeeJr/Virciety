@@ -14,7 +14,6 @@ input EditPostRequest {
     id: String!
     newDescription: String!
     likedBy: [String!]!
-    comments: [String!]!
 }
 
 input LikePostRequest {
@@ -22,7 +21,6 @@ input LikePostRequest {
     description: String!
     newLikedBy: [String!]!
     postOwner: String!
-    comments: [String!]!
     liked: Boolean!
     likedBy: String!
 }

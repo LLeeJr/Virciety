@@ -5,12 +5,7 @@
      [scrollWindow]="false">
   <div *ngFor="let post of posts | async">
     <mat-card class="post-card">
-      <div *ngIf="post.commentMode">
-        <post-comment (newCommentEvent)="addComment(post, $event)" [post]="post" [user]="this.username"></post-comment>
-      </div>
-      <div *ngIf="!post.commentMode">
-        <post-media (newEvent)="triggerEvent(post, $event)" [post]="post" [username]="this.username"></post-media>
-      </div>
+      <post-media (newEvent)="triggerEvent(post, $event)" [post]="post" [username]="this.username"></post-media>
     </mat-card>
   </div>
 

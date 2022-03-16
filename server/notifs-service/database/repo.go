@@ -256,7 +256,7 @@ func (r repo) CreateCommentNotifFromConsumer(body []byte) error {
 		Receiver:  s.Post.Username,
 		Text:      notifText,
 		Read:      false,
-		Route:     "/profile",
+		Route:     "/p/",
 		Params:    m,
 	}
 
@@ -306,7 +306,7 @@ func (r repo) CreateLikeNotifFromConsumer(body []byte) error {
 		Receiver:  s.Username,
 		Text:      notifText,
 		Read:      false,
-		Route:     "/profile",
+		Route:     "/p/",
 		Params:    m,
 	}
 
@@ -412,8 +412,8 @@ func (r repo) CreateEventNotifFromConsumer(body []byte) error {
 		eventType = "Changes on Event"
 	}
 
-	route := "/event"
-	if s.ReportedBy == "" && !s.EditFlag {
+	route := "/e/"
+	if !s.EditFlag {
 		route = ""
 	}
 	notifEvent := NotifEvent{

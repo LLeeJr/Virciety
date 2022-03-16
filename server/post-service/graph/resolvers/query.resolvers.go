@@ -14,7 +14,7 @@ import (
 )
 
 func (r *queryResolver) GetPosts(ctx context.Context, id string, fetchLimit int, filter *string) ([]*model.Post, error) {
-	currentPosts, err := r.repo.GetPosts(id, fetchLimit, filter)
+	currentPosts, err := r.repo.GetPosts(ctx, id, fetchLimit, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func (r *queryResolver) GetPosts(ctx context.Context, id string, fetchLimit int,
 }
 
 func (r *queryResolver) GetData(ctx context.Context, fileID string) (string, error) {
-	data, err := r.repo.GetData(fileID)
+	data, err := r.repo.GetData(ctx, fileID)
 	if err != nil {
 		return "", err
 	}
@@ -78,6 +78,20 @@ func (r *queryResolver) GetPostComments(ctx context.Context, id string) (*model.
 	}
 
 	return commentIdMap, nil
+}
+
+func (r *queryResolver) GetPost(ctx context.Context, id string) (*model.Post, error) {
+	post, err := r.repo.GetPost(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	post.Data.Content, err = r.GetData(ctx, post.Data.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	return post, nil
 }
 
 // Query returns generated.QueryResolver implementation.
