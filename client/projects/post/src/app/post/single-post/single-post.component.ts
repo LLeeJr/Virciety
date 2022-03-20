@@ -5,6 +5,7 @@ import {ActivatedRoute} from "@angular/router";
 import {Location} from "@angular/common";
 import {AuthLibService} from "auth-lib";
 import {Comment} from "../../model/comment";
+import {KeycloakService} from "keycloak-angular";
 
 @Component({
   selector: 'app-single-post',
@@ -19,13 +20,18 @@ export class SinglePostComponent implements OnInit {
   comment: string = '';
   nameSourceMap: Map<string, any> = new Map<string, any>();
   source: string = '';
+  username: string = '';
 
   constructor(private auth: AuthLibService,
               private gqlService: GQLService,
               private route: ActivatedRoute,
-              private location: Location) { }
+              private location: Location,
+              private keycloak: KeycloakService) { }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
+    let keycloakProfilePromise = await this.keycloak.loadUserProfile();
+    this.username = <string>keycloakProfilePromise.username;
+
     let postID = this.route.snapshot.paramMap.get('id');
     // get postID when opened via dialog
     if (postID === null) {
@@ -41,7 +47,6 @@ export class SinglePostComponent implements OnInit {
       } else {
         returnedData.subscribe({
           next: ({data}: any) => {
-            // console.log(data)
             this.post = new Post(data.getPost);
 
             this.getData(this.post);
@@ -67,6 +72,10 @@ export class SinglePostComponent implements OnInit {
       this.gqlService.addComment(this.post, addCommentRequest).subscribe({
         next: ({data}: any) => {
           const comment = new Comment(data.addComment);
+
+          if (!this.nameSourceMap.has(this.username)) {
+            this.getCurrentUserProfilePicture();
+          }
 
           if (this.post)
             this.post.comments = [comment, ...this.post.comments];
@@ -106,6 +115,25 @@ export class SinglePostComponent implements OnInit {
           })
         } else {
           this.nameSourceMap.set(entry[0], "");
+        }
+      }
+    });
+    let find = post.comments.find(comment => comment.createdBy === this.username);
+    if (find != undefined && !this.nameSourceMap.has(this.username)) {
+      this.getCurrentUserProfilePicture();
+    }
+  }
+
+  private getCurrentUserProfilePicture() {
+    this.auth.getUserByName(this.username).subscribe(value => {
+      if (value && value.data && value.data.getUserByName) {
+        let {profilePictureId} = value.data.getUserByName;
+        if (profilePictureId && profilePictureId !== '') {
+          this.auth.getProfilePicture(profilePictureId).subscribe(picture => {
+            if (picture && picture.data && picture.data.getProfilePicture) {
+              this.nameSourceMap.set(this.username, picture.data.getProfilePicture);
+            }
+          })
         }
       }
     });

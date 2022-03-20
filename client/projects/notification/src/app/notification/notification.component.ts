@@ -36,11 +36,23 @@ export class NotificationComponent implements OnInit {
 
           this.api.subscribeToNotifications(this.username).subscribe((value: any) => {
             if (value && value.data && value.data.notifAdded) {
+              let notification = value.data.notifAdded;
               if (this.notifications.length == 10) {
                 let slice = this.notifications.slice(0, this.notifications.length-1);
                 this.notifications = [...slice];
               }
-              this.notifications = [value.data.notifAdded, ...this.notifications];
+              this.notifications = [notification, ...this.notifications];
+
+              let url = this.router.url;
+              let routes = url.split('/')
+
+              if (notification.route === "/chat" && url.startsWith(notification.route)) {
+                if (notification.params[1] && notification.params[1].key === "roomName" && routes.includes(notification.params[1].value)) {
+                  this.api.setReadStatus(notification.id, true).pipe(take(1)).subscribe(() => {
+                    notification.read = true;
+                  });
+                }
+              }
             }
           });
         })
