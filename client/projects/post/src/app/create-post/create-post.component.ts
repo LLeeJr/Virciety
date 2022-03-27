@@ -2,6 +2,7 @@ import {ChangeDetectorRef, Component, OnInit} from '@angular/core';
 import {GQLService} from "../service/gql.service";
 import {MatDialog} from "@angular/material/dialog";
 import {KeycloakService} from "keycloak-angular";
+import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 
 @Component({
   selector: 'app-create-post',
@@ -15,13 +16,19 @@ export class CreatePostComponent implements OnInit {
   content_type: string = '';
   filename: string | undefined;
   username: string;
+  isPhonePortrait: boolean = false;
 
   constructor(private gqlService: GQLService,
               private keycloak: KeycloakService,
-              private cd: ChangeDetectorRef) {
+              private cd: ChangeDetectorRef,
+              private responsive: BreakpointObserver) {
   }
 
   async ngOnInit(): Promise<void> {
+    this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
+      this.isPhonePortrait = result.matches;
+    });
+
     await this.keycloak.isLoggedIn().then(loggedIn => {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {
