@@ -1,7 +1,7 @@
 .comment-list {
   flex-grow: 1;
   overflow: auto;
-  max-height: 150px;
+  max-height: 16em;
   //margin-bottom: 50px;
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -17,6 +17,16 @@
   background-size: cover;
 }
 
+.info {
+  display: flex;
+  flex-direction: column;
+  background: #303030;
+  border-radius: 4px;
+  box-shadow: 5px 5px 5px #272727;
+  padding-left: 1em;
+  padding-right: 1em;
+}
+
 .info-header {
   display: flex;
   align-items: center;
@@ -29,8 +39,35 @@
   margin-bottom: 10px;
 }
 
+.post_comments_container.is-phone-portrait {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
 .media {
   max-width: 500px;
   max-height: 500px;
   margin: 0 16px 0 0;
+  border: 1px solid #272727;
+  box-shadow: 5px 5px 5px #272727;
+  border-radius: 4px;
+}
+
+.post {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.media.is-phone-portrait {
+  max-width: 18em;
+  max-height: 18em;
+  margin-bottom: 1em;
+}
+
+.comment-input {
+  margin-top: auto;
 }
