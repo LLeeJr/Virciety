@@ -31,3 +31,10 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #202020;
 }
+
+@media (hover: hover) {
+  mat-icon:hover {
+    color: #e91e63;
+    transition: 250ms ease-in-out;
+  }
+}
