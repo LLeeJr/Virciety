@@ -1,6 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {KeycloakService} from "keycloak-angular";
 import {AuthLibService} from "auth-lib";
+import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 
 @Component({
   selector: 'app-root',
@@ -13,10 +14,12 @@ export class AppComponent implements OnInit {
   username: string
 
   searchMode: boolean = false;
+  isPhonePortrait: boolean = false;
 
   constructor(
     private auth: AuthLibService,
     private keycloak: KeycloakService,
+    private responsive: BreakpointObserver
   ) {
     this.keycloak.isLoggedIn().then((loggedIn) => {
       this.isLoggedIn = loggedIn;
@@ -24,7 +27,11 @@ export class AppComponent implements OnInit {
     });
   }
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
+      this.isPhonePortrait = result.matches;
+    });
+  }
 
   logout() {
     this.keycloak.isLoggedIn().then((loggedIn) => {
