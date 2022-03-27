@@ -1,5 +1,5 @@
 <form>
-  <mat-form-field appearance="fill" style="font-size: 12px; height: 2.3em">
+  <mat-form-field appearance="fill" style="font-size: 12px; height: 2.3em" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
     <mat-label>Search</mat-label>
     <input type="text"
            placeholder="Username"
