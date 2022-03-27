@@ -1,13 +1,15 @@
-<div class="chat-rooms">
-  <div class="chat-title">Recent Chats</div>
-  <button mat-icon-button class="addButton" (click)="openDialog()">
-    <mat-icon style="font-size: 40px">add_circle_outline</mat-icon>
-  </button>
-  <button mat-icon-button class="settingsButton" (click)="this.showSettings = !this.showSettings">
-    <mat-icon style="font-size: 40px">settings</mat-icon>
-  </button>
+<div class="chat-rooms" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
+  <ng-container *ngIf="!isPhonePortrait; else phoneLayoutHeader">
+    <div class="chat-title">Recent Chats</div>
+    <button mat-icon-button class="addButton" (click)="openDialog()">
+      <mat-icon style="font-size: 40px">add_circle_outline</mat-icon>
+    </button>
+    <button mat-icon-button class="settingsButton" (click)="this.showSettings = !this.showSettings">
+      <mat-icon style="font-size: 40px">settings</mat-icon>
+    </button>
+  </ng-container>
   <div *ngIf="chatrooms.length > 0; else none">
-    <div *ngFor="let room of chatrooms" class="room-card">
+    <div *ngFor="let room of chatrooms" class="room-card" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
       <mat-card (click)="setChatPartner(room)" class="card-content">
         <div>
           <mat-card-title>
@@ -30,6 +32,20 @@
     </div>
   </div>
 </div>
+
+<ng-template #phoneLayoutHeader>
+  <div class="phone-layout-header">
+    <div class="chat-title">Recent Chats</div>
+    <div>
+      <button mat-icon-button (click)="openDialog()">
+        <mat-icon style="font-size: 24px">add_circle_outline</mat-icon>
+      </button>
+      <button mat-icon-button (click)="this.showSettings = !this.showSettings">
+        <mat-icon style="font-size: 24px">settings</mat-icon>
+      </button>
+    </div>
+  </div>
+</ng-template>
 
 <ng-template #none>
   <p>No rooms yet!</p>
