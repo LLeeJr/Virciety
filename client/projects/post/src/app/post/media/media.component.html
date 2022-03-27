@@ -29,13 +29,13 @@
 </mat-card-actions>
 
 <ng-template #normal_buttons_tp>
-  <button mat-icon-button (click)="triggerEvent('like')">
+  <button mat-icon-button (click)="triggerEvent('like')" matTooltip="Like">
     <mat-icon>favorite</mat-icon>
   </button>
-  <button mat-icon-button (click)="openPostDialog(post)">
+  <button mat-icon-button (click)="openPostDialog(post)" matTooltip="Add Comment">
     <mat-icon>add_comment</mat-icon>
   </button>
-  <button mat-icon-button *ngIf="post.username === this.username" (click)="post.editMode = true">
+  <button mat-icon-button *ngIf="post.username === this.username" (click)="post.editMode = true" matTooltip="Edit">
     <mat-icon>edit</mat-icon>
   </button>
 </ng-template>
