@@ -21,3 +21,9 @@
   color: inherit;
   text-decoration: none;
 }
+
+.post-utils {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
