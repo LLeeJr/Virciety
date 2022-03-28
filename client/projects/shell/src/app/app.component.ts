@@ -50,4 +50,8 @@ export class AppComponent implements OnInit {
   closeSearch() {
     this.searchMode = !this.searchMode;
   }
+
+  handleError(event: any) {
+    console.log(event)
+  }
 }
