@@ -10,6 +10,10 @@
   letter-spacing: normal;
 }
 
+.chatroom-title.is-phone-portrait {
+  position: initial;
+}
+
 .chat-container {
   width: 100%;
   display: flex;
@@ -71,6 +75,13 @@
   margin-top: 1em;
 }
 
+.backButton.is-phone-portrait {
+  position: initial;
+  margin-left: .5em;
+  margin-right: 2em;
+  margin-top: .25em;
+}
+
 .groupIcon {
   position: fixed;
   left: 1.5em;
@@ -79,7 +90,23 @@
   cursor: default;
 }
 
+.groupIcon.is-phone-portrait {
+  font-size: 32px;
+  left: 0.25em;
+  bottom: 0.5em;
+}
+
 .mat-card {
   display: flex;
   flex-direction: column;
+}
+
+.phone-layout-chat-header {
+  position: fixed;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background: #212121;
+  z-index: 1;
 }

@@ -1,9 +1,22 @@
+
+<div *ngIf="isPhonePortrait">
+  <div class="phone-layout-chat-header">
+    <button mat-icon-button class="backButton" (click)="goBack()" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
+      <mat-icon style="font-size: 32px">arrow_back_ios</mat-icon>
+    </button>
+    <div class="chatroom-title" [ngClass]="{'is-phone-portrait': isPhonePortrait}">Chatroom: {{this.room.name}}</div>
+  </div>
+</div>
+
 <div class="chat-container" *ngIf="this.room">
-  <button mat-icon-button class="backButton" (click)="goBack()">
-    <mat-icon style="font-size: 40px">arrow_back_ios</mat-icon>
-  </button>
-  <mat-icon *ngIf="!isDirect() && this.room.member" class="groupIcon" matTooltip="{{this.getRoomMembers()}}">groups</mat-icon>
-  <div class="chatroom-title">Chatroom: {{this.room.name}}</div>
+  <ng-container *ngIf="!isPhonePortrait">
+    <button mat-icon-button class="backButton" (click)="goBack()">
+      <mat-icon style="font-size: 40px">arrow_back_ios</mat-icon>
+    </button>
+    <div class="chatroom-title">Chatroom: {{this.room.name}}</div>
+  </ng-container>
+  <mat-icon *ngIf="!isDirect() && this.room.member" class="groupIcon"
+            matTooltip="{{this.getRoomMembers()}}" [ngClass]="{'is-phone-portrait': isPhonePortrait}">groups</mat-icon>
   <div class="chat">
     <div *ngFor="let message of messages" class="message-container">
       <ng-container [ngTemplateOutlet]="message.createdBy === this.username ? userMessage : friendMessage"
@@ -26,6 +39,16 @@
     </mat-form-field>
   </div>
 </div>
+
+
+<ng-template #phoneLayoutChatHeader>
+  <div class="phone-layout-chat-header">
+    <button mat-icon-button class="backButton" (click)="goBack()" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
+      <mat-icon style="font-size: 32px">arrow_back_ios</mat-icon>
+    </button>
+    <div class="chatroom-title" [ngClass]="{'is-phone-portrait': isPhonePortrait}">Chatroom: {{this.room.name}}</div>
+  </div>
+</ng-template>
 
 <ng-template #userMessage let-message='message' class="message-card">
   <mat-card class="user-message-card">
