@@ -12,7 +12,8 @@ import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 @Component({
   selector: 'app-chat',
   templateUrl: './chat.component.html',
-  styleUrls: ['./chat.component.scss']
+  styleUrls: ['./chat.component.scss'],
+  exportAs: 'ChatComponent'
 })
 export class ChatComponent implements OnInit {
 

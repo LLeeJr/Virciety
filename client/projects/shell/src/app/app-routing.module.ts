@@ -1,10 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import {AuthGuard} from "./guard/auth.guard";
-import {loadRemoteModule} from "@angular-architects/module-federation";
 import {ProfileComponent} from "./profile/profile.component";
 import {SinglePostComponent} from "./single-post/single-post.component";
 import {SingleEventComponent} from "./single-event/single-event.component";
+import {PostComponent} from "./post/post.component";
+import {EventComponent} from "./event/event.component";
+import {ChatComponent} from "./chat/chat.component";
+import {OpenChatComponent} from "./open-chat/open-chat.component";
 
 const routes: Routes = [
   {
@@ -15,29 +18,22 @@ const routes: Routes = [
   {
     path: 'chat',
     canActivate: [AuthGuard],
-    loadChildren: () =>
-      loadRemoteModule({
-        remoteName: 'chat',
-        exposedModule: './ChatModule',
-      }).then(m => m.ChatModule),
+    component: ChatComponent,
+  },
+  {
+    path: 'chat/:name',
+    canActivate: [AuthGuard],
+    component: OpenChatComponent,
   },
   {
     path: 'home',
     canActivate: [AuthGuard],
-    loadChildren: () =>
-      loadRemoteModule({
-        remoteName: 'post',
-        exposedModule: './PostModule',
-      }).then(m => m.PostModule),
+    component: PostComponent
   },
   {
     path: 'event',
     canActivate: [AuthGuard],
-    loadChildren: () =>
-      loadRemoteModule({
-        remoteName: 'event',
-        exposedModule: './EventModule',
-      }).then(m => m.EventModule),
+    component: EventComponent,
   },
   {
     path: 'profile',

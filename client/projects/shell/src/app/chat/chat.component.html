@@ -1,0 +1,6 @@
+<app-federated-component
+  remoteEntry="http://localhost:5001/remoteEntry.js"
+  remoteName="chat" exposedModule="ChatModule"
+  componentName="ChatComponent"
+  (errorHandle)="handleError($event)"
+></app-federated-component>

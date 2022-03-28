@@ -20,7 +20,8 @@ export interface EventDate {
 @Component({
   selector: 'app-event',
   templateUrl: './event.component.html',
-  styleUrls: ['./event.component.scss']
+  styleUrls: ['./event.component.scss'],
+  exportAs: 'EventComponent'
 })
 export class EventComponent implements OnInit {
 

@@ -28,7 +28,7 @@ module.exports = {
         name: "chat",
         filename: "remoteEntry.js",
         exposes: {
-            './ChatModule': './projects/chat/src/app/chat/chat.module.ts',
+            ChatModule: './projects/chat/src/app/chat/chat.module.ts',
         },
 
         // For hosts (please adjust)

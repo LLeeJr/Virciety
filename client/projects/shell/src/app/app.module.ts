@@ -13,6 +13,10 @@ import { ProfileComponent } from './profile/profile.component';
 import {ReactiveFormsModule} from "@angular/forms";
 import {SinglePostComponent} from "./single-post/single-post.component";
 import { SingleEventComponent } from './single-event/single-event.component';
+import { PostComponent } from './post/post.component';
+import { ChatComponent } from './chat/chat.component';
+import { EventComponent } from './event/event.component';
+import { OpenChatComponent } from './open-chat/open-chat.component';
 
 @NgModule({
   declarations: [
@@ -20,7 +24,11 @@ import { SingleEventComponent } from './single-event/single-event.component';
     FederatedComponent,
     ProfileComponent,
     SinglePostComponent,
-    SingleEventComponent
+    SingleEventComponent,
+    PostComponent,
+    ChatComponent,
+    EventComponent,
+    OpenChatComponent
   ],
   imports: [
     BrowserModule,

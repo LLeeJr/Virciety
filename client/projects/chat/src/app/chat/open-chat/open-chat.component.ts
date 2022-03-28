@@ -12,7 +12,8 @@ import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 @Component({
   selector: 'app-open-chat',
   templateUrl: './open-chat.component.html',
-  styleUrls: ['./open-chat.component.scss']
+  styleUrls: ['./open-chat.component.scss'],
+  exportAs: 'OpenChatComponent',
 })
 export class OpenChatComponent implements OnInit, OnDestroy {
 
