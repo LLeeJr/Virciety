@@ -1,4 +1,4 @@
-<div class="container">
+<div class="container" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
   <div>
     <mat-toolbar class="event-toolbar">
       <span>{{this.selectedList}}</span>

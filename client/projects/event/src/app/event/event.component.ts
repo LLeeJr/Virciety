@@ -10,6 +10,7 @@ import {ContactDetailsComponent} from "../contact-details/contact-details.compon
 import {UserData} from "../model/userData";
 import {NOTIFY_CONTACT_PERSONS, NOTIFY_HOST_OF_EVENT} from "../service/gql-request-strings";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 
 export interface EventDate {
   startDate: string;
@@ -31,6 +32,7 @@ export class EventComponent implements OnInit {
   username: string;
   selectedList: string = 'Upcoming events';
   lists: string[] = ['Upcoming events', 'Ongoing events', 'Past events'];
+  isPhonePortrait: boolean = false;
 
   asc = (a: Event, b: Event) => +new Date(a.startDate) - +new Date(b.startDate);
   desc = (a: Event, b: Event) => +new Date(a.startDate) + +new Date(b.startDate)
@@ -38,9 +40,14 @@ export class EventComponent implements OnInit {
   constructor(private keycloak: KeycloakService,
               private gqlService: GQLService,
               private dialog: MatDialog,
-              private snackbar: MatSnackBar) { }
+              private snackbar: MatSnackBar,
+              private responsive: BreakpointObserver) { }
 
   async ngOnInit(): Promise<void> {
+    this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
+      this.isPhonePortrait = result.matches;
+    });
+
     await this.keycloak.isLoggedIn().then(loggedIn => {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {
