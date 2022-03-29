@@ -2,6 +2,8 @@ import {Component, OnInit} from '@angular/core';
 import {KeycloakService} from "keycloak-angular";
 import {AuthLibService} from "auth-lib";
 import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
+import {Router} from "@angular/router";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-root',
@@ -19,15 +21,21 @@ export class AppComponent implements OnInit {
   constructor(
     private auth: AuthLibService,
     private keycloak: KeycloakService,
-    private responsive: BreakpointObserver
-  ) {
-    this.keycloak.isLoggedIn().then((loggedIn) => {
-      this.isLoggedIn = loggedIn;
-      this.keycloak.loadUserProfile().then(() => this.username = this.keycloak.getUsername())
-    });
-  }
+    private responsive: BreakpointObserver,
+    private router: Router,
+  ) { }
 
-  ngOnInit() {
+  async ngOnInit(): Promise<void> {
+    await this.keycloak.isLoggedIn().then(loggedIn => {
+      if (loggedIn) {
+        this.keycloak.loadUserProfile().then(() => {
+          this.username = this.keycloak.getUsername();
+        })
+      } else {
+        this.keycloak.login();
+      }
+    });
+
     this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
       this.isPhonePortrait = result.matches;
     });
@@ -52,6 +60,13 @@ export class AppComponent implements OnInit {
   }
 
   handleError(event: any) {
-    console.log(event)
+    let {error, component} = event;
+    if (error) {
+      let msg = `${component} is currently offline!`;
+      switch (component) {
+        case 'post':
+          this.router.navigate(['/page-not-found', msg]);
+      }
+    }
   }
 }

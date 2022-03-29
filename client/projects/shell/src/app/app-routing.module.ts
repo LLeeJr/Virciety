@@ -8,12 +8,17 @@ import {PostComponent} from "./post/post.component";
 import {EventComponent} from "./event/event.component";
 import {ChatComponent} from "./chat/chat.component";
 import {OpenChatComponent} from "./open-chat/open-chat.component";
+import {PageNotFoundComponent} from "./page-not-found/page-not-found.component";
 
 const routes: Routes = [
   {
     path: '',
     redirectTo: '/home',
     pathMatch: 'full'
+  },
+  {
+    path: 'page-not-found/:msg',
+    component: PageNotFoundComponent,
   },
   {
     path: 'chat',

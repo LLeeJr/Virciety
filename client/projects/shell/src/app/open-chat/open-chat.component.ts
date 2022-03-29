@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-open-chat',
@@ -7,12 +8,16 @@ import { Component, OnInit } from '@angular/core';
 })
 export class OpenChatComponent implements OnInit {
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
   }
 
   handleError(event: any) {
-
+    let {error, component} = event;
+    if (error && component === 'chat') {
+      let msg = `${component} is currently offline!`;
+      this.router.navigate(['/page-not-found', msg])
+    }
   }
 }

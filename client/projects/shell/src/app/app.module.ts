@@ -17,6 +17,7 @@ import { PostComponent } from './post/post.component';
 import { ChatComponent } from './chat/chat.component';
 import { EventComponent } from './event/event.component';
 import { OpenChatComponent } from './open-chat/open-chat.component';
+import { PageNotFoundComponent } from './page-not-found/page-not-found.component';
 
 @NgModule({
   declarations: [
@@ -28,7 +29,8 @@ import { OpenChatComponent } from './open-chat/open-chat.component';
     PostComponent,
     ChatComponent,
     EventComponent,
-    OpenChatComponent
+    OpenChatComponent,
+    PageNotFoundComponent,
   ],
   imports: [
     BrowserModule,

@@ -12,6 +12,7 @@ import {MatFormFieldModule} from "@angular/material/form-field";
 import {MatInputModule} from "@angular/material/input";
 import {MatSelectModule} from "@angular/material/select";
 import {MatNativeDateModule} from "@angular/material/core";
+import {MatSnackBarModule} from "@angular/material/snack-bar";
 
 @NgModule({
   imports: [
@@ -27,7 +28,8 @@ import {MatNativeDateModule} from "@angular/material/core";
     MatInputModule,
     NgxMatTimepickerModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    MatSnackBarModule,
   ],
   exports: [
     MatToolbarModule,
@@ -42,7 +44,8 @@ import {MatNativeDateModule} from "@angular/material/core";
     MatInputModule,
     NgxMatTimepickerModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    MatSnackBarModule,
   ],
 })
 export class MaterialModule { }

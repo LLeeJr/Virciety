@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-event',
@@ -7,12 +8,16 @@ import { Component, OnInit } from '@angular/core';
 })
 export class EventComponent implements OnInit {
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
   }
 
   handleError(event: any) {
-    console.log(event)
+    let {error, component} = event;
+    if (error && component === 'event') {
+      let msg = `${component} is currently offline!`;
+      this.router.navigate(['/page-not-found', msg])
+    }
   }
 }
