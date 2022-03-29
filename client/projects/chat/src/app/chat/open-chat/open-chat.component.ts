@@ -134,7 +134,7 @@ export class OpenChatComponent implements OnInit, OnDestroy {
 
   async sendMessage() {
     if (this.message.length > 0) {
-      await this.api.writeDm(this.message, this.room.name, this.room.id).toPromise();
+      await this.api.writeDm(this.message, this.room.name, this.room.id, this.username).toPromise();
       this.message = '';
       this.scrollToBottom();
     }

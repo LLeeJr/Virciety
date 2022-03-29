@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import {setContext} from "@apollo/client/link/context";
-import {ApolloLink, InMemoryCache, split} from "@apollo/client/core";
+import {ApolloLink, from, InMemoryCache, split} from "@apollo/client/core";
 import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
-import {AuthLibService} from "auth-lib";
 import {HttpLink} from "apollo-angular/http";
 import {SubscriptionClient} from "subscriptions-transport-ws";
 import {WebSocketLink} from "@apollo/client/link/ws";
 import {getMainDefinition} from "@apollo/client/utilities";
 import {NotificationSubscriptionGql} from "./notification-subscription-gql";
-import {Observable} from "rxjs";
+import {Observable, Subject} from "rxjs";
+import {onError} from "@apollo/client/link/error";
 
 const base = 'localhost:8082/query';
 
@@ -20,15 +20,21 @@ export class ApiService {
   private webSocketClient!: SubscriptionClient;
   private apollo!: ApolloBase;
   private query: QueryRef<any>;
+  errorState: Subject<string> = new Subject<string>();
 
   constructor(private apolloProvider: Apollo,
-              private auth: AuthLibService,
               private httpLink: HttpLink,
               private notifSubGql: NotificationSubscriptionGql) {
     this.start();
   }
 
   private start() {
+    let errorLink = onError(({graphQLErrors, networkError }) => {
+      if (networkError) {
+        let msg = `Notifications are currently offline!`;
+        this.errorState.next(msg);
+      }
+    });
     const basic = setContext((operation) => ({
       headers: {
         Accept: 'charset=utf-8'
@@ -54,6 +60,7 @@ export class ApiService {
 
     this.webSocketClient = new SubscriptionClient(`ws://${base}`, {
       reconnect: true,
+      reconnectionAttempts: 3,
     });
     const ws = new WebSocketLink(this.webSocketClient);
 
@@ -71,7 +78,7 @@ export class ApiService {
 
     this.apolloProvider.createNamed('notification', {
       cache: cache,
-      link: link
+      link: from([errorLink, link]),
     });
 
     this.apollo = this.apolloProvider.use('notification');

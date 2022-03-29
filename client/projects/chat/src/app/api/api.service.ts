@@ -5,10 +5,11 @@ import {ChatSubscriptionGqlService} from "./chat-subscription-gql";
 import {SubscriptionClient} from "subscriptions-transport-ws";
 import {HttpLink} from "apollo-angular/http";
 import {WebSocketLink} from "@apollo/client/link/ws";
-import {ApolloLink, InMemoryCache, split} from "@apollo/client/core";
+import {ApolloLink, from, InMemoryCache, split} from "@apollo/client/core";
 import {getMainDefinition} from "@apollo/client/utilities";
-import {AuthLibService} from "auth-lib";
 import {setContext} from "@apollo/client/link/context";
+import {onError} from "@apollo/client/link/error";
+import {Router} from "@angular/router";
 
 @Injectable({
   providedIn: 'root',
@@ -24,13 +25,20 @@ export class ApiService {
   private webSocketClient!: SubscriptionClient;
 
   constructor(private apolloProvider: Apollo,
-              private auth: AuthLibService,
               private chatSubGql: ChatSubscriptionGqlService,
-              private httpLink: HttpLink) {
+              private httpLink: HttpLink,
+              private router: Router) {
     this.start();
   }
 
   private start() {
+    let errorLink = onError(({graphQLErrors, networkError }) => {
+      if (networkError) {
+        let msg = `Chat backend is currently offline, try again later!`;
+        this.router.navigate(['page-not-found', msg]);
+      }
+    });
+
     const basic = setContext((operation, context) => ({
       headers: {
         Accept: 'charset=utf-8'
@@ -51,7 +59,7 @@ export class ApiService {
       }
     });
 
-    const http = ApolloLink.from([basic, auth, this.httpLink.create({ uri: 'http://localhost:8081/query'})]);
+    const http = ApolloLink.from([basic, auth, errorLink, this.httpLink.create({ uri: 'http://localhost:8081/query'})]);
     const cache = new InMemoryCache({
       typePolicies: {
         Query: {
@@ -66,6 +74,7 @@ export class ApiService {
 
     this.webSocketClient = new SubscriptionClient('ws://localhost:8081/query', {
       reconnect: true,
+      reconnectionAttempts: 3,
     });
     const ws = new WebSocketLink(this.webSocketClient);
 
@@ -83,14 +92,13 @@ export class ApiService {
 
     this.apolloProvider.createNamed('chat', {
       cache: cache,
-      link: link
+      link: from([errorLink, link]),
     });
 
     this.apollo = this.apolloProvider.use('chat');
   }
 
-  writeDm(msg: string, roomName: string, roomId: string): Observable<any> {
-    const userName = this.auth.userName;
+  writeDm(msg: string, roomName: string, roomId: string, username: string): Observable<any> {
 
     const mutation = gql`
     mutation createDm($msg: String!, $userName: String!, $roomName: String!, $roomID: String!){
@@ -108,7 +116,7 @@ export class ApiService {
       mutation: mutation,
       variables: {
         msg: msg,
-        userName: userName,
+        userName: username,
         roomName: roomName,
         roomID: roomId,
       },
