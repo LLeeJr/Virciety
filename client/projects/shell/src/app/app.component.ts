@@ -17,12 +17,15 @@ export class AppComponent implements OnInit {
 
   searchMode: boolean = false;
   isPhonePortrait: boolean = false;
+  notificationMfeOnline: boolean = true;
+  postMfeOnline: boolean = true;
+  private durationTime: number = 3;
 
-  constructor(
-    private auth: AuthLibService,
+  constructor(private auth: AuthLibService,
     private keycloak: KeycloakService,
     private responsive: BreakpointObserver,
     private router: Router,
+    private snackbar: MatSnackBar,
   ) { }
 
   async ngOnInit(): Promise<void> {
@@ -65,8 +68,22 @@ export class AppComponent implements OnInit {
       let msg = `${component} is currently offline!`;
       switch (component) {
         case 'post':
+          this.postMfeOnline = false;
           this.router.navigate(['/page-not-found', msg]);
+          break;
+        case 'notification':
+          this.notificationMfeOnline = false;
+          break;
+        case 'user':
+          this.searchMode = !this.searchMode;
+          this.placeholderHandler('user-search')
+          break;
       }
     }
+  }
+
+  placeholderHandler(component: string) {
+    let msg = `${component} is currently offline!`;
+    this.snackbar.open(msg, undefined, {duration: this.durationTime*1000});
   }
 }
