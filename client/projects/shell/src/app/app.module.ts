@@ -18,6 +18,7 @@ import { ChatComponent } from './chat/chat.component';
 import { EventComponent } from './event/event.component';
 import { OpenChatComponent } from './open-chat/open-chat.component';
 import { PageNotFoundComponent } from './page-not-found/page-not-found.component';
+import {environment} from "../environments/environment";
 
 @NgModule({
   declarations: [
@@ -48,6 +49,10 @@ import { PageNotFoundComponent } from './page-not-found/page-not-found.component
       useFactory: initializeKeycloak,
       multi: true,
       deps: [KeycloakService],
+    },
+    {
+      provide: 'environment',
+      useValue: environment
     }
   ],
   exports: [

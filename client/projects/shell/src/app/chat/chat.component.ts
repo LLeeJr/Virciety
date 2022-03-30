@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import {environment} from "../../environments/environment";
 import {Router} from "@angular/router";
 
 @Component({
@@ -7,8 +8,11 @@ import {Router} from "@angular/router";
   styleUrls: ['./chat.component.scss']
 })
 export class ChatComponent implements OnInit {
+  chatMFE: string;
 
-  constructor(private router: Router) { }
+  constructor(private router: Router) {
+    this.chatMFE = environment.chatMFE;
+  }
 
   ngOnInit(): void {
   }
