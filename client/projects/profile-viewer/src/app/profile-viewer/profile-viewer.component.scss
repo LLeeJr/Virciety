@@ -5,6 +5,11 @@
   min-width: 26em;
 }
 
+.profile-card.is-phone-portrait {
+  max-width: 20em;
+  min-width: 20em;
+}
+
 .profile-info {
   margin-left: 1em;
   display: grid;

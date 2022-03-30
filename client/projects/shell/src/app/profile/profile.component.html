@@ -6,6 +6,7 @@
     exposedModule="ProfileViewerModule"
     componentName="ProfileViewerComponent"
     class="profile-viewer-container"
+    (errorHandle)="handleError($event)"
   ></app-federated-component>
 
   <app-federated-component
@@ -13,6 +14,7 @@
     remoteName="post" exposedModule="PostModule"
     componentName="PostComponent"
     class="post-container"
+    (errorHandle)="handleError($event)"
   ></app-federated-component>
 
 </div>

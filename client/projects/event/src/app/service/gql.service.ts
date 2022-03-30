@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase} from "apollo-angular";
 import {HttpLink} from "apollo-angular/http";
-import {DocumentNode, InMemoryCache} from "@apollo/client/core";
+import {DocumentNode, from, InMemoryCache} from "@apollo/client/core";
 import {
   ADD_USER_DATA,
   ATTEND_EVENT,
@@ -16,15 +16,26 @@ import {
 import {Event} from "../model/event";
 import {EventDate} from "../event/event.component";
 import {UserData} from "../model/userData";
+import {onError} from "@apollo/client/link/error";
+import {Router} from "@angular/router";
+import {Subject} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
 })
 export class GQLService {
   private apollo: ApolloBase;
+  errorState: Subject<string> = new Subject<string>();
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink) {
+    let errorLink = onError(({graphQLErrors, networkError }) => {
+      if (networkError) {
+        let msg = `Event backend is currently offline, try again later!`;
+        this.errorState.next(msg);
+      }
+    });
+
     const http = httpLink.create({
       uri: 'http://localhost:8086/query',
     });
@@ -32,7 +43,7 @@ export class GQLService {
     try {
       this.apolloProvider.createNamed('event', {
         cache: new InMemoryCache(),
-        link: http,
+        link: from([errorLink, http]),
       });
     } catch (e) {
       console.error('Error when creating apollo client \'event\'', e);

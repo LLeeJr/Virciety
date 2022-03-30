@@ -24,22 +24,19 @@
   </div>
 </mat-card-content>
 
-<mat-card-actions>
+<mat-card-actions class="post-utils" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
   <ng-container [ngTemplateOutlet]="post.editMode ? edit_buttons_tp : normal_buttons_tp" [ngTemplateOutletContext]="{post:post}"></ng-container>
 </mat-card-actions>
 
 <ng-template #normal_buttons_tp>
-  <button mat-button (click)="triggerEvent('like')">
+  <button mat-icon-button (click)="triggerEvent('like')" matTooltip="Like">
     <mat-icon>favorite</mat-icon>
-    Like
   </button>
-  <button mat-button (click)="openPostDialog(post)">
+  <button mat-icon-button (click)="openPostDialog(post)" matTooltip="Add Comment">
     <mat-icon>add_comment</mat-icon>
-    Comment
   </button>
-  <button mat-button *ngIf="post.username === this.username" (click)="post.editMode = true">
+  <button mat-icon-button *ngIf="post.username === this.username" (click)="post.editMode = true" matTooltip="Edit">
     <mat-icon>edit</mat-icon>
-    Edit
   </button>
 </ng-template>
 

@@ -1,3 +1,11 @@
+.phone-layout-header {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .chat-title {
   font: 500 20px/32px;
   font-size: 20px;
@@ -14,6 +22,14 @@
   margin-bottom: auto;
 }
 
+.chat-rooms.is-phone-portrait {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: auto;
+  margin-left: 1em;
+}
+
 .mat-card-title:hover {
   color: #e91e63;
 }
@@ -22,6 +38,11 @@
   cursor: pointer;
   margin-bottom: 1em;
   min-width: 30em;
+}
+
+.room-card.is-phone-portrait {
+  min-width: 23em;
+  max-width: 23em;
 }
 
 .addButton {
@@ -54,8 +75,4 @@
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
-}
-
-.mat-icon:hover {
-  color: #e91e63;
 }

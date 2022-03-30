@@ -10,13 +10,13 @@ import { SingleEventComponent } from '../single-event/single-event.component';
 
 
 const EXPORTS = [
-  SingleEventComponent
+  SingleEventComponent,
+  EventComponent
 ]
 
 @NgModule({
   declarations: [
     ...EXPORTS,
-    EventComponent,
     CreateEventComponent,
     DialogSubscribersComponent,
     ContactDetailsComponent,
@@ -29,7 +29,8 @@ const EXPORTS = [
     FormsModule,
     ReactiveFormsModule,
     MaterialModule,
-  ]
+  ],
+  exports: [...EXPORTS]
 })
 export class EventModule {
   static exports = EXPORTS

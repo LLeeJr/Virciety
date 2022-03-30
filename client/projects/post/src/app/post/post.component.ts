@@ -4,6 +4,7 @@ import {GQLService} from "../service/gql.service";
 import {Observable} from "rxjs";
 import {KeycloakService} from "keycloak-angular";
 import {ActivatedRoute} from "@angular/router";
+import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 
 @Component({
   selector: 'app-post',
@@ -15,13 +16,19 @@ export class PostComponent implements OnInit, OnDestroy {
   posts: Observable<Post[]> | undefined;
   username: string;
   filter: string | null;
+  isPhonePortrait: boolean = false;
 
   constructor(private gqlService: GQLService,
               private keycloak: KeycloakService,
-              private route: ActivatedRoute) {
+              private route: ActivatedRoute,
+              private responsive: BreakpointObserver) {
   }
 
   async ngOnInit(): Promise<void> {
+    this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
+      this.isPhonePortrait = result.matches;
+    });
+
     await this.keycloak.isLoggedIn().then(loggedIn => {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {

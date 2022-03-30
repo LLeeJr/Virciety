@@ -4,7 +4,7 @@
      (scrolled)="onScroll()"
      [scrollWindow]="false">
   <div *ngFor="let post of posts | async">
-    <mat-card class="post-card">
+    <mat-card class="post-card" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
       <post-media (newEvent)="triggerEvent(post, $event)" [post]="post" [username]="this.username"></post-media>
     </mat-card>
   </div>

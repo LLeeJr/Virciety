@@ -2,13 +2,17 @@
   <button mat-icon-button (click)="sidenav.toggle()">
     <mat-icon>menu</mat-icon>
   </button>
-  <span class="title" routerLink="/home">Welcome back, {{username}}</span>
+  <span class="title" routerLink="/home" *ngIf="!isPhonePortrait">Welcome back, {{username}}</span>
   <span class="spacer"></span>
   <button mat-icon-button (click)="openSearch()" *ngIf="!searchMode; else searchInput">
     <mat-icon>search</mat-icon>
   </button>
-  <app-federated-component remoteEntry="http://localhost:5002/remoteEntry.js" remoteName="post" exposedModule="CreatePostModule" componentName="DialogCreatePostComponent"></app-federated-component>
-  <app-federated-component remoteEntry="http://localhost:5006/remoteEntry.js" remoteName="notification" exposedModule="NotificationModule" componentName="NotificationComponent"></app-federated-component>
+  <ng-container *ngIf="postMfeOnline; else createPostMfePlaceholder">
+    <app-federated-component remoteEntry="http://localhost:5002/remoteEntry.js" remoteName="post" exposedModule="CreatePostModule" componentName="DialogCreatePostComponent" (errorHandle)="handleError($event)"></app-federated-component>
+  </ng-container>
+  <ng-container *ngIf="notificationMfeOnline; else notificationMfePlaceholder">
+    <app-federated-component remoteEntry="http://localhost:5006/remoteEntry.js" remoteName="notification" exposedModule="NotificationModule" componentName="NotificationComponent" (errorHandle)="handleError($event)"></app-federated-component>
+  </ng-container>
 </mat-toolbar>
 
 <mat-drawer-container class="mat-drawer-container">
@@ -29,9 +33,21 @@
 
 <ng-template #searchInput>
   <div class="search-container">
-    <app-federated-component remoteEntry="http://localhost:5003/remoteEntry.js" remoteName="user" exposedModule="UserModule" componentName="UserComponent"></app-federated-component>
+    <app-federated-component remoteEntry="http://localhost:5003/remoteEntry.js" remoteName="user" exposedModule="UserModule" componentName="UserComponent" (errorHandle)="handleError($event)"></app-federated-component>
     <button mat-icon-button (click)="closeSearch()">
       <mat-icon>search_off</mat-icon>
     </button>
   </div>
+</ng-template>
+
+<ng-template #notificationMfePlaceholder>
+  <button mat-icon-button (click)="placeholderHandler('notification')">
+    <mat-icon>notifications</mat-icon>
+  </button>
+</ng-template>
+
+<ng-template #createPostMfePlaceholder>
+  <button mat-icon-button (click)="placeholderHandler('create-post')">
+    <mat-icon>add</mat-icon>
+  </button>
 </ng-template>

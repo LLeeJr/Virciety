@@ -4,7 +4,7 @@ import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog
 import {ActivatedRoute, Router} from "@angular/router";
 import {KeycloakService} from "keycloak-angular";
 import {take} from "rxjs/operators";
-import {pipe} from "rxjs";
+import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 
 @Component({
   selector: 'app-profile-viewer',
@@ -20,12 +20,14 @@ export class ProfileViewerComponent implements OnInit {
   source: string = '';
   loggedInUser: string;
   pickedUser: string;
+  isPhonePortrait: boolean = false;
 
   constructor(public dialog: MatDialog,
               private auth: AuthLibService,
               private keycloak: KeycloakService,
               private route: ActivatedRoute,
-              private router: Router) {
+              private router: Router,
+              private responsive: BreakpointObserver) {
     this.route.queryParams.subscribe(({username}) => {
       this.pickedUser = username;
 
@@ -42,6 +44,10 @@ export class ProfileViewerComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
+      this.isPhonePortrait = result.matches
+    })
+
     await this.keycloak.isLoggedIn().then(() => {
       this.keycloak.loadUserProfile().then(() => {
         this.loggedInUser = this.keycloak.getUsername();

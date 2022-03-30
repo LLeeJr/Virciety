@@ -5,6 +5,7 @@ import {DatePipe} from "@angular/common";
 import {Notification} from "../data/notification";
 import {Router} from "@angular/router";
 import {take} from "rxjs";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-notification',
@@ -21,9 +22,11 @@ export class NotificationComponent implements OnInit {
   constructor(private api: ApiService,
               private datePipe: DatePipe,
               private keycloak: KeycloakService,
-              private router: Router) { }
+              private router: Router,
+              private snackbar: MatSnackBar) { }
 
   async ngOnInit(): Promise<void> {
+    this.api.errorState.subscribe(value => this.snackbar.open(value, undefined, {duration: 3000}));
     await this.keycloak.isLoggedIn().then(loggedIn => {
       if (loggedIn) {
         this.keycloak.loadUserProfile().then(() => {

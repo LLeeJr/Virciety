@@ -1,0 +1,6 @@
+<app-federated-component
+  remoteEntry="http://localhost:5004/remoteEntry.js"
+  remoteName="event" exposedModule="EventModule"
+  componentName="EventComponent"
+  (errorHandle)="handleError($event)"
+></app-federated-component>

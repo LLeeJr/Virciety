@@ -28,7 +28,6 @@ const EXPORTS = [
     FormsModule
   ],
   exports: [...EXPORTS],
-
 })
 export class PostModule {
   static exports = EXPORTS;

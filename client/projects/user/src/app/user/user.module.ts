@@ -12,6 +12,7 @@ import {MatInputModule} from "@angular/material/input";
 import {MatListModule} from "@angular/material/list";
 import {MatCardModule} from "@angular/material/card";
 import {MatIconModule} from "@angular/material/icon";
+import {MatSnackBarModule} from "@angular/material/snack-bar";
 
 const EXPORTS = [
   UserComponent,
@@ -32,7 +33,8 @@ const EXPORTS = [
     MatInputModule,
     MatListModule,
     MatCardModule,
-    MatIconModule
+    MatIconModule,
+    MatSnackBarModule,
   ],
   exports: [...EXPORTS],
 })
