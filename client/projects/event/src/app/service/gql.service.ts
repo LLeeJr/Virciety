@@ -18,20 +18,21 @@ import {EventDate} from "../event/event.component";
 import {UserData} from "../model/userData";
 import {onError} from "@apollo/client/link/error";
 import {Router} from "@angular/router";
+import {Subject} from "rxjs";
 
 @Injectable({
   providedIn: 'root'
 })
 export class GQLService {
   private apollo: ApolloBase;
+  errorState: Subject<string> = new Subject<string>();
 
   constructor(private apolloProvider: Apollo,
-              private httpLink: HttpLink,
-              private router: Router) {
+              private httpLink: HttpLink) {
     let errorLink = onError(({graphQLErrors, networkError }) => {
       if (networkError) {
         let msg = `Event backend is currently offline, try again later!`;
-        this.router.navigate(['page-not-found', msg]);
+        this.errorState.next(msg);
       }
     });
 

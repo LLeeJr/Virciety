@@ -45,6 +45,8 @@ export class EventComponent implements OnInit {
               private responsive: BreakpointObserver) { }
 
   async ngOnInit(): Promise<void> {
+    this.gqlService.errorState.subscribe(value => this.snackbar.open(value, undefined, {duration: 3000}));
+
     this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
       this.isPhonePortrait = result.matches;
     });

@@ -8,6 +8,7 @@ import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material/dialog
 import {FormControl, Validators} from "@angular/forms";
 import {take} from "rxjs/operators";
 import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
+import {MatSnackBar} from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-chat',
@@ -27,10 +28,13 @@ export class ChatComponent implements OnInit {
               private dialog: MatDialog,
               private keycloak: KeycloakService,
               private router: Router,
-              private responsive: BreakpointObserver) {
+              private responsive: BreakpointObserver,
+              private snackbar: MatSnackBar) {
   }
 
   async ngOnInit(): Promise<void> {
+    this.api.errorState.subscribe(value => this.snackbar.open(value, undefined, {duration: 3000}));
+
     this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
       this.isPhonePortrait = result.matches;
     });

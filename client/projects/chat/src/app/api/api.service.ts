@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
-import {Observable} from "rxjs";
+import {Observable, Subject} from "rxjs";
 import {ChatSubscriptionGqlService} from "./chat-subscription-gql";
 import {SubscriptionClient} from "subscriptions-transport-ws";
 import {HttpLink} from "apollo-angular/http";
@@ -19,6 +19,7 @@ export class ApiService {
   messages: any[] = [];
   chatMembers: string[] = [];
   selectedRoom: any;
+  errorState: Subject<string> = new Subject<string>();
 
   private query: QueryRef<any> | undefined;
   private apollo!: ApolloBase;
@@ -26,8 +27,7 @@ export class ApiService {
 
   constructor(private apolloProvider: Apollo,
               private chatSubGql: ChatSubscriptionGqlService,
-              private httpLink: HttpLink,
-              private router: Router) {
+              private httpLink: HttpLink) {
     this.start();
   }
 
@@ -35,7 +35,7 @@ export class ApiService {
     let errorLink = onError(({graphQLErrors, networkError }) => {
       if (networkError) {
         let msg = `Chat backend is currently offline, try again later!`;
-        this.router.navigate(['page-not-found', msg]);
+        this.errorState.next(msg);
       }
     });
 
