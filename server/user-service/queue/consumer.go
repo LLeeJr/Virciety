@@ -11,16 +11,19 @@ const QueryQueue = "user-service-query"
 const CommandQueue = "user-service-command"
 const EventQueue = "user-service-event"
 
+// Consumer is a helper-interface for initialising a rabbitMQ-consumer and handling its message-consumption
 type Consumer interface {
 	InitConsumer(ch *amqp.Channel)
 }
 
+// NewConsumer creates a new Consumer with a respective repo to make calls to the database
 func NewConsumer(repo database.Repository) (Consumer, error) {
 	return &ChannelConfig{
 		Repo: repo,
 	}, nil
 }
 
+// InitConsumer initialises a Consumer and its rabbitMQ-exchanges, as well as activates its queue-listeners
 func (c *ChannelConfig) InitConsumer(ch *amqp.Channel) {
 
 	initQueue(QueryQueue, QueryExchange, ch)

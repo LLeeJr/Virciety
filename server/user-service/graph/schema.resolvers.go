@@ -13,6 +13,7 @@ import (
 	"user-service/graph/model"
 )
 
+// CreateUser creates a new model.User by providing a user-input-struct (Username string, FirstName string, LastName string)
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserData) (*model.User, error) {
 	userEvent := database.UserEvent{
 		EventType: "CreateUser",
@@ -38,6 +39,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.UserData)
 	return user, nil
 }
 
+// AddFollow updates the follower- and following-list of the two respective users
 func (r *mutationResolver) AddFollow(ctx context.Context, id *string, username *string, toAdd *string) (*model.User, error) {
 	user, err := r.repo.AddFollow(ctx, id, username, toAdd)
 
@@ -57,6 +59,7 @@ func (r *mutationResolver) AddFollow(ctx context.Context, id *string, username *
 	return user, nil
 }
 
+// RemoveFollow updates the follower- and following-list of the two respective users
 func (r *mutationResolver) RemoveFollow(ctx context.Context, id *string, username *string, toRemove *string) (*model.User, error) {
 	user, err := r.repo.RemoveFollow(ctx, id, username, toRemove)
 
@@ -67,6 +70,7 @@ func (r *mutationResolver) RemoveFollow(ctx context.Context, id *string, usernam
 	return user, nil
 }
 
+// AddProfilePicture adds a new profile-picture to a given username
 func (r *mutationResolver) AddProfilePicture(ctx context.Context, input model.AddProfilePicture) (string, error) {
 	profilePictureEvent := database.ProfilePictureEvent{
 		EventType: "AddProfilePicture",
@@ -83,6 +87,7 @@ func (r *mutationResolver) AddProfilePicture(ctx context.Context, input model.Ad
 	return response, nil
 }
 
+// RemoveProfilePicture removes the profile-picture of a given username by providing the picture's id
 func (r *mutationResolver) RemoveProfilePicture(ctx context.Context, remove model.RemoveProfilePicture) (string, error) {
 	profilePictureEvent := database.ProfilePictureEvent{
 		EventType: "RemoveProfilePicture",
@@ -99,6 +104,7 @@ func (r *mutationResolver) RemoveProfilePicture(ctx context.Context, remove mode
 	return response, nil
 }
 
+// GetUserByID returns a model.User for a given user-id
 func (r *queryResolver) GetUserByID(ctx context.Context, id *string) (*model.User, error) {
 	user, err := r.repo.GetUserByID(ctx, id)
 
@@ -109,6 +115,7 @@ func (r *queryResolver) GetUserByID(ctx context.Context, id *string) (*model.Use
 	return user, nil
 }
 
+// GetUserByName returns a model.User for a given username
 func (r *queryResolver) GetUserByName(ctx context.Context, name *string) (*model.User, error) {
 	user, err := r.repo.GetUserByName(ctx, name)
 
@@ -119,6 +126,7 @@ func (r *queryResolver) GetUserByName(ctx context.Context, name *string) (*model
 	return user, nil
 }
 
+// GetProfilePicture returns the data-content of a profile-picture by providing the file-id
 func (r *queryResolver) GetProfilePicture(ctx context.Context, fileID *string) (string, error) {
 	data, err := r.repo.GetProfilePicture(ctx, fileID)
 	if err != nil {
@@ -128,6 +136,7 @@ func (r *queryResolver) GetProfilePicture(ctx context.Context, fileID *string) (
 	return data, nil
 }
 
+// FindUsersWithName returns ten users whose username matches the provided name at most
 func (r *queryResolver) FindUsersWithName(ctx context.Context, name *string) ([]*model.User, error) {
 	users, err := r.repo.FindUsersWithName(ctx, name)
 

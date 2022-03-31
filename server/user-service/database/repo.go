@@ -39,6 +39,19 @@ type repo struct {
 	bucket                   *gridfs.Bucket
 }
 
+type UserByName struct {
+	EventType string             `bson:"eventtype"`
+	EventTime time.Time          `bson:"eventtime"`
+	FirstName string             `bson:"firstname"`
+	Follows   []string           `bson:"follows"`
+	Followers []string           `bson:"followers"`
+	ID        primitive.ObjectID `bson:"_id"`
+	LastName  string             `bson:"lastname"`
+	Username  string             `bson:"username"`
+	FileId    string             `bson:"fileId"`
+}
+
+// GetProfilePictureIdByUsername retrieves the file-id for a given username
 func (r repo) GetProfilePictureIdByUsername(username string) (string, error) {
 	user, err := r.GetUserByName(nil, &username)
 	if err != nil {
@@ -47,6 +60,7 @@ func (r repo) GetProfilePictureIdByUsername(username string) (string, error) {
 	return user.ProfilePictureID, nil
 }
 
+// RemoveProfilePicture removes the current profile-picture for a given username and file-id
 func (r repo) RemoveProfilePicture(ctx context.Context, profilePictureEvent ProfilePictureEvent) (string, error) {
 
 	type file struct {
@@ -104,6 +118,7 @@ func (r repo) RemoveProfilePicture(ctx context.Context, profilePictureEvent Prof
 	return "removed profile picture successfully", err
 }
 
+// GetProfilePicture retrieves the data-content of a profile-picture for a given file-id
 func (r repo) GetProfilePicture(ctx context.Context, fileID *string) (string, error) {
 	var buf bytes.Buffer
 	_, err := r.bucket.DownloadToStreamByName(*fileID, &buf)
@@ -114,6 +129,7 @@ func (r repo) GetProfilePicture(ctx context.Context, fileID *string) (string, er
 	return string(buf.Bytes()), nil
 }
 
+// InsertFile is a helper-function for inserting the data-content of a given profile-picture (provided ad base64)
 func (r repo) InsertFile(base64 string) (*model.File, error) {
 	fileName := uuid.NewString()
 
@@ -141,7 +157,7 @@ func (r repo) InsertFile(base64 string) (*model.File, error) {
 	}, nil
 }
 
-
+// AddProfilePicture adds a new profile-picture to a given username, whilst also insuring to remove the old picture
 func (r repo) AddProfilePicture(ctx context.Context, profilePictureEvent ProfilePictureEvent, input model.AddProfilePicture) (string, error) {
 	user, err := r.GetUserByName(ctx, &input.Username)
 	if err != nil {
@@ -190,6 +206,7 @@ func (r repo) AddProfilePicture(ctx context.Context, profilePictureEvent Profile
 
 }
 
+// RemoveFollow updates the follower- and follows-list inside the two respective user-elements inside the database
 func (r repo) RemoveFollow(ctx context.Context, id *string, username *string, remove *string) (*model.User, error) {
 	if *username == *remove {
 		return nil, errors.New("user can not unfollow himself")
@@ -254,6 +271,7 @@ func (r repo) RemoveFollow(ctx context.Context, id *string, username *string, re
 	return user, nil
 }
 
+// AddFollow updates the follower- and follows-list inside the two respective user-elements inside the database
 func (r repo) AddFollow(ctx context.Context, id *string, username *string, add *string) (*model.User, error) {
 	if *username == *add {
 		return nil, errors.New("user can not follow himself")
@@ -317,18 +335,7 @@ func (r repo) AddFollow(ctx context.Context, id *string, username *string, add *
 	return user, nil
 }
 
-type UserByName struct {
-	EventType string             `bson:"eventtype"`
-	EventTime time.Time          `bson:"eventtime"`
-	FirstName string             `bson:"firstname"`
-	Follows   []string           `bson:"follows"`
-	Followers []string           `bson:"followers"`
-	ID        primitive.ObjectID `bson:"_id"`
-	LastName  string             `bson:"lastname"`
-	Username  string             `bson:"username"`
-	FileId    string             `bson:"fileId"`
-}
-
+// GetUserByName retrieves a user for a given username from the database
 func (r repo) GetUserByName(ctx context.Context, name *string) (*model.User, error) {
 
 	var result *UserByName
@@ -351,6 +358,7 @@ func (r repo) GetUserByName(ctx context.Context, name *string) (*model.User, err
 	return user, nil
 }
 
+// FindUsersWithName retrieves ten users from the database whose usernames match the given name the most
 func (r repo) FindUsersWithName(ctx context.Context, name *string) ([]*model.User, error) {
 
 	findOptions := options.Find().SetLimit(10)
@@ -388,6 +396,7 @@ func (r repo) FindUsersWithName(ctx context.Context, name *string) ([]*model.Use
 	return users, nil
 }
 
+// GetUserByID retrieves a user for a given id from the database
 func (r repo) GetUserByID(ctx context.Context, id *string) (*model.User, error) {
 
 	var result *UserEvent
@@ -414,6 +423,7 @@ func (r repo) GetUserByID(ctx context.Context, id *string) (*model.User, error) 
 	return user, nil
 }
 
+// CreateUser creates a new user inside the database (stored as event)
 func (r repo) CreateUser(ctx context.Context, userEvent UserEvent) (*model.User, error) {
 	_, err := r.userCollection.Indexes().CreateOne(
 		ctx,
@@ -441,6 +451,7 @@ func (r repo) CreateUser(ctx context.Context, userEvent UserEvent) (*model.User,
 	return user, nil
 }
 
+// InsertUserEvent is a helper-function for inserting a UserEvent in the database
 func (r repo) InsertUserEvent(ctx context.Context, userEvent UserEvent) (string, error) {
 	inserted, err := r.userCollection.InsertOne(ctx, userEvent)
 	if err != nil {
@@ -450,6 +461,7 @@ func (r repo) InsertUserEvent(ctx context.Context, userEvent UserEvent) (string,
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
+// InsertProfilePictureEvent is a helper-function for inserting a ProfilePictureEvent in the database
 func (r repo) InsertProfilePictureEvent(ctx context.Context, profilePictureEvent ProfilePictureEvent) (string, error) {
 	inserted, err := r.profilePictureCollection.InsertOne(ctx, profilePictureEvent)
 	if err != nil {
@@ -459,6 +471,7 @@ func (r repo) InsertProfilePictureEvent(ctx context.Context, profilePictureEvent
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
+// NewRepo creates a new Repository instance for the given database
 func NewRepo() (Repository, error) {
 	client, err := Connect()
 	if err != nil {
