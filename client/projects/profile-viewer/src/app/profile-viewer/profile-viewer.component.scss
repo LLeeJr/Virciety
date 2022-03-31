@@ -53,3 +53,16 @@
   flex-direction: row;
   align-items: center;
 }
+
+.profile-controls{
+  display: flex;
+  flex-direction: row;
+}
+
+.profile-control{
+  font-size: 40px
+}
+
+.profile-control.is-phone-portrait {
+  font-size: 32px;
+}
