@@ -10,13 +10,13 @@
         <label>Do you want to upload this?</label>
       </div>
       <div *ngIf="content_type.startsWith('video'); else elseBlock">
-        <video width="300px" controls>
+        <video controls class="preview" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
           <source src="{{fileBase64}}">
         </video>
       </div>
       <ng-template #elseBlock>
         <div>
-          <img src="{{fileBase64}}" alt="Photo you want to upload" width="300px">
+          <img src="{{fileBase64}}" alt="Photo you want to upload" class="preview" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
         </div>
       </ng-template>
       <input [(ngModel)]="description" width="300px" placeholder="Write a caption...">

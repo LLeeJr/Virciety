@@ -4,6 +4,9 @@ import {FormControl} from "@angular/forms";
 import {debounceTime, map, startWith} from "rxjs/operators";
 import {Observable} from "rxjs";
 import {Router} from "@angular/router";
+import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
+import {MatSnackBar} from "@angular/material/snack-bar";
+import {error} from "ng-packagr/lib/utils/log";
 
 
 @Component({
@@ -19,11 +22,23 @@ export class UserComponent implements OnInit, OnDestroy {
   filteredOptions: Observable<string[]>;
   id: string = '';
   activeUser: User;
+  isPhonePortrait: boolean = false;
 
   constructor(private auth: AuthLibService,
-              private router: Router) { }
+              private router: Router,
+              private responsive: BreakpointObserver,
+              private snackbar: MatSnackBar) { }
 
   ngOnInit(): void {
+    if (!this.auth.error) {
+      this.auth.errorState.subscribe(value => this.snackbar.open(value, undefined, {duration: 3000}));
+    } else {
+      this.snackbar.open(this.auth.error, undefined, {duration: 3000})
+    }
+    this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
+      this.isPhonePortrait = result.matches;
+    });
+
     this.auth._activeId.subscribe(id => {
       this.id = id;
       this.auth.getUserByID(this.id).subscribe(value => {

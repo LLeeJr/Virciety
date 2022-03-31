@@ -32,45 +32,45 @@
         <mat-error *ngIf="range.controls.startDate.hasError('pastDate')">Start date is in the <strong>past</strong></mat-error>
         <mat-error *ngIf="range.controls.endDate.hasError('required')">End date is <strong>required</strong></mat-error>
       </mat-form-field>
+    </p>
 
-
+    <div class="time-input" [style]="!checked ? {'margin-bottom': '1em'} : {'margin-bottom': '0'}">
       <mat-checkbox [(ngModel)]="checked">Add specific time?</mat-checkbox>
-    </p>
+      <ng-container *ngIf="checked">
+        <mat-form-field appearance="fill">
+          <mat-label>Start time</mat-label>
+          <input matInput
+                 [formControl]="startTime"
+                 name="selected_time_A"
+                 [format]="12"
+                 [ngxMatTimepicker]="startTimePicker"
+                 readonly/>
+          <ngx-mat-timepicker #startTimePicker [hoursOnly]="true" (closed)="checkTimes()"></ngx-mat-timepicker>
+          <mat-icon matSuffix
+                    (click)="startTimePicker.open()">
+            watch_later
+          </mat-icon>
+          <mat-error *ngIf="startTime.hasError('required')">Start time is <strong>required</strong></mat-error>
+        </mat-form-field>
 
-    <p *ngIf="checked">
-      <mat-form-field appearance="fill">
-        <mat-label>Start time</mat-label>
-        <input matInput
-               [formControl]="startTime"
-               name="selected_time_A"
-               [format]="12"
-               [ngxMatTimepicker]="startTimePicker"
-               readonly/>
-        <ngx-mat-timepicker #startTimePicker [hoursOnly]="true" (closed)="checkTimes()"></ngx-mat-timepicker>
-        <mat-icon matSuffix
-                  (click)="startTimePicker.open()">
-          watch_later
-        </mat-icon>
-        <mat-error *ngIf="startTime.hasError('required')">Start time is <strong>required</strong></mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="fill">
-        <mat-label>End time</mat-label>
-        <input matInput
-               [formControl]="endTime"
-               name="selected_time_B"
-               [format]="12"
-               [ngxMatTimepicker]="endTimePicker"
-               readonly />
-        <ngx-mat-timepicker #endTimePicker [hoursOnly]="true" (closed)="checkTimes()"></ngx-mat-timepicker>
-        <mat-icon matSuffix
-                  (click)="endTimePicker.open()">
-          watch_later
-        </mat-icon>
-        <mat-error *ngIf="endTime.hasError('required')">End time is <strong>required</strong></mat-error>
-        <mat-error *ngIf="endTime.hasError('wrongTime')">End time is <strong>earlier</strong> than start time</mat-error>
-      </mat-form-field>
-    </p>
+        <mat-form-field appearance="fill">
+          <mat-label>End time</mat-label>
+          <input matInput
+                 [formControl]="endTime"
+                 name="selected_time_B"
+                 [format]="12"
+                 [ngxMatTimepicker]="endTimePicker"
+                 readonly />
+          <ngx-mat-timepicker #endTimePicker [hoursOnly]="true" (closed)="checkTimes()"></ngx-mat-timepicker>
+          <mat-icon matSuffix
+                    (click)="endTimePicker.open()">
+            watch_later
+          </mat-icon>
+          <mat-error *ngIf="endTime.hasError('required')">End time is <strong>required</strong></mat-error>
+          <mat-error *ngIf="endTime.hasError('wrongTime')">End time is <strong>earlier</strong> than start time</mat-error>
+        </mat-form-field>
+      </ng-container>
+    </div>
 
   </div>
 

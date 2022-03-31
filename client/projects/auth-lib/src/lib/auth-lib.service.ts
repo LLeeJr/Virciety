@@ -2,8 +2,8 @@ import { Injectable } from '@angular/core';
 import {Observable, Subject} from "rxjs";
 import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
 import {HttpLink} from "apollo-angular/http";
-import {InMemoryCache} from "@apollo/client/core";
-import {KeycloakService} from "keycloak-angular";
+import {from, InMemoryCache} from "@apollo/client/core";
+import {onError} from "@apollo/client/link/error";
 
 export interface User {
   firstName: string,
@@ -22,30 +22,37 @@ export class AuthLibService {
 
   private apollo: ApolloBase;
   private query: QueryRef<any>;
-  private _userName = new Subject<string | undefined>()
-  _activeId = new Subject<string>()
+  private _userName = new Subject<string | undefined>();
+  _activeId = new Subject<string>();
+  errorState: Subject<string> = new Subject<string>();
+  error: any = null;
 
   userName: string = '';
   activeId: string = '';
 
 
   constructor(private apolloProvider: Apollo,
-              private httpLink: HttpLink,
-              private keycloak: KeycloakService) {
+              private httpLink: HttpLink) {
     this.start();
-    // this.keycloak.
   }
 
   private start() {
+    let errorLink = onError(({graphQLErrors, networkError }) => {
+      if (networkError) {
+        let msg = `User backend is currently offline!`;
+        this.errorState.next(msg);
+        this.error = msg;
+      }
+    });
     this.apollo = this.apolloProvider.use('user');
     if (this.apollo === undefined) {
       const http = this.httpLink.create({
         uri: "http://localhost:8085/query"
-      })
+      });
       this.apolloProvider.createNamed('user', {
         cache: new InMemoryCache(),
-        link: http,
-      })
+        link: from([errorLink, http]),
+      });
       this.apollo = this.apolloProvider.use('user');
     }
   }

@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {Apollo, ApolloBase, QueryRef} from "apollo-angular";
-import {InMemoryCache, split} from "@apollo/client/core";
+import {from, InMemoryCache, split} from "@apollo/client/core";
 import {Post} from "../model/post";
 import {Comment} from "../model/comment";
 import {DataLibService} from "data-lib";
@@ -22,6 +22,8 @@ import {WebSocketLink} from "@apollo/client/link/ws";
 import {map} from 'rxjs/operators';
 import {SubscriptionClient} from "subscriptions-transport-ws";
 import {Observable, Subject} from "rxjs";
+import {onError} from "@apollo/client/link/error";
+import {Router} from "@angular/router";
 
 @Injectable({
   providedIn: 'root'
@@ -43,13 +45,22 @@ export class GQLService {
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink,
-              private dataService: DataLibService) {
+              private dataService: DataLibService,
+              private router: Router) {
+    let errorLink = onError(({graphQLErrors, networkError }) => {
+      if (networkError) {
+        let msg = `Post backend is currently offline, try again later!`;
+        this.router.navigate(['page-not-found', msg]);
+      }
+    });
+
     const http = httpLink.create({
       uri: 'http://localhost:8083/query',
     });
 
     this.webSocketClient = new SubscriptionClient('ws://localhost:8083/query', {
       reconnect: true,
+      reconnectionAttempts: 3,
     });
     const ws = new WebSocketLink(this.webSocketClient);
 
@@ -96,7 +107,7 @@ export class GQLService {
             }
           }
         }),
-        link: link,
+        link: from([errorLink, link]),
       });
     } catch (e) {
       console.error('Error when creating apollo client \'post\'', e);

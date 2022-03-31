@@ -1,4 +1,4 @@
-<div class="post_comments_container" *ngIf="valid && post">
+<div class="post_comments_container" *ngIf="valid && post" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
   <div class="post">
     <ng-container [ngTemplateOutlet]="post.data.content !== undefined ? media_tp : loading_tp"></ng-container>
   </div>
@@ -31,17 +31,16 @@
           <mat-card-subtitle mat-line>{{comment.createdBy}}</mat-card-subtitle>
         </mat-list-item>
       </mat-list>
-
-      <mat-form-field [style.fontSize.px]="14" appearance="fill">
-        <mat-label>New Comment</mat-label>
-        <input matInput [(ngModel)]="comment">
-      </mat-form-field>
     </div>
 
-    <button mat-button (click)="addComment()">
-      <mat-icon>add_comment</mat-icon>
-      Post
-    </button>
+    <mat-form-field [style.fontSize.px]="14" appearance="fill" class="comment-input">
+      <mat-label>New Comment</mat-label>
+      <input matInput [(ngModel)]="comment">
+      <button mat-icon-button matSuffix (click)="addComment()">
+        <mat-icon>add_comment</mat-icon>
+      </button>
+    </mat-form-field>
+
   </div>
 </div>
 
@@ -58,7 +57,7 @@
 </ng-template>
 
 <ng-template #image_tp>
-  <img class="media" src="{{post ? post.data.content : ''}}" alt="{{post ? post.description : ''}}">
+  <img class="media" src="{{post ? post.data.content : ''}}" alt="{{post ? post.description : ''}}" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
 </ng-template>
 
 <ng-template #video_tp>

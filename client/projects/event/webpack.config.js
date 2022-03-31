@@ -31,7 +31,6 @@ module.exports = {
       filename: "remoteEntry.js",
       exposes: {
         EventModule: './projects/event/src/app/event/event.module.ts',
-        './EventModule': './projects/event/src/app/event/event.module.ts',
       },
 
       shared: share({

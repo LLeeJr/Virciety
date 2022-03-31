@@ -8,10 +8,14 @@ import {MaterialModule} from "../material/material.module";
 import {MatFormFieldModule} from "@angular/material/form-field";
 
 
+const EXPORTS = [
+  ChatComponent,
+  OpenChatComponent
+]
+
 @NgModule({
   declarations: [
-    ChatComponent,
-    OpenChatComponent,
+    ...EXPORTS,
     AddChatDialog,
     SelectOwnerDialog,
   ],
@@ -23,5 +27,8 @@ import {MatFormFieldModule} from "@angular/material/form-field";
     ReactiveFormsModule,
     MatFormFieldModule,
   ],
+  exports: [...EXPORTS]
 })
-export class ChatModule { }
+export class ChatModule {
+  static exports = EXPORTS
+}

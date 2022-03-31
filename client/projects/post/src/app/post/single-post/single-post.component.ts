@@ -6,6 +6,7 @@ import {Location} from "@angular/common";
 import {AuthLibService} from "auth-lib";
 import {Comment} from "../../model/comment";
 import {KeycloakService} from "keycloak-angular";
+import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 
 @Component({
   selector: 'app-single-post',
@@ -21,14 +22,20 @@ export class SinglePostComponent implements OnInit {
   nameSourceMap: Map<string, any> = new Map<string, any>();
   source: string = '';
   username: string = '';
+  isPhonePortrait: boolean = false;
 
   constructor(private auth: AuthLibService,
               private gqlService: GQLService,
               private route: ActivatedRoute,
               private location: Location,
-              private keycloak: KeycloakService) { }
+              private keycloak: KeycloakService,
+              private responsive: BreakpointObserver) { }
 
   async ngOnInit(): Promise<void> {
+    this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
+      this.isPhonePortrait = result.matches;
+    })
+
     let keycloakProfilePromise = await this.keycloak.loadUserProfile();
     this.username = <string>keycloakProfilePromise.username;
 

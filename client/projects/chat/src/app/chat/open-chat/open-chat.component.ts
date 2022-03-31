@@ -7,11 +7,13 @@ import {ActivatedRoute, Params, Router} from "@angular/router";
 import {Room} from "../../data/room";
 import {DatePipe} from "@angular/common";
 import {take} from "rxjs/operators";
+import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 
 @Component({
   selector: 'app-open-chat',
   templateUrl: './open-chat.component.html',
-  styleUrls: ['./open-chat.component.scss']
+  styleUrls: ['./open-chat.component.scss'],
+  exportAs: 'OpenChatComponent',
 })
 export class OpenChatComponent implements OnInit, OnDestroy {
 
@@ -20,6 +22,7 @@ export class OpenChatComponent implements OnInit, OnDestroy {
   message: string = '';
   username: string;
   room: Room;
+  isPhonePortrait: boolean = false;
   private subscription: Subscription;
 
   constructor(public api: ApiService,
@@ -27,7 +30,8 @@ export class OpenChatComponent implements OnInit, OnDestroy {
               private elem: ElementRef,
               private keycloak: KeycloakService,
               private route: ActivatedRoute,
-              private router: Router) { }
+              private router: Router,
+              private responsive: BreakpointObserver) { }
 
   ngOnDestroy(): void {
     this.messages = [];
@@ -37,6 +41,10 @@ export class OpenChatComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
+      this.isPhonePortrait = result.matches;
+    });
+
     this.keycloak.isLoggedIn().then(isLoggedIn => {
       if (isLoggedIn) {
         this.username = this.keycloak.getUsername();
@@ -126,7 +134,7 @@ export class OpenChatComponent implements OnInit, OnDestroy {
 
   async sendMessage() {
     if (this.message.length > 0) {
-      await this.api.writeDm(this.message, this.room.name, this.room.id).toPromise();
+      await this.api.writeDm(this.message, this.room.name, this.room.id, this.username).toPromise();
       this.message = '';
       this.scrollToBottom();
     }

@@ -5,7 +5,7 @@ import {
   OnInit,
   ViewChild,
   ViewContainerRef,
-  ɵcreateInjector, ComponentFactoryResolver,
+  ɵcreateInjector, ComponentFactoryResolver, Output, EventEmitter,
 } from "@angular/core";
 import {loadRemoteModule} from "../utils/federation-utils";
 
@@ -21,6 +21,7 @@ export class FederatedComponent implements OnInit {
   @Input() remoteName: string;
   @Input() exposedModule: string;
   @Input() componentName: string;
+  @Output() errorHandle = new EventEmitter<any>();
 
   constructor(private injector: Injector,
               private componentFactoryResolver: ComponentFactoryResolver) {}
@@ -40,6 +41,8 @@ export class FederatedComponent implements OnInit {
       const { instance } = this.federatedComponent.createComponent(
         factory, undefined, ɵcreateInjector(federated[this.exposedModule], this.injector)
       );
+    }).catch(err => {
+      this.errorHandle.emit({error: err, component: this.remoteName})
     });
   }
 }

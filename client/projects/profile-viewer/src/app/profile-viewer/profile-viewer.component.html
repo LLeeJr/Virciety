@@ -1,5 +1,5 @@
 
-<mat-card class="profile-card" *ngIf="activeUser">
+<mat-card class="profile-card" *ngIf="activeUser" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
   <div *ngIf="this.activeUser.profilePictureId !== ''; else placeholder">
     <img *ngIf="isCurrentUser(); else foreignProfile" src="{{this.source}}"
          alt="{{this.activeUser.username}}-profile-picture"
@@ -18,12 +18,10 @@
       </div>
     </mat-card-title>
     <mat-card-subtitle>{{this.activeUser.firstName}} {{this.activeUser.lastName}}</mat-card-subtitle>
-    <div>
-      <span style="font-weight: bold">{{this.activeUser.followers.length}}</span>
-      Follower
-      <span style="margin-left: 1em; font-weight: bold">{{this.activeUser.follows.length}}</span>
-      Subscribed
-    </div>
+    <ng-container>
+      <span>{{this.activeUser.followers.length}} Follower</span>
+      <span>{{this.activeUser.follows.length}} Subscribed</span>
+    </ng-container>
   </div>
 </mat-card>
 

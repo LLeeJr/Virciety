@@ -4,6 +4,7 @@ import {MAT_DIALOG_DATA, MatDialog} from "@angular/material/dialog";
 import {AuthLibService} from "auth-lib";
 import {SinglePostComponent} from "../single-post/single-post.component";
 import { Location } from '@angular/common'
+import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 
 @Component({
   selector: 'post-media',
@@ -17,12 +18,18 @@ export class MediaComponent implements OnInit {
   @Output() newEvent = new EventEmitter<string>();
   editMode: boolean = false;
   source: string = '';
+  isPhonePortrait: boolean = false;
 
   constructor(private auth: AuthLibService,
               private dialog: MatDialog,
-              private location: Location) { }
+              private location: Location,
+              private responsive: BreakpointObserver) { }
 
   ngOnInit(): void {
+    this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
+      this.isPhonePortrait = result.matches;
+    });
+
     this.auth.getUserByName(this.post.username).subscribe(value => {
       if (value && value.data && value.data.getUserByName) {
         let {profilePictureId} = value.data.getUserByName;
