@@ -258,29 +258,23 @@ export class EventComponent implements OnInit {
   }
 
   attendEvent(event: Event) {
-    let left: boolean;
-    if (event.attendees.indexOf(this.username) < 0) {
-      left = false;
-      event.attendees = [...event.attendees, this.username];
-    } else {
-      left = true;
-    }
+    const left = event.attendees.indexOf(this.username) >= 0;
 
     this.gqlService.attendEvent(event, left, this.username).subscribe(({data}: any) => {
-        if (data.attendEvent === "success") {
-          event.currentlyAttended = !event.currentlyAttended;
-        }},
+        event.currentlyAttended = !event.currentlyAttended;
+        event.attendees = data.attendEvent
+      },
       ((error: Error) => {
-        if (error.message === 'event is expired') {
-          this.snackbar.open(error.message + ', please reload the page', undefined,{
-            duration: 5 * 1000,
-          })
-        } else {
-          this.snackbar.open('Sorry! An error occurred.', undefined,{
-            duration: 5 * 1000,
-          })
-        }}
-    ));
+          if (error.message === 'event is expired') {
+            this.snackbar.open(error.message + ', please reload the page', undefined,{
+              duration: 5 * 1000,
+            })
+          } else {
+            this.snackbar.open('Sorry! An error occurred.', undefined,{
+              duration: 5 * 1000,
+            })
+          }}
+      ));
   }
 
   reportCovidCase(attendees: string[], id: string) {

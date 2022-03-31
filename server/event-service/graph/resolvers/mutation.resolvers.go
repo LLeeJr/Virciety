@@ -146,30 +146,16 @@ func (r *mutationResolver) SubscribeEvent(ctx context.Context, eventID string, u
 	return updatedEvent.Subscribers, nil
 }
 
-func (r *mutationResolver) AttendEvent(ctx context.Context, attend model.EditEventRequest, username string, left bool) (string, error) {
-	// process the data and create new event
-	event := database.Event{
-		EventID:     attend.EventID,
-		EventTime:   time.Now(),
-		EventType:   "AttendEvent",
-		Title:       attend.Title,
-		Subscribers: attend.Subscribers,
-		Description: attend.Description,
-		StartDate:   attend.StartDate,
-		EndDate:     attend.EndDate,
-		Location:    attend.Location,
-		Attendees:   attend.Attendees,
-	}
-
+func (r *mutationResolver) AttendEvent(ctx context.Context, eventID string, username string, left bool) ([]string, error) {
 	r.mu.Lock()
 	// save event in database
-	ok, err := r.repo.AttendEvent(ctx, event, username, left)
+	attendees, err := r.repo.AttendEvent(ctx, eventID, username, left)
 	if err != nil {
-		return ok, err
+		return nil, err
 	}
 	r.mu.Unlock()
 
-	return ok, nil
+	return attendees, nil
 }
 
 func (r *mutationResolver) AddUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error) {

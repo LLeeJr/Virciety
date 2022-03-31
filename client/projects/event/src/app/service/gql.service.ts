@@ -28,7 +28,7 @@ export class GQLService {
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink) {
-    let errorLink = onError(({_, networkError }) => {
+    let errorLink = onError(({graphQLErrors, networkError }) => {
       if (networkError) {
         let msg = `Event backend is currently offline, try again later!`;
         this.errorState.next(msg);
@@ -118,13 +118,6 @@ export class GQLService {
         mutation: ATTEND_EVENT,
         variables: {
           eventID: event.id,
-          title: event.title,
-          description: event.description,
-          subscribers: event.subscribers,
-          startDate: event.startDate,
-          endDate: event.endDate,
-          location: event.location,
-          attendees: event.attendees,
           left: left,
           username: username
         }

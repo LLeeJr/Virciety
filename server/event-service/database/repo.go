@@ -18,7 +18,7 @@ type Repository interface {
 	GetEvents(ctx context.Context, username string) ([]*model.Event, []*model.Event, []*model.Event, error)
 	RemoveEvent(ctx context.Context, event Event) (string, error)
 	EditEvent(ctx context.Context, event Event) (string, string, error)
-	AttendEvent(ctx context.Context, event Event, username string, left bool) (string, error)
+	AttendEvent(ctx context.Context, eventID, username string, left bool) ([]string, error)
 	InsertUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error)
 	CheckUserData(ctx context.Context, username string) (*model.UserData, error)
 	LogTime(ctx context.Context, eventID, username string, expired bool, leaveTime *time.Time) (string, error)
@@ -365,13 +365,44 @@ func (repo *Repo) EditEvent(ctx context.Context, event Event) (string, string, e
 	return "failure", "", errors.New("event is not ongoing, upcoming nor in the past")
 }
 
-func (repo *Repo) AttendEvent(ctx context.Context, event Event, username string, left bool) (string, error) {
-	updatedEvent, err := repo.GetEvent(ctx, event.EventID)
+func (repo *Repo) AttendEvent(ctx context.Context, eventID, username string, left bool) ([]string, error) {
+	updatedEvent, err := repo.GetEvent(ctx, eventID)
 	if err != nil {
-		return "failed", err
+		return nil, err
 	}
 
-	event.Attendees = append(event.Attendees, updatedEvent.Attendees...)
+	if !left {
+		updatedEvent.Attendees = append(updatedEvent.Attendees, username)
+	} else {
+		index := -1
+		for i, attendee := range updatedEvent.Attendees {
+			if attendee == username {
+				index = i
+				break
+			}
+		}
+
+		if index == -1 {
+			return nil, errors.New("username not found in attendees list")
+		}
+
+		updatedEvent.Attendees = append(updatedEvent.Attendees[:index], updatedEvent.Attendees[index+1:]...)
+	}
+
+
+	// process the data and create new event
+	event := Event{
+		EventID:     updatedEvent.ID,
+		EventTime:   time.Now(),
+		EventType:   "AttendEvent",
+		Title:       updatedEvent.Title,
+		Subscribers: updatedEvent.Subscribers,
+		Description: updatedEvent.Description,
+		StartDate:   updatedEvent.StartDate,
+		EndDate:     updatedEvent.EndDate,
+		Location:    updatedEvent.Location,
+		Attendees:   updatedEvent.Attendees,
+	}
 
 	// get utc time now because all events are timezone utc
 	currentTime := time.Now().UTC()
@@ -382,19 +413,19 @@ func (repo *Repo) AttendEvent(ctx context.Context, event Event, username string,
 		if !left {
 			_, err := repo.InsertEvent(ctx, event)
 			if err != nil {
-				return "failed", err
+				return nil, err
 			}
 		}
 
 		_, err := repo.LogTime(ctx, event.EventID, username, false, nil)
 		if err != nil {
-			return "failed", err
+			return nil, err
 		}
 
-		return "success", nil
+		return updatedEvent.Attendees, nil
 	}
 
-	return "", errors.New("event is expired")
+	return nil, errors.New("event is expired")
 }
 
 func (repo *Repo) InsertUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error) {

@@ -123,8 +123,8 @@ export const SUBSCRIBE_EVENT = gql`
   `;
 
 export const ATTEND_EVENT = gql`
-    mutation attendEvent($eventID: String!, $title: String!, $description: String!, $subscribers: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attendees: [String!]!, $username: String!, $left: Boolean!) {
-      attendEvent(attend: {eventID: $eventID, title: $title, description: $description, subscribers: $subscribers, startDate: $startDate, endDate: $endDate, location: $location, attendees: $attendees}, username: $username, left: $left)
+    mutation attendEvent($eventID: String!, $username: String!, $left: Boolean!) {
+      attendEvent(eventID: $eventID, username: $username, left: $left)
     }
   `;
 
