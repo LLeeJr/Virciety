@@ -28,6 +28,8 @@
 .user-message-card, .friend-message-card {
   display: inline-block;
   margin-bottom: 1em;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .user-message-card {
