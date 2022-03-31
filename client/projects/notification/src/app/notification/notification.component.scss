@@ -1,12 +1,31 @@
 .notifications-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  overflow: scroll;
   position: fixed;
   z-index: 2;
   right: 1.1em;
 }
 
+.notifications-container::-webkit-scrollbar {
+  display: none;
+}
+
+.notifications-container.is-phone-portrait {
+  max-width: 15.5em;
+  max-height: 29em;
+}
+
+.notification-status {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
 .notification-content {
   display: flex;
   flex-direction: column;
+  min-width: 20em;
 }
 
 .notification-content:hover {
@@ -15,10 +34,9 @@
 }
 
 .notification-text {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 1em;
+  margin-right: 1em;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .hide-button {

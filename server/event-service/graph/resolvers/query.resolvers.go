@@ -70,7 +70,7 @@ func (r *queryResolver) NotifyContactPersons(ctx context.Context, username *stri
 }
 
 func (r *queryResolver) GetEvent(ctx context.Context, eventID *string) (*model.Event, error) {
-	return r.repo.GetEvent(ctx, *eventID);
+	return r.repo.GetEvent(ctx, *eventID)
 }
 
 // Query returns generated.QueryResolver implementation.

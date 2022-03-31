@@ -4,9 +4,9 @@
   </button>
   <span class="title" routerLink="/home" *ngIf="!isPhonePortrait">Welcome back, {{username}}</span>
   <span class="spacer"></span>
-  <button mat-icon-button (click)="openSearch()" *ngIf="!searchMode; else searchInput">
-    <mat-icon>search</mat-icon>
-  </button>
+  <ng-container *ngIf="userMfeOnline; else userMfePlaceholder">
+    <app-federated-component [remoteEntry]="this.userMFE" remoteName="user" exposedModule="UserModule" componentName="UserComponent" (errorHandle)="handleError($event)"></app-federated-component>
+  </ng-container>
   <ng-container *ngIf="postMfeOnline; else createPostMfePlaceholder">
     <app-federated-component [remoteEntry]="this.postMFE" remoteName="post" exposedModule="CreatePostModule" componentName="DialogCreatePostComponent" (errorHandle)="handleError($event)"></app-federated-component>
   </ng-container>
@@ -31,13 +31,10 @@
   </mat-drawer-content>
 </mat-drawer-container>
 
-<ng-template #searchInput>
-  <div class="search-container">
-    <app-federated-component [remoteEntry]="this.userMFE" remoteName="user" exposedModule="UserModule" componentName="UserComponent" (errorHandle)="handleError($event)"></app-federated-component>
-    <button mat-icon-button (click)="closeSearch()">
-      <mat-icon>search_off</mat-icon>
-    </button>
-  </div>
+<ng-template #userMfePlaceholder>
+  <button mat-icon-button (click)="placeholderHandler('user-search')">
+    <mat-icon>search</mat-icon>
+  </button>
 </ng-template>
 
 <ng-template #notificationMfePlaceholder>

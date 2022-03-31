@@ -1,18 +1,33 @@
-<form>
-  <mat-form-field appearance="fill" style="font-size: 12px; height: 2.3em" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
-    <mat-label>Search</mat-label>
-    <input type="text"
-           placeholder="Username"
-           matInput
-           [formControl]="searchFormControl"
-           [matAutocomplete]="auto">
-    <button matSuffix mat-icon-button aria-label="Clear" type="reset">
-      <mat-icon>close</mat-icon>
-    </button>
-    <mat-autocomplete #auto="matAutocomplete">
-      <mat-option *ngFor="let option of filteredOptions | async" [value]="option" (click)="redirect(option)">
-        {{option}}
-      </mat-option>
-    </mat-autocomplete>
-  </mat-form-field>
-</form>
+
+<div class="search-container">
+
+  <form *ngIf="searchMode" id="searchInput">
+    <mat-form-field appearance="fill" style="font-size: 12px; height: 2.3em" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
+      <mat-label>Search</mat-label>
+      <input type="text"
+             (blur)="handleBlur()"
+             placeholder="Username"
+             matInput
+             [formControl]="searchFormControl"
+             [matAutocomplete]="auto">
+      <button matSuffix mat-icon-button aria-label="Clear" type="reset" (click)="handleReset()">
+        <mat-icon>close</mat-icon>
+      </button>
+      <mat-autocomplete #auto="matAutocomplete">
+        <mat-option *ngFor="let option of filteredOptions | async" [value]="option" (click)="redirect(option)">
+          {{option}}
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+  </form>
+
+  <button mat-icon-button (click)="searchMode = !searchMode" *ngIf="!searchMode; else searchInputOff">
+    <mat-icon>search</mat-icon>
+  </button>
+</div>
+
+<ng-template #searchInputOff>
+  <button mat-icon-button (click)="searchMode = !searchMode">
+    <mat-icon>search_off</mat-icon>
+  </button>
+</ng-template>
