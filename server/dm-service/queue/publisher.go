@@ -11,6 +11,7 @@ const QueryExchange = "query-exchange"
 const CommandExchange = "command-exchange"
 const EventExchange = "event-exchange"
 
+// Publisher is a helper-interface for initialising a rabbitMQ-publisher and handling its message-production
 type Publisher interface {
 	InitPublisher(ch *amqp.Channel)
 	AddMessageToQuery()
@@ -18,6 +19,7 @@ type Publisher interface {
 	AddMessageToEvent(chatEvent database.ChatEvent, messageId string)
 }
 
+// NewPublisher creates a new Publisher with newly created channels
 func NewPublisher() (Publisher, error) {
 	return &ChannelConfig{
 		QueryChan:   make(chan RabbitMsg, 10),
@@ -26,6 +28,7 @@ func NewPublisher() (Publisher, error) {
 	}, nil
 }
 
+// InitPublisher initialises a Publisher and its rabbitMQ-exchanges
 func (c *ChannelConfig) InitPublisher(ch *amqp.Channel) {
 
 	initExchange(QueryExchange, ch)
@@ -44,12 +47,14 @@ func (c *ChannelConfig) InitPublisher(ch *amqp.Channel) {
 	}
 }
 
+// AddMessageToQuery adds a message to the query-exchange
 func (c ChannelConfig) AddMessageToQuery() {
 	c.QueryChan <- RabbitMsg{
 		QueueName: QueryExchange,
 	}
 }
 
+// AddMessageToCommand adds a message to the command-exchange
 func (c ChannelConfig) AddMessageToCommand(messageId string) {
 	c.CommandChan <- RabbitMsg{
 		QueueName: CommandExchange,
@@ -57,6 +62,7 @@ func (c ChannelConfig) AddMessageToCommand(messageId string) {
 	}
 }
 
+// AddMessageToEvent adds a message to the event-exchange
 func (c ChannelConfig) AddMessageToEvent(chatEvent database.ChatEvent, messageId string) {
 	c.EventChan <- RabbitMsg{
 		QueueName: EventExchange,
@@ -65,6 +71,7 @@ func (c ChannelConfig) AddMessageToEvent(chatEvent database.ChatEvent, messageId
 	}
 }
 
+// publish is a helper-function for producing new messages on rabbitMQ
 func (c *ChannelConfig) publish(msg RabbitMsg, ch *amqp.Channel) {
 	body, err := json.Marshal(msg.ChatEvent)
 

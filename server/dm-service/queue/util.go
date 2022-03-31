@@ -6,6 +6,7 @@ import (
 	"log"
 )
 
+// RabbitMsg and ChannelConfig are both util structs for handling rabbitMQ related data and channels
 type (
 	RabbitMsg struct {
 	QueueName string             `json:"queueName"`
@@ -21,12 +22,14 @@ type (
 	}
 )
 
+// FailOnError is a helper function for logging errors with graceful system exit
 func FailOnError(err error, msg string) {
 	if err != nil {
 		log.Fatalf("%s: %s", msg, err)
 	}
 }
 
+// initExchange declares a queue-exchange for a given queueName and a rabbitMQ-channel
 func initExchange(queueName string, ch *amqp.Channel) {
 	err := ch.ExchangeDeclare(
 		queueName,
@@ -39,6 +42,7 @@ func initExchange(queueName string, ch *amqp.Channel) {
 	FailOnError(err, "Failed to declare an exchange")
 }
 
+// initQueue declares a queue for a given queueName, an rabbitMQ-exchange and a rabbitMQ-channel
 func initQueue(queueName string, exchangeName string, ch *amqp.Channel) {
 	q, err := ch.QueueDeclare(
 		queueName,    // name
