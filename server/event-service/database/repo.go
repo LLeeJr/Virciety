@@ -35,6 +35,7 @@ type Repo struct {
 	timeCollection     *mongo.Collection
 }
 
+// NewRepo : create new Repo which includes all necessary database collections
 func NewRepo() (Repository, error) {
 	client, err := dbConnect()
 	if err != nil {
@@ -50,6 +51,7 @@ func NewRepo() (Repository, error) {
 	}, nil
 }
 
+// InsertEvent for given event
 func (repo *Repo) InsertEvent(ctx context.Context, event Event) (string, error) {
 	inserted, err := repo.eventCollection.InsertOne(ctx, event)
 	if err != nil {
@@ -59,14 +61,17 @@ func (repo *Repo) InsertEvent(ctx context.Context, event Event) (string, error) 
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
+// CreateEvent for event
 func (repo *Repo) CreateEvent(ctx context.Context, event Event) (*model.Event, string, error) {
 	currentTime := time.Now().UTC()
 
+	// insert event and get insertedID
 	insertedID, err := repo.InsertEvent(ctx, event)
 	if err != nil {
 		return nil, "", err
 	}
 
+	// create new event
 	eventModel := &model.Event{
 		ID:          insertedID,
 		Title:       event.Title,
@@ -85,10 +90,13 @@ func (repo *Repo) CreateEvent(ctx context.Context, event Event) (*model.Event, s
 		return nil, "", err
 	}
 
+	// check if event is ongoing
 	if !onlyCheckDate && currentTime.Before(endTime) && currentTime.After(startTime) || onlyCheckDate && currentTime.After(startTime) && currentTime.Before(endTime) {
 		return eventModel, "ongoing", nil
+		// check if event is in the past
 	} else if currentTime.After(endTime) {
 		return eventModel, "past", nil
+		// chcek if event is upcoming
 	} else if currentTime.Before(startTime) {
 		return eventModel, "upcoming", nil
 	}
@@ -96,6 +104,7 @@ func (repo *Repo) CreateEvent(ctx context.Context, event Event) (*model.Event, s
 	return nil, "", errors.New("event is not ongoing, upcoming nor in the past")
 }
 
+// GetEvents in three parts: currentEvents, pastEvents and upcomingEvents by username
 func (repo *Repo) GetEvents(ctx context.Context, username string) ([]*model.Event, []*model.Event, []*model.Event, error) {
 	events, upcomingEvents, ongoingEvents, pastEvents := make([]*model.Event, 0), make([]*model.Event, 0), make([]*model.Event, 0), make([]*model.Event, 0)
 	currentTime := time.Now().UTC()
@@ -168,6 +177,7 @@ func (repo *Repo) GetEvents(ctx context.Context, username string) ([]*model.Even
 			return nil, nil, nil, err
 		}
 
+		// check if user is currently attending an ongoing event
 		if !onlyCheckDate && currentTime.Before(endTime) && currentTime.After(startTime) || onlyCheckDate && currentTime.After(startTime) && currentTime.Before(endTime) {
 			currentlyAttended, err := repo.CheckIfCurrentlyAttended(ctx, username, eventModel.ID)
 			if err != nil {
@@ -177,6 +187,7 @@ func (repo *Repo) GetEvents(ctx context.Context, username string) ([]*model.Even
 			eventModel.CurrentlyAttended = &currentlyAttended
 
 			ongoingEvents = append(ongoingEvents, eventModel)
+			// check if user is attending an past event and set leave time to endtime of event
 		} else if currentTime.After(endTime) {
 			attendedOnce, err := repo.CheckIfAttendedOnce(ctx, username, eventModel.ID)
 			if err != nil {
@@ -201,6 +212,7 @@ func (repo *Repo) GetEvents(ctx context.Context, username string) ([]*model.Even
 
 				pastEvents = append(pastEvents, eventModel)
 			}
+			// check if event is upcoming
 		} else if currentTime.Before(startTime) {
 			upcomingEvents = append(upcomingEvents, eventModel)
 		}
@@ -209,6 +221,7 @@ func (repo *Repo) GetEvents(ctx context.Context, username string) ([]*model.Even
 	return upcomingEvents, ongoingEvents, pastEvents, nil
 }
 
+// GetEvent for given event id
 func (repo *Repo) GetEvent(ctx context.Context, eventID string) (*model.Event, error) {
 	objID, err := primitive.ObjectIDFromHex(eventID)
 	if err != nil {
@@ -267,7 +280,9 @@ func (repo *Repo) GetEvent(ctx context.Context, eventID string) (*model.Event, e
 	return eventModel, nil
 }
 
+// formatDate for given input
 func formatDate(startDate string, endDate string) (time.Time, time.Time, bool, error) {
+	// event has a timestamp
 	if strings.HasSuffix(startDate, "M") && strings.HasSuffix(endDate, "M") {
 		startTime, err := time.Parse("1/2/06, 3:04 PM", startDate)
 		if err != nil {
@@ -280,6 +295,7 @@ func formatDate(startDate string, endDate string) (time.Time, time.Time, bool, e
 		}
 
 		return startTime, endTime, false, nil
+		// event has no timestamp
 	} else {
 		startTime, err := time.Parse("Monday, January 2, 2006", startDate)
 		if err != nil {
@@ -297,6 +313,7 @@ func formatDate(startDate string, endDate string) (time.Time, time.Time, bool, e
 	}
 }
 
+// RemoveEvent and all its created events
 func (repo *Repo) RemoveEvent(ctx context.Context, event Event) (string, error) {
 	// convert hex-string into primitive.objectID
 	objID, err := primitive.ObjectIDFromHex(event.EventID)
@@ -341,6 +358,7 @@ func (repo *Repo) RemoveEvent(ctx context.Context, event Event) (string, error) 
 	return "success", nil
 }
 
+// EditEvent with given event
 func (repo *Repo) EditEvent(ctx context.Context, event Event) (string, string, error) {
 	_, err := repo.InsertEvent(ctx, event)
 	if err != nil {
@@ -349,11 +367,13 @@ func (repo *Repo) EditEvent(ctx context.Context, event Event) (string, string, e
 
 	currentTime := time.Now().UTC()
 
+	// format date to go time lib
 	startTime, endTime, onlyCheckDate, err := formatDate(event.StartDate, event.EndDate)
 	if err != nil {
 		return "failure", "", err
 	}
 
+	// check edited events time (when edited, it may change the category)
 	if !onlyCheckDate && currentTime.Before(endTime) && currentTime.After(startTime) || onlyCheckDate && currentTime.After(startTime) && currentTime.Before(endTime) {
 		return "success", "ongoing", nil
 	} else if currentTime.After(endTime) {
@@ -365,12 +385,15 @@ func (repo *Repo) EditEvent(ctx context.Context, event Event) (string, string, e
 	return "failure", "", errors.New("event is not ongoing, upcoming nor in the past")
 }
 
+// AttendEvent with given eventId, username and if attending or leaving condition
 func (repo *Repo) AttendEvent(ctx context.Context, eventID, username string, left bool) ([]string, error) {
+	// get most recent edited event
 	updatedEvent, err := repo.GetEvent(ctx, eventID)
 	if err != nil {
 		return nil, err
 	}
 
+	// update attendees list
 	if !left {
 		updatedEvent.Attendees = append(updatedEvent.Attendees, username)
 	} else {
@@ -389,7 +412,6 @@ func (repo *Repo) AttendEvent(ctx context.Context, eventID, username string, lef
 		updatedEvent.Attendees = append(updatedEvent.Attendees[:index], updatedEvent.Attendees[index+1:]...)
 	}
 
-
 	// process the data and create new event
 	event := Event{
 		EventID:     updatedEvent.ID,
@@ -407,9 +429,12 @@ func (repo *Repo) AttendEvent(ctx context.Context, eventID, username string, lef
 	// get utc time now because all events are timezone utc
 	currentTime := time.Now().UTC()
 
+	// format endTime because it is needed for error handling
 	_, endTime, _, _ := formatDate(event.StartDate, event.EndDate)
 
+	// check if current time is before endtime of event
 	if currentTime.Before(endTime) {
+		// if user is attending event, a new event will be inserted to db
 		if !left {
 			_, err := repo.InsertEvent(ctx, event)
 			if err != nil {
@@ -417,6 +442,7 @@ func (repo *Repo) AttendEvent(ctx context.Context, eventID, username string, lef
 			}
 		}
 
+		// log the time of the users attendance
 		_, err := repo.LogTime(ctx, event.EventID, username, false, nil)
 		if err != nil {
 			return nil, err
@@ -428,6 +454,7 @@ func (repo *Repo) AttendEvent(ctx context.Context, eventID, username string, lef
 	return nil, errors.New("event is expired")
 }
 
+// InsertUserData with given userdata
 func (repo *Repo) InsertUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error) {
 	_, err := repo.userDataCollection.InsertOne(ctx, userData)
 	if err != nil {
@@ -446,6 +473,7 @@ func (repo *Repo) InsertUserData(ctx context.Context, userData model.UserDataReq
 	}, nil
 }
 
+// CheckUserData if userdata exists in db
 func (repo *Repo) CheckUserData(ctx context.Context, username string) (*model.UserData, error) {
 	var result model.UserData
 	err := repo.userDataCollection.FindOne(ctx, bson.D{{"username", username}}).Decode(&result)
@@ -459,7 +487,9 @@ func (repo *Repo) CheckUserData(ctx context.Context, username string) (*model.Us
 	return &result, nil
 }
 
+// LogTime of user attendance
 func (repo *Repo) LogTime(ctx context.Context, eventID, username string, expired bool, leaveTime *time.Time) (string, error) {
+	// check if user attended
 	var log LogTime
 	err := repo.timeCollection.FindOne(ctx, bson.D{
 		{"username", username},
@@ -469,6 +499,7 @@ func (repo *Repo) LogTime(ctx context.Context, eventID, username string, expired
 		}},
 	}).Decode(&log)
 	if err != nil {
+		// if user didn't attend, create a new document for attendance
 		if err == mongo.ErrNoDocuments {
 			logTime := LogTime{
 				EventID:  eventID,
@@ -486,6 +517,7 @@ func (repo *Repo) LogTime(ctx context.Context, eventID, username string, expired
 		return "", err
 	}
 
+	// update an attendance document with currentTime or leaveTime (endDate of event)
 	filter := bson.D{{"_id", log.ID}}
 	var update bson.D
 	if expired {
@@ -507,6 +539,7 @@ func (repo *Repo) LogTime(ctx context.Context, eventID, username string, expired
 	return "success", nil
 }
 
+// CheckIfAttendedOnce : check if a user attended the event with given eventID
 func (repo *Repo) CheckIfAttendedOnce(ctx context.Context, username, eventID string) (bool, error) {
 	var log LogTime
 	err := repo.timeCollection.FindOne(ctx, bson.D{
@@ -522,6 +555,7 @@ func (repo *Repo) CheckIfAttendedOnce(ctx context.Context, username, eventID str
 	return true, nil
 }
 
+// CheckIfCurrentlyAttended : check if user is currently attending an event
 func (repo *Repo) CheckIfCurrentlyAttended(ctx context.Context, username, eventID string) (bool, error) {
 	var log LogTime
 	err := repo.timeCollection.FindOne(ctx, bson.D{
@@ -541,6 +575,7 @@ func (repo *Repo) CheckIfCurrentlyAttended(ctx context.Context, username, eventI
 	return true, nil
 }
 
+// SetLeaveTimeAfterEventEnded : if an event was expired the leave time of an open attendance will be set to the end time of event
 func (repo *Repo) SetLeaveTimeAfterEventEnded(ctx context.Context, username string, event *model.Event) error {
 	_, leaveTime, _, err := formatDate(event.StartDate, event.EndDate)
 	if err != nil {
@@ -556,6 +591,7 @@ func (repo *Repo) SetLeaveTimeAfterEventEnded(ctx context.Context, username stri
 	return nil
 }
 
+// DetermineContactPersons : get contact persons of an event for given username and eventID
 func (repo *Repo) DetermineContactPersons(ctx context.Context, username, eventID string) ([]string, error) {
 	contactPersons := make([]string, 0)
 

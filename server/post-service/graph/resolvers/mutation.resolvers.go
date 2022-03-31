@@ -12,8 +12,10 @@ import (
 )
 
 func (r *mutationResolver) CreatePost(ctx context.Context, newPost model.CreatePostRequest) (*model.Post, error) {
+	// get current time
 	created := time.Now().Format("2006-01-02 15:04:05")
 
+	// create post event
 	postEvent := database.PostEvent{
 		EventTime:   created,
 		EventType:   "CreatePost",
@@ -76,10 +78,6 @@ func (r *mutationResolver) RemovePost(ctx context.Context, remove model.RemovePo
 		return ok, err
 	}
 
-	// put event on queue for notifications to remove all notification events for this post
-	// put event on queue for comments to remove all comment events for this post
-	// r.producerQueue.AddMessageToQuery(postEvent)
-
 	return ok, nil
 }
 
@@ -101,7 +99,7 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 	}
 
 	// save event in database
-	err := r.repo.LikePost(ctx, postEvent)
+	_, err := r.repo.EditPost(ctx, postEvent)
 	if err != nil {
 		return "failed", err
 	}
@@ -116,6 +114,7 @@ func (r *mutationResolver) LikePost(ctx context.Context, like model.LikePostRequ
 }
 
 func (r *mutationResolver) AddComment(ctx context.Context, comment model.AddCommentRequest) (*model.Comment, error) {
+	// create newComment
 	newComment := &model.Comment{
 		PostID:    comment.PostID,
 		Comment:   comment.Comment,
@@ -123,16 +122,19 @@ func (r *mutationResolver) AddComment(ctx context.Context, comment model.AddComm
 		Event:     "CreateComment",
 	}
 
+	// get post related to the comment
 	post, err := r.repo.GetPost(ctx, comment.PostID)
 	if err != nil {
 		return nil, err
 	}
 
+	// create post comment event
 	postCommentEvent := database.PostCommentEvent{
 		Comment: newComment,
 		Post:    post,
 	}
 
+	// put event on queue for comments
 	r.producerQueue.AddMessageToCommand(postCommentEvent)
 
 	return newComment, nil
