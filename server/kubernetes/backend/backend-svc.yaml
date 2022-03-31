@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.virciety: backend.post
+  name: backend-post-svc
+spec:
+  ports:
+    - name: post
+      port: 8083
+      targetPort: 8083
+  selector:
+    app.virciety: backend.post
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.virciety: backend.chat
+  name: backend-chat-svc
+spec:
+  ports:
+    - name: chat
+      port: 8081
+      targetPort: 8081
+  selector:
+    app.virciety: backend.chat
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.virciety: backend.notifs
+  name: backend-notifs-svc
+spec:
+  ports:
+    - name: notifs
+      port: 8082
+      targetPort: 8082
+  selector:
+    app.virciety: backend.notifs
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.virciety: backend.event
+  name: backend-event-svc
+spec:
+  ports:
+    - name: event
+      port: 8086
+      targetPort: 8086
+  selector:
+    app.virciety: backend.event
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.virciety: backend.user
+  name: backend-user-svc
+spec:
+  ports:
+    - name: user
+      port: 8085
+      targetPort: 8085
+  selector:
+    app.virciety: backend.user
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.virciety: backend.comment
+  name: backend-comment-svc
+spec:
+  ports:
+    - name: comment
+      port: 8084
+      targetPort: 8084
+  selector:
+    app.virciety: backend.comment

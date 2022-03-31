@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import {environment} from "../../environments/environment";
 
 @Component({
   selector: 'app-single-post',
@@ -6,8 +7,11 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./single-post.component.scss']
 })
 export class SinglePostComponent implements OnInit {
+  postMFE: string;
 
-  constructor() { }
+  constructor() {
+    this.postMFE = environment.postMFE;
+  }
 
   ngOnInit(): void {
   }
