@@ -1,0 +1,160 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: frontend.post
+  name: frontend.post
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: frontend.post
+  template:
+    metadata:
+      labels:
+        app.virciety: frontend.post
+    spec:
+      containers:
+        - image: cubalatino/virciety:frontend.post
+          name: frontend-post
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: frontend.chat
+  name: frontend.chat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: frontend.chat
+  template:
+    metadata:
+      labels:
+        app.virciety: frontend.chat
+    spec:
+      containers:
+        - image: cubalatino/virciety:frontend.chat
+          name: frontend-chat
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: frontend.event
+  name: frontend.event
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: frontend.event
+  template:
+    metadata:
+      labels:
+        app.virciety: frontend.event
+    spec:
+      containers:
+        - image: cubalatino/virciety:frontend.event
+          name: frontend-event
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: frontend.notifs
+  name: frontend.notifs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: frontend.notifs
+  template:
+    metadata:
+      labels:
+        app.virciety: frontend.notifs
+    spec:
+      containers:
+        - image: cubalatino/virciety:frontend.notifs
+          name: frontend-notifs
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: frontend.profile
+  name: frontend.profile
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: frontend.profile
+  template:
+    metadata:
+      labels:
+        app.virciety: frontend.profile
+    spec:
+      containers:
+        - image: cubalatino/virciety:frontend.profile
+          name: frontend-profile
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: frontend.shell
+  name: frontend.shell
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: frontend.shell
+  template:
+    metadata:
+      labels:
+        app.virciety: frontend.shell
+    spec:
+      containers:
+        - image: cubalatino/virciety:frontend.shell
+          name: frontend-shell
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: frontend.user
+  name: frontend.user
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: frontend.user
+  template:
+    metadata:
+      labels:
+        app.virciety: frontend.user
+    spec:
+      containers:
+        - image: cubalatino/virciety:frontend.user
+          name: frontend-user
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80

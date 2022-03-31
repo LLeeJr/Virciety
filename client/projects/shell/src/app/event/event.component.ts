@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {Router} from "@angular/router";
+import {environment} from "../../environments/environment";
 
 @Component({
   selector: 'app-event',
@@ -7,8 +8,11 @@ import {Router} from "@angular/router";
   styleUrls: ['./event.component.scss']
 })
 export class EventComponent implements OnInit {
+  eventMFE: string;
 
-  constructor(private router: Router) { }
+  constructor(private router: Router) {
+    this.eventMFE = environment.eventMFE;
+  }
 
   ngOnInit(): void {
   }

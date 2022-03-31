@@ -1,0 +1,167 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: backend.post
+  name: backend.post
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: backend.post
+  template:
+    metadata:
+      labels:
+        app.virciety: backend.post
+    spec:
+      containers:
+        - image: cubalatino/virciety:backend.post
+          name: backend-post
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8083
+          env:
+            - name: RABBITMQ_URL
+              value: amqp://user:8YslJ0D10i@my-release-rabbitmq.rabbit.svc:5672
+            - name: POST_MONGODB_URL
+              value: mongodb://admin:admin@mongo-post-svc:27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: backend.chat
+  name: backend.chat
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: backend.chat
+  template:
+    metadata:
+      labels:
+        app.virciety: backend.chat
+    spec:
+      containers:
+        - image: cubalatino/virciety:backend.chat
+          name: backend-chat
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+          env:
+            - name: RABBITMQ_URL
+              value: amqp://user:8YslJ0D10i@my-release-rabbitmq.rabbit.svc:5672
+            - name: DM_MONGODB_URL
+              value: mongodb://admin:admin@mongo-chat-svc:27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: backend.comment
+  name: backend.comment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: backend.comment
+  template:
+    metadata:
+      labels:
+        app.virciety: backend.comment
+    spec:
+      containers:
+        - image: cubalatino/virciety:backend.comment
+          name: backend-comment
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8084
+          env:
+            - name: RABBITMQ_URL
+              value: amqp://user:8YslJ0D10i@my-release-rabbitmq.rabbit.svc:5672
+            - name: COMMENT_MONGODB_URL
+              value: mongodb://admin:admin@mongo-comment-svc:27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: backend.user
+  name: backend.user
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: backend.user
+  template:
+    metadata:
+      labels:
+        app.virciety: backend.user
+    spec:
+      containers:
+        - image: cubalatino/virciety:backend.user
+          name: backend-user
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8085
+          env:
+            - name: RABBITMQ_URL
+              value: amqp://user:8YslJ0D10i@my-release-rabbitmq.rabbit.svc:5672
+            - name: USER_MONGODB_URL
+              value: mongodb://admin:admin@mongo-user-svc:27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: backend.event
+  name: backend.event
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: backend.event
+  template:
+    metadata:
+      labels:
+        app.virciety: backend.event
+    spec:
+      containers:
+        - image: cubalatino/virciety:backend.event
+          name: backend-event
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8086
+          env:
+            - name: RABBITMQ_URL
+              value: amqp://user:8YslJ0D10i@my-release-rabbitmq.rabbit.svc:5672
+            - name: EVENT_MONGODB_URL
+              value: mongodb://admin:admin@mongo-event-svc:27017
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: backend.notifs
+  name: backend.notifs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: backend.notifs
+  template:
+    metadata:
+      labels:
+        app.virciety: backend.notifs
+    spec:
+      containers:
+        - image: cubalatino/virciety:backend.notifs
+          name: backend-notifs
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082
+          env:
+            - name: RABBITMQ_URL
+              value: amqp://user:8YslJ0D10i@my-release-rabbitmq.rabbit.svc:5672
+            - name: NOTIFS_MONGODB_URL
+              value: mongodb://admin:admin@mongo-notifs-svc:27017

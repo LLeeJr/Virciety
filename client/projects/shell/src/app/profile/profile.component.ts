@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import {Router} from "@angular/router";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {environment} from "../../environments/environment";
 
 @Component({
   selector: 'app-profile',
@@ -8,11 +9,15 @@ import {MatSnackBar} from "@angular/material/snack-bar";
   styleUrls: ['./profile.component.scss']
 })
 export class ProfileComponent implements OnInit {
-
+  profileMFE: string;
+  postMFE: string;
   private durationTime: number = 3;
 
   constructor(private router: Router,
-              private snackbar: MatSnackBar) { }
+              private snackbar: MatSnackBar) {
+    this.postMFE = environment.postMFE;
+    this.profileMFE = environment.profileMFE;
+  }
 
   ngOnInit(): void {
   }

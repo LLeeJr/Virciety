@@ -4,6 +4,7 @@ import {AuthLibService} from "auth-lib";
 import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 import {Router} from "@angular/router";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {environment} from "../environments/environment";
 
 @Component({
   selector: 'app-root',
@@ -21,12 +22,21 @@ export class AppComponent implements OnInit {
   postMfeOnline: boolean = true;
   private durationTime: number = 3;
 
-  constructor(private auth: AuthLibService,
+  postMFE: string;
+  notifsMFE: string;
+  userMFE: string;
+
+  constructor(
+    private auth: AuthLibService,
     private keycloak: KeycloakService,
     private responsive: BreakpointObserver,
     private router: Router,
     private snackbar: MatSnackBar,
-  ) { }
+  ) {
+    this.postMFE = environment.postMFE;
+    this.notifsMFE = environment.notifsMFE;
+    this.userMFE = environment.userMFE;
+  }
 
   async ngOnInit(): Promise<void> {
     await this.keycloak.isLoggedIn().then(loggedIn => {

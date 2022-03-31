@@ -1,7 +1,7 @@
 <div class="profile-container">
 
   <app-federated-component
-    remoteEntry="http://localhost:5005/remoteEntry.js"
+    [remoteEntry]="this.profileMFE"
     remoteName="profileViewer"
     exposedModule="ProfileViewerModule"
     componentName="ProfileViewerComponent"
@@ -10,7 +10,7 @@
   ></app-federated-component>
 
   <app-federated-component
-    remoteEntry="http://localhost:5002/remoteEntry.js"
+    [remoteEntry]="this.postMFE"
     remoteName="post" exposedModule="PostModule"
     componentName="PostComponent"
     class="post-container"
