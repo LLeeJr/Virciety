@@ -5,7 +5,6 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 	"post-service/graph/generated"
 	"post-service/graph/model"
 
@@ -13,15 +12,14 @@ import (
 )
 
 func (r *subscriptionResolver) NewPostCreated(ctx context.Context) (<-chan *model.Post, error) {
-	fmt.Println("Subscribed")
-
+	// create a new id for a new client
 	id := uuid.NewString()
 	events := make(chan *model.Post, 1)
 
+	// delete subscription when client disconnects
 	go func() {
 		<-ctx.Done()
 		r.mu.Lock()
-		fmt.Printf("Deleted id %v\n", id)
 		delete(r.observers, id)
 		r.mu.Unlock()
 	}()

@@ -24,11 +24,7 @@ const defaultPort = "8083"
 const defaultRabbitMQUrl = "amqp://guest:guest@localhost:5672/"
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
-	}
-
+	// get rabbitmq url from envs
 	rabbitmqURL := os.Getenv("RABBITMQ_URL")
 	if rabbitmqURL == "" {
 		rabbitmqURL = defaultRabbitMQUrl
@@ -43,21 +39,25 @@ func main() {
 	messagequeue.FailOnError(err, "Failed to open a channel")
 	defer ch.Close()
 
+	// create repo for connection to db
 	repo, err := database.NewRepo()
 	messagequeue.FailOnError(err, "Failed to connect to DB")
 
 	responses := map[string]chan []*model.Comment{}
 	userResponses := map[string]chan map[string]string{}
 
+	// create producer queue
 	producerQueue, _ := messagequeue.NewPublisher()
 	go producerQueue.InitPublisher(ch)
 
+	// create consumer queue
 	consumerQueue, _ := messagequeue.NewConsumer(repo, responses, userResponses)
 	go consumerQueue.InitConsumer(ch)
 
 	// graphql init
 	srv := handler.New(generated.NewExecutableSchema(generated.Config{Resolvers: resolvers.NewResolver(repo, producerQueue, responses, userResponses)}))
 
+	// websocket config
 	srv.AddTransport(transport.POST{})
 	srv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
@@ -69,6 +69,7 @@ func main() {
 	})
 	srv.Use(extension.Introspection{})
 
+	// cors config
 	r := mux.NewRouter()
 	r.Use(cors.New(cors.Options{
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
@@ -80,6 +81,6 @@ func main() {
 	r.Handle("/query", srv)
 	r.Handle("/", playground.Handler("GraphQL playground", "/query"))
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	log.Printf("connect to http://localhost:%s/ for GraphQL playground", defaultPort)
+	log.Fatal(http.ListenAndServe(":"+defaultPort, r))
 }

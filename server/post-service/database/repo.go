@@ -22,7 +22,6 @@ type Repository interface {
 	GetPosts(ctx context.Context, id string, fetchLimit int, filter *string) ([]*model.Post, error)
 	RemovePost(ctx context.Context, postEvent PostEvent) (string, error)
 	EditPost(ctx context.Context, postEvent PostEvent) (string, error)
-	LikePost(ctx context.Context, postEvent PostEvent) error
 	GetData(ctx context.Context, fileID string) (string, error)
 	GetPost(ctx context.Context, id string) (*model.Post, error)
 }
@@ -34,6 +33,7 @@ type Repo struct {
 	bucket           *gridfs.Bucket
 }
 
+// NewRepo : create new Repo which includes all necessary database collections
 func NewRepo() (Repository, error) {
 	client, err := dbConnect()
 	if err != nil {
@@ -54,6 +54,7 @@ func NewRepo() (Repository, error) {
 	}, nil
 }
 
+// InsertPostEvent for given post event
 func (repo *Repo) InsertPostEvent(ctx context.Context, postEvent PostEvent) (string, error) {
 	inserted, err := repo.postCollection.InsertOne(ctx, postEvent)
 	if err != nil {
@@ -63,21 +64,27 @@ func (repo *Repo) InsertPostEvent(ctx context.Context, postEvent PostEvent) (str
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
+// InsertFile for given file content
 func (repo *Repo) InsertFile(_ context.Context, base64File string) (*model.File, error) {
+	// new filename as uuid
 	fileName := uuid.NewString()
 
+	// get properties and contentType
 	properties := strings.Split(base64File, ";base64,")
 	contentType := strings.Split(properties[0], ":")
 
+	// set uploadOptions for file upload: set contentType
 	uploadOpts := options.GridFSUpload().
 		SetMetadata(bson.D{{"contentType", contentType[1]}})
 
+	// open upload stream to database
 	uploadStream, err := repo.bucket.OpenUploadStream(fileName, uploadOpts)
 	if err != nil {
 		return nil, err
 	}
 	defer uploadStream.Close()
 
+	// upload the file data
 	_, err = uploadStream.Write([]byte(base64File))
 	if err != nil {
 		return nil, err
@@ -90,19 +97,24 @@ func (repo *Repo) InsertFile(_ context.Context, base64File string) (*model.File,
 	}, nil
 }
 
+// CreatePost for given postEvent and file content
 func (repo *Repo) CreatePost(ctx context.Context, postEvent PostEvent, base64File string) (*model.Post, error) {
+	// insert the file
 	file, err := repo.InsertFile(ctx, base64File)
 	if err != nil {
 		return nil, err
 	}
 
+	// save file id to post event
 	postEvent.FileID = file.Name
 
+	// insert post event
 	insertedID, err := repo.InsertPostEvent(ctx, postEvent)
 	if err != nil {
 		return nil, err
 	}
 
+	// build post object
 	post := &model.Post{
 		ID:          insertedID,
 		Description: postEvent.Description,
@@ -115,12 +127,15 @@ func (repo *Repo) CreatePost(ctx context.Context, postEvent PostEvent, base64Fil
 	return post, nil
 }
 
+// GetPost for given id
 func (repo *Repo) GetPost(ctx context.Context, id string) (*model.Post, error) {
+	// convert hex id to mongodb's id type
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
+	// get post
 	var postEvent *PostEvent
 	err = repo.postCollection.FindOne(ctx, bson.D{
 		{"_id", objID},
@@ -145,6 +160,7 @@ func (repo *Repo) GetPost(ctx context.Context, id string) (*model.Post, error) {
 		}
 	}
 
+	// create post object
 	post := &model.Post{
 		ID:          postEvent.ID.Hex(),
 		Description: postEvent.Description,
@@ -158,7 +174,7 @@ func (repo *Repo) GetPost(ctx context.Context, id string) (*model.Post, error) {
 	}
 
 	max := int64(1)
-	// Sort event_time and get one element which will be the most recent edited post in relation to liked, unliked and description
+	// Sort event_time and get one element which will be the most recent edited post
 	opts := options.Find()
 	opts.SetSort(bson.D{{"event_time", -1}})
 	opts.Limit = &max
@@ -187,10 +203,16 @@ func (repo *Repo) GetPost(ctx context.Context, id string) (*model.Post, error) {
 	return post, nil
 }
 
+// GetPosts given...
+//
+// an id from last fetched post
+// a fetchlimit how many posts should be fetched
+// filter which posts should be fetched (i.e. by username)
 func (repo *Repo) GetPosts(ctx context.Context, id string, fetchLimit int, filter *string) ([]*model.Post, error) {
 	currentPosts := make([]*model.Post, 0)
 	limit := int64(fetchLimit)
 
+	// get lastFetchedEventTime for last fetched post
 	lastFetchedEventTime := ""
 	if id != "" {
 		projection := bson.D{
@@ -281,7 +303,7 @@ func (repo *Repo) GetPosts(ctx context.Context, id string, fetchLimit int, filte
 
 	max := int64(1)
 	for _, post := range currentPosts {
-		// Sort event_time and get one element which will be the most recent edited post in relation to liked, unliked and description
+		// Sort event_time and get one element which will be the most recent edited post
 		opts.Limit = &max
 		cursor, err = repo.postCollection.Find(ctx, bson.D{
 			{"id", post.ID},
@@ -309,6 +331,7 @@ func (repo *Repo) GetPosts(ctx context.Context, id string, fetchLimit int, filte
 	return currentPosts, nil
 }
 
+// GetData given a file id
 func (repo *Repo) GetData(_ context.Context, fileID string) (string, error) {
 	// get file content for post
 	var buf bytes.Buffer
@@ -320,17 +343,20 @@ func (repo *Repo) GetData(_ context.Context, fileID string) (string, error) {
 	return string(buf.Bytes()), nil
 }
 
+// RemovePost given a postEvent
 func (repo *Repo) RemovePost(ctx context.Context, postEvent PostEvent) (string, error) {
 	// get fileID for deleting all chunks
 	projection := bson.D{
 		{"_id", 1},
 	}
 
+	// find file id in file collection
 	var result bson.M
 	if err := repo.fileCollection.FindOne(ctx, bson.M{"filename": postEvent.FileID}, options.FindOne().SetProjection(projection)).Decode(&result); err != nil {
 		return "failed", err
 	}
 
+	// get file id out of map
 	fileID := result["_id"].(primitive.ObjectID)
 
 	// delete file ref from fileCollection
@@ -391,13 +417,4 @@ func (repo *Repo) EditPost(ctx context.Context, postEvent PostEvent) (string, er
 	}
 
 	return "success", nil
-}
-
-func (repo *Repo) LikePost(ctx context.Context, postEvent PostEvent) error {
-	_, err := repo.InsertPostEvent(ctx, postEvent)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
