@@ -3,7 +3,9 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  postWS: "ws://localhost:8083/query",
+  postAPI: "http://localhost:8083/query",
 };
 
 /*

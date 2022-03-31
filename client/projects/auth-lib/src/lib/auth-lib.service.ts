@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import {Inject, Injectable} from '@angular/core';
 import {Observable, Subject} from "rxjs";
 import {Apollo, ApolloBase, gql, QueryRef} from "apollo-angular";
 import {HttpLink} from "apollo-angular/http";
@@ -29,10 +29,13 @@ export class AuthLibService {
 
   userName: string = '';
   activeId: string = '';
+  private environment: any;
 
 
   constructor(private apolloProvider: Apollo,
-              private httpLink: HttpLink) {
+              private httpLink: HttpLink,
+              @Inject('environment') environment: any) {
+    this.environment = environment;
     this.start();
   }
 
@@ -47,8 +50,8 @@ export class AuthLibService {
     this.apollo = this.apolloProvider.use('user');
     if (this.apollo === undefined) {
       const http = this.httpLink.create({
-        uri: "http://localhost:8085/query"
-      });
+        uri: this.environment.userAPI
+      })
       this.apolloProvider.createNamed('user', {
         cache: new InMemoryCache(),
         link: from([errorLink, http]),

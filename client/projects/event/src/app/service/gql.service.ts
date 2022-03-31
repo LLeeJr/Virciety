@@ -17,8 +17,8 @@ import {Event} from "../model/event";
 import {EventDate} from "../event/event.component";
 import {UserData} from "../model/userData";
 import {onError} from "@apollo/client/link/error";
-import {Router} from "@angular/router";
 import {Subject} from "rxjs";
+import {environment} from "../../environments/environment";
 
 @Injectable({
   providedIn: 'root'
@@ -37,7 +37,7 @@ export class GQLService {
     });
 
     const http = httpLink.create({
-      uri: 'http://localhost:8086/query',
+      uri: environment.eventAPI,
     });
 
     try {

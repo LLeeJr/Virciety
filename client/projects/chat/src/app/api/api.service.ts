@@ -8,8 +8,8 @@ import {WebSocketLink} from "@apollo/client/link/ws";
 import {ApolloLink, from, InMemoryCache, split} from "@apollo/client/core";
 import {getMainDefinition} from "@apollo/client/utilities";
 import {setContext} from "@apollo/client/link/context";
+import {environment} from "../../environments/environment";
 import {onError} from "@apollo/client/link/error";
-import {Router} from "@angular/router";
 
 @Injectable({
   providedIn: 'root',
@@ -59,7 +59,7 @@ export class ApiService {
       }
     });
 
-    const http = ApolloLink.from([basic, auth, errorLink, this.httpLink.create({ uri: 'http://localhost:8081/query'})]);
+    const http = ApolloLink.from([basic, auth, errorLink, this.httpLink.create({ uri: environment.chatAPI})]);
     const cache = new InMemoryCache({
       typePolicies: {
         Query: {
@@ -72,7 +72,7 @@ export class ApiService {
       },
     });
 
-    this.webSocketClient = new SubscriptionClient('ws://localhost:8081/query', {
+    this.webSocketClient = new SubscriptionClient(environment.chatWS, {
       reconnect: true,
       reconnectionAttempts: 3,
     });
