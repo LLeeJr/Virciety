@@ -102,18 +102,13 @@ export class GQLService {
     );
   }
 
-  subscribeEvent(event: Event) {
+  subscribeEvent(event: Event, username: string, subscribed: boolean) {
     return this.apollo.mutate({
         mutation: SUBSCRIBE_EVENT,
         variables: {
           eventID: event.id,
-          title: event.title,
-          description: event.description,
-          subscribers: event.subscribers,
-          startDate: event.startDate,
-          endDate: event.endDate,
-          location: event.location,
-          attendees: event.attendees,
+          username: username,
+          subscribed: subscribed
         }
       }
     );
@@ -124,13 +119,6 @@ export class GQLService {
         mutation: ATTEND_EVENT,
         variables: {
           eventID: event.id,
-          title: event.title,
-          description: event.description,
-          subscribers: event.subscribers,
-          startDate: event.startDate,
-          endDate: event.endDate,
-          location: event.location,
-          attendees: event.attendees,
           left: left,
           username: username
         }

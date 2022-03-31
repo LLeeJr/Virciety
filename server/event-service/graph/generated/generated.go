@@ -73,11 +73,11 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddUserData    func(childComplexity int, userData model.UserDataRequest) int
-		AttendEvent    func(childComplexity int, attend model.EditEventRequest, username string, left bool) int
+		AttendEvent    func(childComplexity int, eventID string, username string, left bool) int
 		CreateEvent    func(childComplexity int, newEvent model.CreateEventRequest) int
 		EditEvent      func(childComplexity int, edit model.EditEventRequest) int
 		RemoveEvent    func(childComplexity int, remove string) int
-		SubscribeEvent func(childComplexity int, subscribe model.EditEventRequest) int
+		SubscribeEvent func(childComplexity int, eventID string, username *string, subscribed bool) int
 	}
 
 	Query struct {
@@ -104,8 +104,8 @@ type MutationResolver interface {
 	CreateEvent(ctx context.Context, newEvent model.CreateEventRequest) (*model.CreateEventResponse, error)
 	EditEvent(ctx context.Context, edit model.EditEventRequest) (*model.EditEventResponse, error)
 	RemoveEvent(ctx context.Context, remove string) (string, error)
-	SubscribeEvent(ctx context.Context, subscribe model.EditEventRequest) (string, error)
-	AttendEvent(ctx context.Context, attend model.EditEventRequest, username string, left bool) (string, error)
+	SubscribeEvent(ctx context.Context, eventID string, username *string, subscribed bool) ([]string, error)
+	AttendEvent(ctx context.Context, eventID string, username string, left bool) ([]string, error)
 	AddUserData(ctx context.Context, userData model.UserDataRequest) (*model.UserData, error)
 }
 type QueryResolver interface {
@@ -272,7 +272,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AttendEvent(childComplexity, args["attend"].(model.EditEventRequest), args["username"].(string), args["left"].(bool)), true
+		return e.complexity.Mutation.AttendEvent(childComplexity, args["eventID"].(string), args["username"].(string), args["left"].(bool)), true
 
 	case "Mutation.createEvent":
 		if e.complexity.Mutation.CreateEvent == nil {
@@ -320,7 +320,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SubscribeEvent(childComplexity, args["subscribe"].(model.EditEventRequest)), true
+		return e.complexity.Mutation.SubscribeEvent(childComplexity, args["eventID"].(string), args["username"].(*string), args["subscribed"].(bool)), true
 
 	case "Query.getEvent":
 		if e.complexity.Query.GetEvent == nil {
@@ -576,8 +576,8 @@ type UserData {
     createEvent(newEvent: CreateEventRequest!): CreateEventResponse!
     editEvent(edit: EditEventRequest!): EditEventResponse!
     removeEvent(remove: String!): String!
-    subscribeEvent(subscribe: EditEventRequest!): String!
-    attendEvent(attend: EditEventRequest!, username: String!, left: Boolean!): String!
+    subscribeEvent(eventID: String!, username: String, subscribed: Boolean!): [String!]!
+    attendEvent(eventID: String!, username: String!, left: Boolean!): [String!]!
     addUserData(userData: UserDataRequest!): UserData!
 }
 `, BuiltIn: false},
@@ -614,15 +614,15 @@ func (ec *executionContext) field_Mutation_addUserData_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_attendEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.EditEventRequest
-	if tmp, ok := rawArgs["attend"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("attend"))
-		arg0, err = ec.unmarshalNEditEventRequest2eventᚑserviceᚋgraphᚋmodelᚐEditEventRequest(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["eventID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["attend"] = arg0
+	args["eventID"] = arg0
 	var arg1 string
 	if tmp, ok := rawArgs["username"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
@@ -692,15 +692,33 @@ func (ec *executionContext) field_Mutation_removeEvent_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_subscribeEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.EditEventRequest
-	if tmp, ok := rawArgs["subscribe"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subscribe"))
-		arg0, err = ec.unmarshalNEditEventRequest2eventᚑserviceᚋgraphᚋmodelᚐEditEventRequest(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["eventID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("eventID"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["subscribe"] = arg0
+	args["eventID"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["username"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["username"] = arg1
+	var arg2 bool
+	if tmp, ok := rawArgs["subscribed"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("subscribed"))
+		arg2, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["subscribed"] = arg2
 	return args, nil
 }
 
@@ -1602,7 +1620,7 @@ func (ec *executionContext) _Mutation_subscribeEvent(ctx context.Context, field 
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().SubscribeEvent(rctx, args["subscribe"].(model.EditEventRequest))
+		return ec.resolvers.Mutation().SubscribeEvent(rctx, args["eventID"].(string), args["username"].(*string), args["subscribed"].(bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1614,9 +1632,9 @@ func (ec *executionContext) _Mutation_subscribeEvent(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_attendEvent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1644,7 +1662,7 @@ func (ec *executionContext) _Mutation_attendEvent(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().AttendEvent(rctx, args["attend"].(model.EditEventRequest), args["username"].(string), args["left"].(bool))
+		return ec.resolvers.Mutation().AttendEvent(rctx, args["eventID"].(string), args["username"].(string), args["left"].(bool))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1656,9 +1674,9 @@ func (ec *executionContext) _Mutation_attendEvent(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_addUserData(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
