@@ -117,8 +117,8 @@ export const EDIT_EVENT = gql`
   `;
 
 export const SUBSCRIBE_EVENT = gql`
-    mutation subscribeEvent($eventID: String!, $title: String!, $description: String!, $subscribers: [String!]!, $startDate: String!, $endDate: String!, $location: String!, $attendees: [String!]!) {
-      subscribeEvent(subscribe: {eventID: $eventID, title: $title, description: $description, subscribers: $subscribers, startDate: $startDate, endDate: $endDate, location: $location, attendees: $attendees})
+    mutation subscribeEvent($eventID: String!, $username: String!, $subscribed: Boolean!) {
+      subscribeEvent(eventID: $eventID, username: $username, subscribed: $subscribed)
     }
   `;
 

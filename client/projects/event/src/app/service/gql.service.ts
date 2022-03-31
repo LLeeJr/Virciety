@@ -17,7 +17,6 @@ import {Event} from "../model/event";
 import {EventDate} from "../event/event.component";
 import {UserData} from "../model/userData";
 import {onError} from "@apollo/client/link/error";
-import {Router} from "@angular/router";
 import {Subject} from "rxjs";
 
 @Injectable({
@@ -29,7 +28,7 @@ export class GQLService {
 
   constructor(private apolloProvider: Apollo,
               private httpLink: HttpLink) {
-    let errorLink = onError(({graphQLErrors, networkError }) => {
+    let errorLink = onError(({_, networkError }) => {
       if (networkError) {
         let msg = `Event backend is currently offline, try again later!`;
         this.errorState.next(msg);
@@ -102,18 +101,13 @@ export class GQLService {
     );
   }
 
-  subscribeEvent(event: Event) {
+  subscribeEvent(event: Event, username: string, subscribed: boolean) {
     return this.apollo.mutate({
         mutation: SUBSCRIBE_EVENT,
         variables: {
           eventID: event.id,
-          title: event.title,
-          description: event.description,
-          subscribers: event.subscribers,
-          startDate: event.startDate,
-          endDate: event.endDate,
-          location: event.location,
-          attendees: event.attendees,
+          username: username,
+          subscribed: subscribed
         }
       }
     );

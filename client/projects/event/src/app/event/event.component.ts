@@ -227,14 +227,10 @@ export class EventComponent implements OnInit {
   }
 
   subscribeEvent(event: Event) {
-    if (event.subscribers.indexOf(this.username) < 0) {
-      event.subscribers = [...event.subscribers, this.username];
-    } else {
-      event.subscribers = event.subscribers.filter(member => member !== this.username);
-    }
+    const subscribed = event.subscribers.indexOf(this.username) < 0;
 
-    this.gqlService.subscribeEvent(event).subscribe(({data}: any) => {
-      // console.log(data);
+    this.gqlService.subscribeEvent(event, this.username, subscribed).subscribe(({data}: any) => {
+      event.subscribers = data.subscribeEvent;
     });
   }
 

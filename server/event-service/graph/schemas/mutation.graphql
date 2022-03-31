@@ -2,7 +2,7 @@ type Mutation {
     createEvent(newEvent: CreateEventRequest!): CreateEventResponse!
     editEvent(edit: EditEventRequest!): EditEventResponse!
     removeEvent(remove: String!): String!
-    subscribeEvent(subscribe: EditEventRequest!): String!
+    subscribeEvent(eventID: String!, username: String, subscribed: Boolean!): [String!]!
     attendEvent(attend: EditEventRequest!, username: String!, left: Boolean!): String!
     addUserData(userData: UserDataRequest!): UserData!
 }
