@@ -16,5 +16,5 @@
   </mat-list-item>
 </mat-list>
 
-<input type="file" (click)="reset()"
+<input type="file" (click)="reset()" accept="image/*"
        (change)="onFileSelected($event)" #fileUpload [hidden]="true">
