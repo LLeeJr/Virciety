@@ -1,4 +1,12 @@
+:host {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
 .return-home {
   margin-top: 10px;
   cursor: pointer;
+  display: flex;
+  justify-content: center;
 }
