@@ -15,8 +15,8 @@ export class AppComponent implements OnInit {
   isLoggedIn: boolean = false;
   username: string
 
-  searchMode: boolean = false;
   isPhonePortrait: boolean = false;
+  userMfeOnline: boolean = true;
   notificationMfeOnline: boolean = true;
   postMfeOnline: boolean = true;
   private durationTime: number = 3;
@@ -53,14 +53,6 @@ export class AppComponent implements OnInit {
     })
   }
 
-  openSearch() {
-    this.searchMode = !this.searchMode;
-  }
-
-  closeSearch() {
-    this.searchMode = !this.searchMode;
-  }
-
   handleError(event: any) {
     let {error, component} = event;
     if (error) {
@@ -74,8 +66,7 @@ export class AppComponent implements OnInit {
           this.notificationMfeOnline = false;
           break;
         case 'user':
-          this.searchMode = !this.searchMode;
-          this.placeholderHandler('user-search')
+          this.userMfeOnline = false;
           break;
       }
     }

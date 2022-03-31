@@ -1,4 +1,4 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {AuthLibService, User} from "auth-lib";
 import {FormControl} from "@angular/forms";
 import {debounceTime, map, startWith} from "rxjs/operators";
@@ -6,7 +6,7 @@ import {Observable} from "rxjs";
 import {Router} from "@angular/router";
 import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 import {MatSnackBar} from "@angular/material/snack-bar";
-import {error} from "ng-packagr/lib/utils/log";
+import {MatAutocomplete} from "@angular/material/autocomplete";
 
 
 @Component({
@@ -23,6 +23,8 @@ export class UserComponent implements OnInit, OnDestroy {
   id: string = '';
   activeUser: User;
   isPhonePortrait: boolean = false;
+  searchMode: boolean = false;
+  private reset: boolean = false;
 
   constructor(private auth: AuthLibService,
               private router: Router,
@@ -97,5 +99,19 @@ export class UserComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  handleBlur() {
+    setTimeout(() => {
+      if (this.reset) {
+        this.reset = false;
+      } else {
+        this.searchMode = !this.searchMode;
+      }
+    }, 200);
+  }
+
+  handleReset() {
+    this.reset = true;
   }
 }
