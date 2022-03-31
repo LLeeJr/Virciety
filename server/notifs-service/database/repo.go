@@ -113,6 +113,7 @@ type EventNotification struct {
 	Username string `json:"username"`
 }
 
+// UpdateNotification updates the read-status for an existing notification inside the database
 func (r repo) UpdateNotification(ctx context.Context, id string, status bool) (string, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -135,6 +136,7 @@ func (r repo) UpdateNotification(ctx context.Context, id string, status bool) (s
 	return "success", nil
 }
 
+// GetNotification returns an existing notification by providing its id
 func (r repo) GetNotification(ctx context.Context, id string) (*model.Notif, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -162,14 +164,17 @@ func (r repo) GetNotification(ctx context.Context, id string) (*model.Notif, err
 	return notif, nil
 }
 
+// AddSubscription adds a new subscriber to the local Subscriptions map
 func (r repo) AddSubscription(name string, subscription *Message) {
 	r.Subscriptions[name] = subscription
 }
 
+// GetSubscriptions returns all currently existing subscriptions
 func (r repo) GetSubscriptions() map[string]*Message {
 	return r.Subscriptions
 }
 
+// CreateDmNotifFromConsumer creates a dm-related notification after consuming it via event-exchange
 func (r repo) CreateDmNotifFromConsumer(data []byte) error {
 	var s *ChatEvent
 	err := json.Unmarshal(data, &s)
@@ -231,6 +236,7 @@ func (r repo) CreateDmNotifFromConsumer(data []byte) error {
 	return nil
 }
 
+// CreateCommentNotifFromConsumer creates a comment-related notification after consuming it via event-exchange
 func (r repo) CreateCommentNotifFromConsumer(body []byte) error {
 	var s *CommentEvent
 	err := json.Unmarshal(body, &s)
@@ -285,6 +291,7 @@ func (r repo) CreateCommentNotifFromConsumer(body []byte) error {
 	return nil
 }
 
+// CreateLikeNotifFromConsumer creates a like-related notification after consuming it via event-exchange
 func (r repo) CreateLikeNotifFromConsumer(body []byte) error {
 	var s *PostEvent
 	err := json.Unmarshal(body, &s)
@@ -335,6 +342,7 @@ func (r repo) CreateLikeNotifFromConsumer(body []byte) error {
 	return nil
 }
 
+// CreateFollowNotifFromConsumer creates a follow-related notification after consuming it via event-exchange
 func (r repo) CreateFollowNotifFromConsumer(body []byte) error {
 	var s *FollowEvent
 	err := json.Unmarshal(body, &s)
@@ -385,6 +393,7 @@ func (r repo) CreateFollowNotifFromConsumer(body []byte) error {
 	return nil
 }
 
+// CreateEventNotifFromConsumer creates an event-related notification after consuming it via event-exchange
 func (r repo) CreateEventNotifFromConsumer(body []byte) error {
 	var s *EventNotification
 	err := json.Unmarshal(body, &s)
@@ -451,6 +460,7 @@ func (r repo) CreateEventNotifFromConsumer(body []byte) error {
 	return nil
 }
 
+// InsertNotifEvent is a helper-function for inserting a NotifEvent in the database
 func (r *repo) InsertNotifEvent(ctx context.Context, notifEvent NotifEvent) (string, error) {
 	inserted, err := r.notifCollection.InsertOne(ctx, notifEvent)
 	if err != nil {
@@ -460,6 +470,7 @@ func (r *repo) InsertNotifEvent(ctx context.Context, notifEvent NotifEvent) (str
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
+// GetNotifsByReceiver retrieves the most recent ten notifications from the database for a given username
 func (r repo) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error) {
 
 	var result []*Notif
@@ -494,6 +505,7 @@ func (r repo) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*mode
 	return notifs, nil
 }
 
+// NewRepo creates a new Repository instance for the given database
 func NewRepo() (Repository, error) {
 	client, err := Connect()
 	if err != nil {
