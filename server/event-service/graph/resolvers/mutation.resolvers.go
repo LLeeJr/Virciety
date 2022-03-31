@@ -136,11 +136,13 @@ func (r *mutationResolver) AttendEvent(ctx context.Context, attend model.EditEve
 		Attendees:   attend.Attendees,
 	}
 
+	r.mu.Lock()
 	// save event in database
 	ok, err := r.repo.AttendEvent(ctx, event, username, left)
 	if err != nil {
 		return ok, err
 	}
+	r.mu.Unlock()
 
 	return ok, nil
 }
