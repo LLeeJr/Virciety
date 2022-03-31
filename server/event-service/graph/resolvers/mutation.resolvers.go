@@ -121,7 +121,6 @@ func (r *mutationResolver) SubscribeEvent(ctx context.Context, eventID string, u
 
 		updatedEvent.Subscribers = append(updatedEvent.Subscribers[:index], updatedEvent.Subscribers[index+1:]...)
 	}
-	r.mu.Unlock()
 
 	// process the data and create new event
 	event := database.Event{
@@ -142,6 +141,8 @@ func (r *mutationResolver) SubscribeEvent(ctx context.Context, eventID string, u
 	if err != nil {
 		return nil, err
 	}
+
+	r.mu.Unlock()
 
 	return updatedEvent.Subscribers, nil
 }
