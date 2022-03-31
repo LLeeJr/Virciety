@@ -6,6 +6,7 @@ import {Notification} from "../data/notification";
 import {Router} from "@angular/router";
 import {take} from "rxjs";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 
 @Component({
   selector: 'app-notification',
@@ -18,14 +19,20 @@ export class NotificationComponent implements OnInit {
   private username: string;
   show = false;
   notifications: Notification[] = [];
+  isPhonePortrait: boolean = false;
 
   constructor(private api: ApiService,
               private datePipe: DatePipe,
               private keycloak: KeycloakService,
               private router: Router,
-              private snackbar: MatSnackBar) { }
+              private snackbar: MatSnackBar,
+              private responsive: BreakpointObserver) { }
 
   async ngOnInit(): Promise<void> {
+    this.responsive.observe(Breakpoints.HandsetPortrait).subscribe((result) => {
+      this.isPhonePortrait = result.matches;
+    });
+
     this.api.errorState.subscribe(value => this.snackbar.open(value, undefined, {duration: 3000}));
     await this.keycloak.isLoggedIn().then(loggedIn => {
       if (loggedIn) {
