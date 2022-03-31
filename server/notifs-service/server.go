@@ -22,6 +22,7 @@ import (
 const defaultPort = "8082"
 const defaultRabbitMQUrl = "amqp://guest:guest@localhost:5672/"
 
+// main function for starting the notif-microservice
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {

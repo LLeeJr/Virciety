@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// SetReadStatus updates the read-status of a notification for a given id
 func (r *mutationResolver) SetReadStatus(ctx context.Context, id string, status bool) (*model.Notif, error) {
 	notification, err := r.repo.GetNotification(ctx, id)
 	if err != nil {
@@ -27,10 +28,12 @@ func (r *mutationResolver) SetReadStatus(ctx context.Context, id string, status 
 	return notification, nil
 }
 
+// GetNotifsByReceiver returns the most-recent ten messages for a given userName
 func (r *queryResolver) GetNotifsByReceiver(ctx context.Context, receiver string) ([]*model.Notif, error) {
 	return r.repo.GetNotifsByReceiver(ctx, receiver)
 }
 
+// NotifAdded handles the subscription for real-time-notification-functionality. Users subscribe by providing their userName
 func (r *subscriptionResolver) NotifAdded(ctx context.Context, userName string) (<-chan *model.Notif, error) {
 	r.mu.Lock()
 	subscription := r.repo.GetSubscriptions()[userName]

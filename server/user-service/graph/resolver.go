@@ -14,6 +14,7 @@ type Resolver struct{
 	publisher queue.Publisher
 }
 
+// NewResolver creates a new Resolver struct with a given rabbitMQ-publisher and an instance of the repository
 func NewResolver(repo database.Repository, publisher queue.Publisher) *Resolver {
 	return &Resolver{
 		repo:      repo,

@@ -11,6 +11,7 @@ import (
 
 const defaultMongoDBUrl = "mongodb://admin:admin@localhost:27018/"
 
+// Connect is a helper-function for establishing a connection with a given mongoDB-database
 func Connect() (*mongo.Client, error) {
 	url := os.Getenv("DM_MONGODB_URL")
 	if url == "" {
