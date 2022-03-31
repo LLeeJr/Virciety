@@ -44,10 +44,6 @@
   font-size: 150px;
 }
 
-.mat-icon-button {
-  margin-left: 1em;
-}
-
 .profile-title {
   display: flex;
   flex-direction: row;
@@ -60,9 +56,17 @@
 }
 
 .profile-control{
-  font-size: 40px
+  font-size: 40px;
+  margin-left: 1em;
 }
 
 .profile-control.is-phone-portrait {
   font-size: 32px;
+  margin-left: 0;
+}
+
+.profile-card-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
 }

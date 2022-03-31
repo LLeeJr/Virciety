@@ -8,12 +8,12 @@
   <div class="profile-info">
     <mat-card-title class="profile-title">
       {{this.activeUser.username}}
-      <div *ngIf="!isCurrentUser()" class="profile-controls">
+      <div *ngIf="!isCurrentUser() && !isPhonePortrait" class="profile-controls">
         <button mat-icon-button (click)="openChat()">
-          <mat-icon class="profile-control" [ngClass]="{'is-phone-portrait': isPhonePortrait}">message</mat-icon>
+          <mat-icon class="profile-control">message</mat-icon>
         </button>
         <button mat-icon-button *ngIf="isFollowedByUser(); else followIcon" (click)="unfollow()">
-          <mat-icon class="profile-control" [ngClass]="{'is-phone-portrait': isPhonePortrait}">person_remove</mat-icon>
+          <mat-icon class="profile-control">person_remove</mat-icon>
         </button>
       </div>
     </mat-card-title>
@@ -22,6 +22,14 @@
       <span>{{this.activeUser.followers.length}} Follower</span>
       <span>{{this.activeUser.follows.length}} Subscribed</span>
     </ng-container>
+    <div *ngIf="!isCurrentUser() && isPhonePortrait" class="profile-card-footer">
+      <button mat-icon-button (click)="openChat()">
+        <mat-icon class="profile-control" [ngClass]="{'is-phone-portrait': isPhonePortrait}">message</mat-icon>
+      </button>
+      <button mat-icon-button *ngIf="isFollowedByUser(); else followIcon" (click)="unfollow()">
+        <mat-icon class="profile-control" [ngClass]="{'is-phone-portrait': isPhonePortrait}">person_remove</mat-icon>
+      </button>
+    </div>
   </div>
 </mat-card>
 

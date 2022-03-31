@@ -1,5 +1,5 @@
 
-<div *ngIf="isPhonePortrait">
+<div *ngIf="isPhonePortrait && this.room">
   <div class="phone-layout-chat-header">
     <button mat-icon-button class="backButton" (click)="goBack()" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
       <mat-icon style="font-size: 32px">arrow_back_ios</mat-icon>
