@@ -21,6 +21,7 @@ import (
 const defaultPort = "8081"
 const defaultRabbitMQUrl = "amqp://guest:guest@localhost:5672/"
 
+// main function for starting the dm-microservice
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {

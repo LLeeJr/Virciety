@@ -34,6 +34,16 @@ type repo struct {
 	bucket         *gridfs.Bucket
 }
 
+type Chatroom struct {
+	EventType string             `bson:"eventtype"`
+	ID        primitive.ObjectID `bson:"_id"`
+	Member    []string           `bson:"member"`
+	Name      string             `bson:"name"`
+	Owner     string             `bson:"owner"`
+	IsDirect  bool               `bson:"isdirect"`
+}
+
+// GetDirectRoom retrieves a direct-chat chatroom for two given userNames from the database
 func (r repo) GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error) {
 	order1 := []string{user1, user2}
 	order2 := []string{user2, user1}
@@ -82,6 +92,7 @@ func (r repo) GetDirectRoom(ctx context.Context, user1 string, user2 string) (*m
 	return nil, errors.New("no room found")
 }
 
+// DeleteRoom removes a chatroom from the database for a given id
 func (r repo) DeleteRoom(ctx context.Context, id string) (string, error) {
 	objID, err := primitive.ObjectIDFromHex(id)
 
@@ -100,6 +111,7 @@ func (r repo) DeleteRoom(ctx context.Context, id string) (string, error) {
 	return msg, err
 }
 
+// GetMessagesFromRoom retrieves all dms from the database for a given roomID
 func (r repo) GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, error) {
 	var result []*DmEvent
 	cursor, err := r.dmCollection.Find(
@@ -128,6 +140,7 @@ func (r repo) GetMessagesFromRoom(ctx context.Context, id string) ([]*model.Dm, 
 	return dms, err
 }
 
+// UpdateRoom updates an existing chatroom inside the database
 func (r repo) UpdateRoom(ctx context.Context, room *model.Chatroom) (string, error) {
 	objID, err := primitive.ObjectIDFromHex(room.ID)
 	if err != nil {
@@ -156,6 +169,7 @@ func (r repo) UpdateRoom(ctx context.Context, room *model.Chatroom) (string, err
 	return "success", nil
 }
 
+// CreateRoom creates a new chatroom in the database (stored as event)
 func (r repo) CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.Chatroom, error) {
 	insertedId, err := r.InsertRoomEvent(ctx, roomEvent)
 	if err != nil {
@@ -173,6 +187,7 @@ func (r repo) CreateRoom(ctx context.Context, roomEvent ChatroomEvent) (*model.C
 	return modelRoom, nil
 }
 
+// InsertRoomEvent is a helper-function for inserting a ChatroomEvent in the database
 func (r repo) InsertRoomEvent(ctx context.Context, room ChatroomEvent) (string, error) {
 	inserted, err := r.roomCollection.InsertOne(ctx, room)
 	if err != nil {
@@ -182,6 +197,7 @@ func (r repo) InsertRoomEvent(ctx context.Context, room ChatroomEvent) (string, 
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
+// InsertDmEvent is a helper-function for inserting a DmEvent in the database
 func (r repo) InsertDmEvent(ctx context.Context, dmEvent DmEvent) (string, error) {
 	inserted, err := r.dmCollection.InsertOne(ctx, dmEvent)
 	if err != nil {
@@ -191,15 +207,7 @@ func (r repo) InsertDmEvent(ctx context.Context, dmEvent DmEvent) (string, error
 	return inserted.InsertedID.(primitive.ObjectID).Hex(), err
 }
 
-type Chatroom struct {
-	EventType string             `bson:"eventtype"`
-	ID        primitive.ObjectID `bson:"_id"`
-	Member    []string           `bson:"member"`
-	Name      string             `bson:"name"`
-	Owner     string             `bson:"owner"`
-	IsDirect  bool               `bson:"isdirect"`
-}
-
+// GetRoom retrieves a chatroom from the database for a given roomName and a respective roomID
 func (r repo) GetRoom(ctx context.Context, roomName string, id string) (*model.Chatroom, error) {
 	var objID primitive.ObjectID
 	if id != "" {
@@ -231,6 +239,7 @@ func (r repo) GetRoom(ctx context.Context, roomName string, id string) (*model.C
 	}, nil
 }
 
+// GetRoomsByUser retrieves all chatroom-elements from the database for a given userName
 func (r repo) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error) {
 
 	var result []*Chatroom
@@ -260,6 +269,7 @@ func (r repo) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Cha
 	return rooms, err
 }
 
+// CreateDm creates a new dm in the database (stored as event)
 func (r repo) CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error) {
 	insertedId, err := r.InsertDmEvent(ctx, dmEvent)
 	if err != nil {
@@ -277,6 +287,7 @@ func (r repo) CreateDm(ctx context.Context, dmEvent DmEvent) (*model.Dm, error) 
 	return dm, err
 }
 
+// NewRepo creates a new Repository instance for the given database
 func NewRepo() (Repository, error) {
 	client, err := Connect()
 	if err != nil {

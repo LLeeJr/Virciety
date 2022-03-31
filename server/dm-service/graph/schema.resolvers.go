@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// CreateDm creates a new model.Dm for a given msg, a userName, a roomName and a given roomID
 func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName string, roomName string, roomID string) (*model.Dm, error) {
 	r.mu.Lock()
 	room := r.Rooms[roomName]
@@ -85,6 +86,7 @@ func (r *mutationResolver) CreateDm(ctx context.Context, msg string, userName st
 	return dm, nil
 }
 
+// CreateRoom creates a new model.Chatroom for a given room-input-struct (Member []string, Name string, Owner string, IsDirect *bool)
 func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoom) (*model.Chatroom, error) {
 	r.mu.Lock()
 	room := r.Rooms[input.Name]
@@ -146,6 +148,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 	}, nil
 }
 
+// DeleteRoom removes a room with a given room-input-struct (ID string, RoomName string, UserName string)
 func (r *mutationResolver) DeleteRoom(ctx context.Context, remove model.RemoveRoom) (string, error) {
 	r.mu.Lock()
 	room := r.Rooms[remove.RoomName]
@@ -188,6 +191,7 @@ func (r *mutationResolver) DeleteRoom(ctx context.Context, remove model.RemoveRo
 	return msg, err
 }
 
+// LeaveChat enables the user for a given roomID and his userName to leave the respective room (appoints a new owner if given)
 func (r *mutationResolver) LeaveChat(ctx context.Context, roomID string, userName string, owner *string) (*model.Chatroom, error) {
 	room, err := r.repo.GetRoom(ctx, "", roomID)
 	if err != nil {
@@ -230,6 +234,7 @@ func (r *mutationResolver) LeaveChat(ctx context.Context, roomID string, userNam
 	return room, nil
 }
 
+// GetDirectRoom returns a direct-chat chatroom of two given users
 func (r *queryResolver) GetDirectRoom(ctx context.Context, user1 string, user2 string) (*model.Chatroom, error) {
 	room, err := r.repo.GetDirectRoom(ctx, user1, user2)
 	if err != nil {
@@ -254,6 +259,7 @@ func (r *queryResolver) GetDirectRoom(ctx context.Context, user1 string, user2 s
 	return room, nil
 }
 
+// GetRoom returns a room for a given roomName and the respective roomID
 func (r *queryResolver) GetRoom(ctx context.Context, roomName string, roomID string) (*model.Chatroom, error) {
 	r.mu.Lock()
 	room := r.Rooms[roomName]
@@ -294,6 +300,7 @@ func (r *queryResolver) GetRoom(ctx context.Context, roomName string, roomID str
 	}, nil
 }
 
+// GetRoomsByUser returns all chatroom-elements which contain the given userName inside their Member-property
 func (r *queryResolver) GetRoomsByUser(ctx context.Context, userName string) ([]*model.Chatroom, error) {
 	rooms, err := r.repo.GetRoomsByUser(ctx, userName)
 	if err != nil {
@@ -322,6 +329,7 @@ func (r *queryResolver) GetRoomsByUser(ctx context.Context, userName string) ([]
 	return rooms, nil
 }
 
+// GetMessagesFromRoom returns all dms for a given roomID
 func (r *queryResolver) GetMessagesFromRoom(ctx context.Context, roomID string) ([]*model.Dm, error) {
 	dms, err := r.repo.GetMessagesFromRoom(ctx, roomID)
 	if err != nil {
@@ -330,6 +338,7 @@ func (r *queryResolver) GetMessagesFromRoom(ctx context.Context, roomID string) 
 	return dms, nil
 }
 
+// DmAdded handles the subscription for real-time-chat-functionality. Users subscribe by providing the roomName
 func (r *subscriptionResolver) DmAdded(ctx context.Context, roomName string) (<-chan *model.Dm, error) {
 	r.mu.Lock()
 	room := r.Rooms[roomName]
@@ -378,6 +387,7 @@ type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
 
+// Chatroom internal helper-struct for handling the chatroom-data and -subscriptions
 type Chatroom struct {
 	Id        string
 	IsDirect  bool
