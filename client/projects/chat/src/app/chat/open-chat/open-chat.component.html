@@ -26,7 +26,7 @@
   </div>
 
   <div class="chat-input">
-    <mat-form-field class="message-form-field" appearance="fill">
+    <mat-form-field class="message-form-field" appearance="fill" [ngClass]="{'is-phone-portrait': isPhonePortrait}">
       <mat-label>Enter your message</mat-label>
       <input matInput type="text" [(ngModel)]="message"
              class="form-control" id="message-input"
