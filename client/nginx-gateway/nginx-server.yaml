@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.virciety: gateway
+  name: gateway
+spec:
+  ports:
+    - port: 4199
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app.virciety: gateway
+  type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.virciety: gateway
+  name: gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.virciety: gateway
+  template:
+    metadata:
+      labels:
+        app.virciety: gateway
+    spec:
+      containers:
+        - image: cubalatino/virciety:gateway
+          name: gateway
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80

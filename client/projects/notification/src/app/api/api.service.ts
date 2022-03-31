@@ -9,8 +9,7 @@ import {getMainDefinition} from "@apollo/client/utilities";
 import {NotificationSubscriptionGql} from "./notification-subscription-gql";
 import {Observable, Subject} from "rxjs";
 import {onError} from "@apollo/client/link/error";
-
-const base = 'localhost:8082/query';
+import {environment} from "../../environments/environment";
 
 @Injectable({
   providedIn: 'root'
@@ -55,10 +54,10 @@ export class ApiService {
       }
     });
 
-    const http = ApolloLink.from([basic, auth, this.httpLink.create({ uri: `http://${base}`})]);
+    const http = ApolloLink.from([basic, auth, this.httpLink.create({ uri: environment.notifsAPI})]);
     const cache = new InMemoryCache();
 
-    this.webSocketClient = new SubscriptionClient(`ws://${base}`, {
+    this.webSocketClient = new SubscriptionClient(environment.notifsWS, {
       reconnect: true,
       reconnectionAttempts: 3,
     });

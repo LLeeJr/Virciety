@@ -1,5 +1,5 @@
 <app-federated-component
-  remoteEntry="http://localhost:5002/remoteEntry.js"
+  [remoteEntry]="this.postMFE"
   remoteName="post" exposedModule="PostModule"
   componentName="PostComponent"
   class="post-container"

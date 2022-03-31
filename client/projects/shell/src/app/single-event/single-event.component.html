@@ -1,5 +1,5 @@
 <app-federated-component
-  remoteEntry="http://localhost:5004/remoteEntry.js"
+  [remoteEntry]="this.eventMFE"
   remoteName="event"
   exposedModule="EventModule"
   componentName="SingleEventComponent"

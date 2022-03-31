@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import {Router} from "@angular/router";
+import {environment} from "../../environments/environment";
 
 @Component({
   selector: 'app-post',
@@ -7,8 +8,11 @@ import {Router} from "@angular/router";
   styleUrls: ['./post.component.scss']
 })
 export class PostComponent implements OnInit {
+  postMFE: string;
 
-  constructor(private router: Router) { }
+  constructor(private router: Router) {
+    this.postMFE = environment.postMFE;
+  }
 
   ngOnInit(): void {
   }

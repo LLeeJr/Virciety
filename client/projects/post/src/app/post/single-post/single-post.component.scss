@@ -1,10 +1,33 @@
+
+:host ::ng-deep .mat-list-item-content {
+  align-items: flex-start !important;
+}
+
 .comment-list {
   flex-grow: 1;
   overflow: auto;
-  max-height: 16em;
+  max-height: 14em;
   //margin-bottom: 50px;
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.comment-list::-webkit-scrollbar {
+  display: none;
+}
+
+.comment-item {
+  height: auto !important;
+  margin-bottom: 1em
+;
+}
+
+.comment-item.mat-list-item-content {
+  align-items: flex-start;
+}
+
+.avatar {
+  margin-right: .5em;
 }
 
 .user-image {
@@ -19,12 +42,17 @@
 
 .info {
   display: flex;
+  max-width: 40em;
   flex-direction: column;
   background: #303030;
   border-radius: 4px;
   box-shadow: 5px 5px 5px #272727;
   padding-left: 1em;
   padding-right: 1em;
+}
+
+.info.is-phone-portrait {
+  max-width: 21em;
 }
 
 .info-header {
@@ -35,6 +63,7 @@
 
 .post_comments_container {
   display: flex;
+  justify-content: center;
   margin-top: 10px;
   margin-bottom: 10px;
 }
@@ -70,4 +99,15 @@
 
 .comment-input {
   margin-top: auto;
+}
+
+.comment-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.comment-text {
+  white-space: pre-line;
+  word-break: break-word;
 }

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mongodb-notifs
+  name: mongodb-notifs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb-notifs
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: mongodb-notifs
+    spec:
+      containers:
+        - image: mongo
+          name: mongodb-notifs
+          args: ["--dbpath","/data/notifs-db"]
+          livenessProbe:
+            exec:
+              command:
+                - mongo
+                - --disableImplicitSessions
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - mongo
+                - --disableImplicitSessions
+                - --eval
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: admin
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              value: admin
+          volumeMounts:
+            - name: "mongo-notifs-data-dir"
+              mountPath: "/data/notifs-db"
+      volumes:
+        - name: "mongo-notifs-data-dir"
+          persistentVolumeClaim:
+            claimName: "mongo-notifs-data"

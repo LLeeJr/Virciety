@@ -3,7 +3,15 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  chatMFE: "http://localhost:5001/remoteEntry.js",
+  eventMFE: "http://localhost:5004/remoteEntry.js",
+  keycloak: "http://localhost:8080/auth",
+  postMFE: "http://localhost:5002/remoteEntry.js",
+  profileMFE: "http://localhost:5005/remoteEntry.js",
+  notifsMFE: "http://localhost:5006/remoteEntry.js",
+  userMFE: "http://localhost:5003/remoteEntry.js",
+  userAPI: "http://localhost:8085/query"
 };
 
 /*

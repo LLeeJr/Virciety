@@ -24,6 +24,7 @@ import {SubscriptionClient} from "subscriptions-transport-ws";
 import {Observable, Subject} from "rxjs";
 import {onError} from "@apollo/client/link/error";
 import {Router} from "@angular/router";
+import {environment} from "../../environments/environment";
 
 @Injectable({
   providedIn: 'root'
@@ -55,10 +56,10 @@ export class GQLService {
     });
 
     const http = httpLink.create({
-      uri: 'http://localhost:8083/query',
+      uri: environment.postAPI,
     });
 
-    this.webSocketClient = new SubscriptionClient('ws://localhost:8083/query', {
+    this.webSocketClient = new SubscriptionClient(environment.postWS, {
       reconnect: true,
       reconnectionAttempts: 3,
     });

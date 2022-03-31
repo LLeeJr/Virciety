@@ -1,6 +1,6 @@
 <h2 mat-dialog-title>Create a new post</h2>
 
-<mat-dialog-content>
+<mat-dialog-content class="create-post-container">
   <div *ngIf="fileBase64 && content_type !== ''">
     <div *ngIf="!(content_type.startsWith('image') || content_type.startsWith('video')); else elseIfBlock">
       {{alertFunction()}}

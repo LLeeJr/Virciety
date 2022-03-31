@@ -1,4 +1,5 @@
 import {KeycloakService} from "keycloak-angular";
+import {environment} from "../../environments/environment";
 
 
 export function initializeKeycloak(
@@ -7,13 +8,13 @@ export function initializeKeycloak(
   return () =>
     keycloak.init({
       config: {
-        url: 'http://localhost:8080' + '/auth',
+        url: environment.keycloak,
         realm: 'virciety',
         clientId: 'virciety-frontend',
       },
       initOptions: {
-        checkLoginIframe: true,
-        checkLoginIframeInterval: 60
+        // checkLoginIframe: true,
+        // checkLoginIframeInterval: 60
       }
     });
 }

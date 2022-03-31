@@ -4,6 +4,7 @@ import {AuthLibService} from "auth-lib";
 import {BreakpointObserver, Breakpoints} from "@angular/cdk/layout";
 import {Router} from "@angular/router";
 import {MatSnackBar} from "@angular/material/snack-bar";
+import {environment} from "../environments/environment";
 
 @Component({
   selector: 'app-root',
@@ -15,18 +16,27 @@ export class AppComponent implements OnInit {
   isLoggedIn: boolean = false;
   username: string
 
-  searchMode: boolean = false;
   isPhonePortrait: boolean = false;
+  userMfeOnline: boolean = true;
   notificationMfeOnline: boolean = true;
   postMfeOnline: boolean = true;
   private durationTime: number = 3;
 
-  constructor(private auth: AuthLibService,
+  postMFE: string;
+  notifsMFE: string;
+  userMFE: string;
+
+  constructor(
+    private auth: AuthLibService,
     private keycloak: KeycloakService,
     private responsive: BreakpointObserver,
     private router: Router,
     private snackbar: MatSnackBar,
-  ) { }
+  ) {
+    this.postMFE = environment.postMFE;
+    this.notifsMFE = environment.notifsMFE;
+    this.userMFE = environment.userMFE;
+  }
 
   async ngOnInit(): Promise<void> {
     await this.keycloak.isLoggedIn().then(loggedIn => {
@@ -53,14 +63,6 @@ export class AppComponent implements OnInit {
     })
   }
 
-  openSearch() {
-    this.searchMode = !this.searchMode;
-  }
-
-  closeSearch() {
-    this.searchMode = !this.searchMode;
-  }
-
   handleError(event: any) {
     let {error, component} = event;
     if (error) {
@@ -74,8 +76,7 @@ export class AppComponent implements OnInit {
           this.notificationMfeOnline = false;
           break;
         case 'user':
-          this.searchMode = !this.searchMode;
-          this.placeholderHandler('user-search')
+          this.userMfeOnline = false;
           break;
       }
     }
